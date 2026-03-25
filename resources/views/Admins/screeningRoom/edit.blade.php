@@ -1,68 +1,78 @@
 @extends('layouts.appAdmin')
 
 @section('content')
-    <h2>Edit Screening Room</h2>
+<div class="container mt-5" style="max-width: 600px;">
 
-    <a href="{{ route('screeningRoom.index') }}">
-        Back
-    </a>
+    <div class="bg-white p-4 rounded-3 shadow-sm border">
 
-    @if ($errors->any())
-        <div class="alert alert-danger">
-            <ul>
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="fw-semibold text-dark mb-0">
+                Chỉnh sửa phòng chiếu
+            </h4>
 
-    <form action="{{ route('screeningRoom.update', $room->roomID) }}" method="POST">
-
-        @csrf
-        @method('PUT')
-
-        <div>
-            <label>Room Name</label>
-            <input type="text" name="roomName" value="{{ $room->roomName }}">
+            <a href="{{ route('screeningRoom.index') }}" 
+               class="btn btn-outline-secondary btn-sm">
+                ← Quay lại
+            </a>
         </div>
 
-        <br>
+        <!-- Error -->
+        @if ($errors->any())
+            <div class="alert alert-danger border-0 shadow-sm">
+                <ul class="mb-0 ps-3">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
 
-        <div>
-            <label>Capacity</label>
-            <input type="number" name="capacity" value="{{ $room->capacity }}">
-        </div>
+        <form action="{{ route('screeningRoom.update', $room->roomID) }}" method="POST">
+            @csrf
+            @method('PUT')
 
-        <br>
+            <!-- Room Name -->
+            <div class="mb-3">
+                <label class="form-label text-muted">Tên phòng</label>
+                <input type="text" 
+                       name="roomName" 
+                       value="{{ $room->roomName }}"
+                       class="form-control"
+                       placeholder="Nhập tên phòng...">
+            </div>
 
-        <div>
-            <label>Screen Type</label>
+            <!-- Capacity -->
+            <div class="mb-3">
+                <label class="form-label text-muted">Sức chứa</label>
+                <input type="number" 
+                       name="capacity" 
+                       value="{{ $room->capacity }}"
+                       class="form-control">
+            </div>
 
-            <select name="screenTypeID">
+            <!-- Screen Type -->
+            <div class="mb-4">
+                <label class="form-label text-muted">Loại phòng chiếu</label>
+                <select name="screenTypeID" class="form-select">
+                    @foreach($screenTypes as $type)
+                        <option value="{{ $type->screenTypeID }}"
+                            {{ $type->screenTypeID == $room->screenTypeID ? 'selected' : '' }}>
+                            {{ $type->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
 
-                @foreach($screenTypes as $type)
+            <!-- Button -->
+            <div class="text-end">
+                <button type="submit" class="btn btn-dark px-4">
+                    Cập nhật
+                </button>
+            </div>
 
-                    <option value="{{ $type->screenTypeID }}"
-                        {{ $type->screenTypeID == $room->screenTypeID ? 'selected' : '' }}>
+        </form>
 
-                        {{ $type->name }}
+    </div>
 
-                    </option>
-
-                @endforeach
-
-            </select>
-
-        </div>
-
-        <br>
-
-        <button type="submit">
-            Update Room
-        </button>
-
-    </form>
-
+</div>
 @endsection
-

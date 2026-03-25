@@ -1,18 +1,56 @@
 @extends('layouts.appAdmin')
 
 @section('content')
-    <form method="post" action="{{ route('paymentMethod.store') }}">
-        @csrf
+<div class="container mt-4">
 
-        <div>
-            <label for="name">Tên phương thức: </label>
-            <input type="text" name="name" id="name" placeholder="Nhập tên phương thức">
-        </div>
+    <!-- Header -->
+    <div class="mb-3">
+        <h4 class="fw-semibold">Thêm phương thức thanh toán</h4>
+    </div>
 
-        <div>
-            <button type="submit" class="btn btn-primary">
-                Thêm phương thức
-            </button>
+    <!-- Card -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+
+            <form method="POST" action="{{ route('paymentMethod.store') }}">
+                @csrf
+
+                <!-- Name -->
+                <div class="mb-3">
+                    <label for="name" class="form-label">
+                        Tên phương thức
+                    </label>
+
+                    <input type="text"
+                           name="name"
+                           id="name"
+                           class="form-control"
+                           placeholder="Nhập tên phương thức"
+                           value="{{ old('name') }}">
+
+                    @error('name')
+                        <small class="text-danger">
+                            {{ $message }}
+                        </small>
+                    @enderror
+                </div>
+
+                <!-- Actions -->
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-dark">
+                        + Thêm
+                    </button>
+
+                    <a href="{{ route('paymentMethod.index') }}" 
+                       class="btn btn-secondary">
+                        Quay lại
+                    </a>
+                </div>
+
+            </form>
+
         </div>
-    </form>
+    </div>
+
+</div>
 @endsection

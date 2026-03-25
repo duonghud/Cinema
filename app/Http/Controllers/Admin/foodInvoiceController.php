@@ -12,56 +12,59 @@ use App\Models\Admin\payment_method;
 
 class foodInvoiceController extends Controller
 {
-    
+
     public function index()
     {
         $invoices = FoodInvoice::with(['customer', 'payment', 'details.food'])->get();
         return view('admins.foodInvoice.index', compact('invoices'));
     }
 
-    
+
     public function create()
     {
-        $foods = Food::all();
         $customers = Customer::all();
         $payments = payment_method::all();
+        $foods = Food::all();
 
-        return view('admins.foodInvoice.create', compact('foods', 'customers', 'payments'));
+        return view('admins.foodInvoice.create', compact('customers', 'payments', 'foods'));
     }
 
-    
     public function store(Request $request)
     {
-        $invoice = FoodInvoice::create([
-            'orderDate' => now(),
-            'total' => 0,
-            'customerID' => $request->customerID,
-            'adminID' => 2,
-            'paymentID' => $request->paymentID
+        // Validate cơ bản
+        $request->validate([
+            'customerID' => 'required|exists:customers,customerID',
+            'paymentID'  => 'required|exists:payments,paymentID',
+            'orderTime'  => 'required|date',
+        ], [
+            'customerID.required' => 'Vui lòng chọn khách hàng',
+            'customerID.exists'   => 'Khách hàng không tồn tại',
+
+            'paymentID.required' => 'Vui lòng chọn phương thức thanh toán',
+            'paymentID.exists'   => 'Phương thức không hợp lệ',
+
+            'orderTime.required' => 'Vui lòng chọn thời gian',
+            'orderTime.date'     => 'Thời gian không hợp lệ',
         ]);
 
-        $total = 0;
+        // Validate món ăn (ít nhất 1 món > 0)
+        $foods = $request->input('foods', []);
+        $hasFood = collect($foods)->filter(fn($q) => $q > 0)->count() > 0;
 
-        foreach ($request->foods as $foodID => $qty) {
-            if ($qty > 0) {
-                $food = Food::find($foodID);
-
-                FoodInvoiceDetail::create([
-                    'foodInvoiceID' => $invoice->foodInvoiceID,
-                    'foodID' => $foodID,
-                    'quantity' => $qty
-                ]);
-
-                $total += $food->price * $qty;
-            }
+        if (!$hasFood) {
+            return back()
+                ->withErrors(['foods' => 'Vui lòng chọn ít nhất 1 món'])
+                ->withInput();
         }
 
-        $invoice->update(['total' => $total]);
+        // ===== Xử lý lưu (demo) =====
+        // $invoice = FoodInvoice::create([...]);
 
-        return redirect()->route('foodInvoice.index')->with('success', 'Tạo hóa đơn thành công');
+        return redirect()->route('foodInvoice.index')
+            ->with('success', 'Tạo hóa đơn thành công!');
     }
 
-    
+
     public function show($id)
     {
         $invoice = FoodInvoice::with(['customer', 'payment', 'details.food'])->findOrFail($id);

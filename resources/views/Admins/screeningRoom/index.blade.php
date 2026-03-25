@@ -1,73 +1,78 @@
 @extends('layouts.appAdmin')
 
 @section('content')
-    <h2>Danh sách phòng chiếu</h2>
+<div class="container mt-5">
 
-    <a href="{{ route('screeningRoom.create') }}" class="btn btn-success">
-        Thêm phòng
-    </a>
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-semibold text-dark">Danh sách phòng chiếu</h3>
 
-    @if(session('success'))
-        <div class="alert alert-success">
-            {{ session('success') }}
-        </div>
-    @endif
+        <a href="{{ route('screeningRoom.create') }}" 
+           class="btn btn-dark px-4">
+            + Thêm phòng
+        </a>
+    </div>
 
-    <table border="1" width="800">
-        <thead>
-        <tr>
-            <th>ID</th>
-            <th>Tên phòng</th>
-            <th>Sức chứa</th>
-            <th>Loại phòng chiếu</th>
-            <th>Hoạt động</th>
-        </tr>
-        </thead>
+    <!-- Table -->
+    <div class="bg-white border rounded-3 shadow-sm">
+        <table class="table mb-0 align-middle">
+            <thead class="border-bottom">
+                <tr class="text-muted small">
+                    <th>ID</th>
+                    <th>Tên phòng</th>
+                    <th>Sức chứa</th>
+                    <th>Loại màn</th>
+                    <th class="text-end">Hành động</th>
+                </tr>
+            </thead>
 
-        <tbody>
+            <tbody>
+            @foreach($room as $r)
+                <tr class="border-bottom">
+                    <td class="text-muted">{{ $r->roomID }}</td>
 
-        @foreach($room as $r)
+                    <td class="fw-medium">
+                        {{ $r->roomName }}
+                    </td>
 
-            <tr>
+                    <td>
+                        {{ $r->capacity }}
+                    </td>
 
-                <td>{{ $r->roomID }}</td>
-                <td>{{ $r->roomName }}</td>
-                <td>{{ $r->capacity }}</td>
+                    <td>
+                        @if($r->screenType)
+                            <span class="text-secondary">
+                                {{ $r->screenType->name }}
+                            </span>
+                        @else
+                            <span class="text-muted">N/A</span>
+                        @endif
+                    </td>
 
-                <td>
-                    @if($r->screenType)
-                        {{ $r->screenType->name }}
-                    @else
-                        N/A
-                    @endif
-                </td>
+                    <td class="text-end">
+                        <a href="{{ route('screeningRoom.edit',$r->roomID) }}" 
+                           class="btn btn-sm btn-outline-dark me-2">
+                            Sửa
+                        </a>
 
-                <td>
+                        <form action="{{ route('screeningRoom.destroy',$r->roomID) }}" 
+                              method="POST" 
+                              class="d-inline">
 
-                    <a href="{{ route('screeningRoom.edit',$r->roomID) }}">
-                        Sửa
-                    </a>
+                            @csrf
+                            @method('DELETE')
 
-                    <form action="{{ route('screeningRoom.destroy',$r->roomID) }}" method="POST" style="display:inline">
+                            <button class="btn btn-sm btn-outline-danger">
+                                Xóa
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            @endforeach
+            </tbody>
 
-                        @csrf
-                        @method('DELETE')
+        </table>
+    </div>
 
-                        <button onclick="return confirm('Delete this room?')">
-                            Xóa
-                        </button>
-
-                    </form>
-
-                </td>
-
-            </tr>
-
-        @endforeach
-
-        </tbody>
-
-    </table>
-
+</div>
 @endsection
-

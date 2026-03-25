@@ -1,73 +1,93 @@
 @extends('layouts.appAdmin')
 
 @section('content')
+<div class="container mt-4">
 
-<h2>Thêm nhân viên</h2>
+    <!-- Header -->
+    <div class="mb-3">
+        <h4 class="fw-semibold">Thêm nhân viên</h4>
+    </div>
 
-{{-- Hiển thị lỗi --}}
-@if ($errors->any())
-<div style="color:red">
-    <ul>
-        @foreach ($errors->all() as $error)
-            <li>{{ $error }}</li>
-        @endforeach
-    </ul>
+    <!-- Alert lỗi -->
+    @if ($errors->any())
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    <!-- Card -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+
+            <form method="POST" action="{{ route('admin.store') }}">
+                @csrf
+
+                <!-- Họ tên -->
+                <div class="mb-3">
+                    <label class="form-label">Họ tên</label>
+                    <input type="text"
+                           name="fullName"
+                           class="form-control"
+                           placeholder="Nhập họ tên"
+                           value="{{ old('fullName') }}">
+                </div>
+
+                <!-- Email -->
+                <div class="mb-3">
+                    <label class="form-label">Email</label>
+                    <input type="email"
+                           name="email"
+                           class="form-control"
+                           placeholder="Nhập email"
+                           value="{{ old('email') }}">
+                </div>
+
+                <!-- Password -->
+                <div class="mb-3">
+                    <label class="form-label">Mật khẩu</label>
+                    <input type="password"
+                           name="password"
+                           class="form-control"
+                           placeholder="Nhập mật khẩu">
+                </div>
+
+                <!-- Role -->
+                <div class="mb-3">
+                    <label class="form-label">Chức vụ</label>
+                    <select name="role" class="form-select">
+                        <option value="">-- Chọn chức vụ --</option>
+                        <option value="admin" {{ old('role') == 'admin' ? 'selected' : '' }}>
+                            Quản trị viên
+                        </option>
+                        <option value="ticket_staff" {{ old('role') == 'ticket_staff' ? 'selected' : '' }}>
+                            Nhân viên bán vé
+                        </option>
+                        <option value="food_staff" {{ old('role') == 'food_staff' ? 'selected' : '' }}>
+                            Nhân viên bán đồ ăn
+                        </option>
+                    </select>
+                </div>
+
+                <!-- Button -->
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-dark">
+                        + Thêm nhân viên
+                    </button>
+
+                    <a href="{{ route('admin.index') }}" 
+                       class="btn btn-secondary">
+                        Quay lại
+                    </a>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+
 </div>
-@endif
-
-<form method="POST" action="{{ route('admin.store') }}">
-    @csrf
-
-    <div>
-        <label for="fullName">Họ tên:</label>
-        <input 
-            type="text" 
-            name="fullName" 
-            id="fullName" 
-            placeholder="Nhập họ tên"
-            value="{{ old('fullName') }}"
-        >
-    </div>
-
-    <div>
-        <label for="email">Email:</label>
-        <input 
-            type="email" 
-            name="email" 
-            id="email" 
-            placeholder="Nhập email"
-            value="{{ old('email') }}"
-        >
-    </div>
-
-    <div>
-        <label for="password">Mật khẩu:</label>
-        <input 
-            type="password" 
-            name="password" 
-            id="password" 
-            placeholder="Nhập mật khẩu"
-            
-        >
-        
-    
-
-    <div>
-        <label for="role">Chức vụ</label>
-        <select name="role" id="role">
-            <option value="">-- Chọn chức vụ --</option>
-            <option value="admin">Quản trị viên</option>
-            <option value="ticket_staff">Nhân viên bán vé</option>
-            <option value="food_staff">Nhân viên bán đồ ăn</option>
-        </select>
-    </div>
-
-    <div>
-        <button type="submit" class="btn btn-primary">
-            Thêm nhân viên
-        </button>
-    </div>
-
-</form>
-
 @endsection

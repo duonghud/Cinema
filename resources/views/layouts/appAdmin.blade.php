@@ -219,6 +219,9 @@
                     <a href="{{ route('screeningRoom.index') }}" class="{{ request()->routeIs('screeningRoom.*') ? 'active' : '' }}">
                         <i class="bi bi-tv me-2"></i> Phòng chiếu
                     </a>
+                    <a href="{{ route('screenType.index') }}" class="{{ request()->routeIs('screenType.*') ? 'active' : '' }}">
+                        <i class="bi bi-tv me-2"></i> Loại phòng chiếu
+                    </a>
                     <a href="{{ route('seat.index') }}" class="{{ request()->routeIs('seat.*') ? 'active' : '' }}">
                         <i class="bi bi-grid me-2"></i> Ghế
                     </a>
