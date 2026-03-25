@@ -1,83 +1,136 @@
 @extends('layouts.appAdmin')
 @section('content')
 
-
 <div class="container mt-4">
 
-    <h2>Danh sách phim</h2>
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="fw-semibold">Danh sách phim</h4>
 
-    <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#createModal">
-        Thêm phim mới
-    </button>
+        <button class="btn btn-dark mb-3" data-bs-toggle="modal" data-bs-target="#createModal">
+            + Thêm phim mới
+        </button>
+    </div>
 
-    <table class="table table-bordered">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Tên phim</th>
-                <th>Poster</th>
-                <th>Trailer</th>
-                <th>Đạo diễn</th>
-                <th>Mô tả</th>
-                <th>Thời gian phát hành</th>
-                <th>Kiểm duyệt độ tuổi</th>
-                <th>Thể loại</th>
-                <th>Hãng</th>
-                <th>Hoạt động</th>
-            </tr>
-        </thead>
+    <!-- Card -->
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
 
-        <tbody>
-            @foreach($movies as $movie)
-            <tr>
-                <td>{{ $movie->movieID }}</td>
-                <td>{{ $movie->movieTitle }}</td>
-                <td>
-                    <img src="{{ asset('posters/'.$movie->poster) }}" width="80">
-                </td>
-                <td>
-                    @php
-                    $videoId = explode('v=', $movie->trailer);
-                    $videoId = isset($videoId[1]) ? explode('&', $videoId[1])[0] : '';
-                    @endphp
+            <table class="table table-hover align-middle mb-0">
 
-                    <iframe width="200" height="120"
-                        src="https://www.youtube.com/embed/{{ $videoId }}"
-                        frameborder="0"
-                        allowfullscreen>
-                    </iframe>
-                </td>
-                <td>{{ $movie->director }}</td>
-                <td>{{ $movie->description }}</td>
-                <td>{{ $movie->releaseDate }}</td>
-                <td>{{ $movie->ageRating->code }}</td>
-                <td></td>
-                <td>{{ $movie->studio->name }}</td>
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Tên phim</th>
+                        <th>Poster</th>
+                        <th>Trailer</th>
+                        <th>Đạo diễn</th>
+                        <th>Mô tả</th>
+                        <th>Phát hành</th>
+                        <th>Độ tuổi</th>
+                        <th>Thể loại</th>
+                        <th>Hãng</th>
+                        <th class="text-end">Hành động</th>
+                    </tr>
+                </thead>
 
-                <td>
-                    <button class="btn btn-warning btn-sm"
-                        data-bs-toggle="modal"
-                        data-bs-target="#editModal{{$movie->movieID}}">
-                        Sửa
-                    </button>
+                <tbody>
+                    @foreach($movies as $movie)
+                    <tr>
 
-                    <form action="{{route('movies.destroy',$movie->movieID)}}" method="POST" style="display:inline;">
-                        @csrf
-                        @method('DELETE')
-                        <button class="btn btn-danger btn-sm">Xóa</button>
-                    </form>
-                </td>
-            </tr>
+                        <td class="text-muted">{{ $movie->movieID }}</td>
 
-            @include('admins.movies.edit')
+                        <td class="fw-medium">
+                            {{ $movie->movieTitle }}
+                        </td>
 
-            @endforeach
-        </tbody>
-    </table>
+                        <!-- Poster -->
+                        <td>
+                            <img src="{{ asset('posters/'.$movie->poster) }}"
+                                 width="70"
+                                 class="rounded shadow-sm">
+                        </td>
+
+                        <!-- Trailer -->
+                        <td>
+                            @php
+                            $videoId = explode('v=', $movie->trailer);
+                            $videoId = isset($videoId[1]) ? explode('&', $videoId[1])[0] : '';
+                            @endphp
+
+                            <iframe width="140" height="80"
+                                class="rounded"
+                                src="https://www.youtube.com/embed/{{ $videoId }}"
+                                frameborder="0"
+                                allowfullscreen>
+                            </iframe>
+                        </td>
+
+                        <td>{{ $movie->director }}</td>
+
+                        <!-- Description -->
+                        <td style="max-width:200px;">
+                            <small class="text-muted">
+                                {{ Str::limit($movie->description, 80) }}
+                            </small>
+                        </td>
+
+                        <td>
+                            {{ \Carbon\Carbon::parse($movie->releaseDate)->format('d/m/Y') }}
+                        </td>
+
+                        <!-- Age -->
+                        <td>
+                            <span class="badge bg-secondary">
+                                {{ $movie->ageRating->code }}
+                            </span>
+                        </td>
+
+                        <td></td>
+
+                        <!-- Studio -->
+                        <td>
+                            <span class="badge bg-light text-dark">
+                                {{ $movie->studio->name }}
+                            </span>
+                        </td>
+
+                        <!-- Actions -->
+                        <td class="text-end">
+
+                            <button class="btn btn-sm btn-outline-dark me-2"
+                                data-bs-toggle="modal"
+                                data-bs-target="#editModal{{$movie->movieID}}">
+                                Sửa
+                            </button>
+
+                            <form action="{{route('movies.destroy',$movie->movieID)}}"
+                                  method="POST"
+                                  class="d-inline">
+                                @csrf
+                                @method('DELETE')
+
+                                <button class="btn btn-sm btn-outline-danger">
+                                    Xóa
+                                </button>
+                            </form>
+
+                        </td>
+
+                    </tr>
+
+                    @include('admins.movies.edit')
+
+                    @endforeach
+                </tbody>
+
+            </table>
+
+        </div>
+    </div>
 
 </div>
 
 @include('admins.movies.create')
-
 
 @endsection

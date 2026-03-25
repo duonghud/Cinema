@@ -1,26 +1,49 @@
 @extends('layouts.appAdmin')
 
 @section('content')
-<form action="{{ route('studio.update', $studio->studioID) }}" method="post">
-    @csrf
-    @method('PUT')
-    <div>
-        <label for="name">Tên nhà sản xuất: </label>
+<div class="container mt-4">
 
-        <input type="text" name="name"
-               class="form-control @error('name') is-invalid @enderror"
-               value="{{ old('name') }}">
+    <!-- Card Form -->
+    <div class="card shadow-sm">
 
-        @error('name')
-        <div class="invalid-feedback">
-            {{ $message }}
+        <!-- Header -->
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-semibold">Cập nhật nhà sản xuất</h5>
         </div>
-        @enderror
+
+        <!-- Body -->
+        <div class="card-body">
+
+            <form action="{{ route('studio.update', $studio->studioID) }}" method="post">
+                @csrf
+                @method('PUT')
+
+                <!-- Tên nhà sản xuất -->
+                <div class="mb-3">
+                    <label for="name" class="form-label fw-medium">Tên nhà sản xuất</label>
+                    <input type="text" name="name" id="name"
+                           class="form-control @error('name') is-invalid @enderror"
+                           value="{{ old('name', $studio->name) }}" required>
+
+                    @error('name')
+                        <div class="invalid-feedback">
+                            {{ $message }}
+                        </div>
+                    @enderror
+                </div>
+
+                <!-- Submit -->
+                <div class="text-end">
+                    <a href="{{ route('studio.index') }}" class="btn btn-outline-dark btn-sm">Quay lại</a>
+                    <button type="submit" class="btn btn-dark">
+                        Cập nhật
+                    </button>
+                </div>
+
+            </form>
+
+        </div>
     </div>
-    <div>
-        <button type="submit" class="btn btn-primary">
-            Cập nhật
-        </button>
-    </div>
-</form>
+
+</div>
 @endsection
