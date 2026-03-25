@@ -1,83 +1,96 @@
 @extends('layouts.appAdmin')
 
 @section('content')
-<h2>Thêm khách hàng</h2>
+<div class="container mt-4">
 
-{{-- Hiển thị lỗi validate --}}
-@if ($errors->any())
-<div style="color:red; margin-bottom:15px;">
-    <ul>
-        @foreach ($errors->all() as $error)
-            <li>{{ $error }}</li>
-        @endforeach
-    </ul>
+    <!-- Header -->
+    <div class="mb-3">
+        <h4 class="fw-semibold">Thêm khách hàng</h4>
+    </div>
+
+    <!-- Alert lỗi -->
+    @if ($errors->any())
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    <!-- Card -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+
+            <form method="POST" action="{{ route('customer.store') }}">
+                @csrf
+
+                <!-- Name -->
+                <div class="mb-3">
+                    <label class="form-label">Họ tên</label>
+                    <input type="text"
+                           name="fullName"
+                           class="form-control"
+                           placeholder="Nhập họ tên"
+                           value="{{ old('fullName') }}">
+                </div>
+
+                <!-- Email -->
+                <div class="mb-3">
+                    <label class="form-label">Email</label>
+                    <input type="email"
+                           name="email"
+                           class="form-control"
+                           placeholder="Nhập email"
+                           value="{{ old('email') }}">
+                </div>
+
+                <!-- Password -->
+                <div class="mb-3">
+                    <label class="form-label">Mật khẩu</label>
+                    <input type="password"
+                           name="password"
+                           class="form-control"
+                           placeholder="Nhập mật khẩu">
+                </div>
+
+                <!-- Phone -->
+                <div class="mb-3">
+                    <label class="form-label">Số điện thoại</label>
+                    <input type="text"
+                           name="phoneNumber"
+                           class="form-control"
+                           placeholder="Nhập số điện thoại"
+                           value="{{ old('phoneNumber') }}">
+                </div>
+
+                <!-- Address -->
+                <div class="mb-3">
+                    <label class="form-label">Địa chỉ</label>
+                    <input type="text"
+                           name="address"
+                           class="form-control"
+                           placeholder="Nhập địa chỉ"
+                           value="{{ old('address') }}">
+                </div>
+
+                <!-- Actions -->
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-dark">
+                        + Thêm khách hàng
+                    </button>
+
+                    <a href="{{ route('customer.index') }}" 
+                       class="btn btn-secondary">
+                        Quay lại
+                    </a>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+
 </div>
-@endif
-
-<form method="POST" action="{{ route('customer.store') }}">
-    @csrf
-
-    <div>
-        <label for="fullName">Họ tên:</label>
-        <input 
-            type="text" 
-            name="fullName" 
-            id="fullName" 
-            placeholder="Nhập họ tên"
-            value="{{ old('fullName') }}"
-        >
-    </div>
-
-    <div>
-        <label for="email">Email:</label>
-        <input 
-            type="email" 
-            name="email" 
-            id="email" 
-            placeholder="Nhập email"
-            value="{{ old('email') }}"
-        >
-    </div>
-
-    <div>
-        <label for="password">Mật khẩu:</label>
-        <input 
-            type="password" 
-            name="password" 
-            id="password" 
-            placeholder="Nhập mật khẩu"
-        >
-    </div>
-
-    <div>
-        <label for="phoneNumber">Số điện thoại:</label>
-        <input 
-            type="text" 
-            name="phoneNumber" 
-            id="phoneNumber" 
-            placeholder="Nhập số điện thoại"
-            value="{{ old('phoneNumber') }}"
-        >
-    </div>
-
-    <div>
-        <label for="address">Địa chỉ:</label>
-        <input 
-            type="text" 
-            name="address" 
-            id="address" 
-            placeholder="Nhập địa chỉ"
-            value="{{ old('address') }}"
-        >
-    </div>
-
-    <div>
-        <button type="submit" class="btn btn-primary">
-            Thêm khách hàng
-        </button>
-    </div>
-
-</form>
-
 @endsection
->>>>>>> 62dbd1183a0333b3d2f39924f33e517ace5ff3b2

@@ -2,67 +2,98 @@
 
 @section('content')
 
+<div class="container mt-4">
 
-<a href="{{ route('ageRating.create') }}" class="btn btn-success mb-3">
-    Thêm kiểm duyệt
-</a>
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="fw-semibold mb-0">Danh sách kiểm duyệt độ tuổi</h4>
+            <small class="text-muted">Quản lý phân loại phim theo độ tuổi</small>
+        </div>
 
-<table class="table table-bordered" width="600">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Tên</th>
-            <th>Mô tả</th>
-            <th>Hành động</th>
-        </tr>
-    </thead>
+        <a href="{{ route('ageRating.create') }}" class="btn btn-dark">
+            + Thêm kiểm duyệt
+        </a>
+    </div>
 
-    <tbody>
+    <!-- Card -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
 
-        @forelse($ageRatings as $item)
+            <table class="table table-hover align-middle mb-0">
 
-        <tr>
-            <td>{{ $item->ageRatingID }}</td>
-            <td>{{ $item->code }}</td>
-            <td>{{ $item->description }}</td>
+                <thead class="table-light">
+                    <tr>
+                        <th width="80">ID</th>
+                        <th width="120">Mã</th>
+                        <th>Mô tả</th>
+                        <th width="180" class="text-end">Hành động</th>
+                    </tr>
+                </thead>
 
-            <td>
+                <tbody>
 
-                <a href="{{ route('ageRating.edit',$item) }}"
-                    class="btn btn-warning btn-sm">
-                    Sửa
-                </a>
+                    @forelse($ageRatings as $item)
+                    <tr>
 
-                <form action="{{ route('ageRating.destroy',$item) }}"
-                    method="POST"
-                    style="display:inline-block">
+                        <!-- ID -->
+                        <td class="text-muted">
+                            #{{ $item->ageRatingID }}
+                        </td>
 
-                    @csrf
-                    @method('DELETE')
+                        <!-- Code -->
+                        <td>
+                            <span class="badge bg-warning text-dark px-3 py-2">
+                                {{ $item->code }}
+                            </span>
+                        </td>
 
-                    <button type="submit"
-                        class="btn btn-danger btn-sm"
-                        onclick="return confirm('Bạn có chắc muốn xóa?')">
-                        Xóa
-                    </button>
+                        <!-- Description -->
+                        <td>
+                            <span class="text-secondary">
+                                {{ $item->description }}
+                            </span>
+                        </td>
 
-                </form>
+                        <!-- Actions -->
+                        <td class="text-end">
 
-            </td>
-        </tr>
+                            <a href="{{ route('ageRating.edit',$item) }}"
+                                class="btn btn-sm btn-outline-dark me-2">
+                                Sửa
+                            </a>
 
-        @empty
+                            <form action="{{ route('ageRating.destroy',$item) }}"
+                                method="POST"
+                                class="d-inline">
 
-        <tr>
-            <td colspan="4" class="text-center">
-                Không có dữ liệu
-            </td>
-        </tr>
+                                @csrf
+                                @method('DELETE')
 
-        @endforelse
+                                <button type="submit"
+                                    class="btn btn-sm btn-outline-danger">
+                                    Xóa
+                                </button>
+                            </form>
 
-    </tbody>
+                        </td>
+                    </tr>
 
-</table>
+                    @empty
+                    <tr>
+                        <td colspan="4" class="text-center text-muted py-5">
+                            <i>Chưa có dữ liệu kiểm duyệt</i>
+                        </td>
+                    </tr>
+                    @endforelse
+
+                </tbody>
+
+            </table>
+
+        </div>
+    </div>
+
+</div>
 
 @endsection

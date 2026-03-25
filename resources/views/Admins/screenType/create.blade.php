@@ -1,18 +1,51 @@
 @extends('layouts.appAdmin')
 
 @section('content')
-    <form method="post" action="{{ route('screenType.store') }}">
-        @csrf
+<div class="container mt-4">
 
-        <div>
-            <label for="name">Tên định dạng: </label>
-            <input type="text" name="name" id="name" placeholder="Nhập tên định dạng">
-        </div>
+    <!-- Header -->
+    <div class="mb-3">
+        <h4 class="fw-semibold">Thêm định dạng màn hình</h4>
+    </div>
 
-        <div>
-            <button type="submit" class="btn btn-primary">
-                Thêm định dạng
-            </button>
+    <!-- Card -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+
+            <form method="POST" action="{{ route('screenType.store') }}">
+                @csrf
+
+                <!-- Name -->
+                <div class="mb-3">
+                    <label for="name" class="form-label">Tên định dạng</label>
+                    <input type="text" 
+                           name="name" 
+                           id="name" 
+                           class="form-control"
+                           placeholder="Nhập tên định dạng"
+                           value="{{ old('name') }}">
+
+                    @error('name')
+                        <small class="text-danger">{{ $message }}</small>
+                    @enderror
+                </div>
+
+                <!-- Button -->
+                <div class="d-flex justify-content-end">
+                    <a href="{{ route('screenType.index') }}" 
+                       class="btn btn-secondary me-2">
+                        Quay lại
+                    </a>
+
+                    <button type="submit" class="btn btn-dark">
+                        + Thêm định dạng
+                    </button>
+                </div>
+
+            </form>
+
         </div>
-    </form>
+    </div>
+
+</div>
 @endsection

@@ -1,50 +1,101 @@
 @extends('layouts.appAdmin')
+
 @section('content')
-<form action="{{ route('foodInvoice.update', $invoice->foodInvoiceID) }}" method="POST">
-    @csrf
-    @method('PUT')
+<div class="container mt-4">
 
-    <!-- Customer -->
-     <label for="">Tên khách hàng</label>
-    <select name="customerID" class="form-control">
-        @foreach($customers as $c)
-            <option value="{{ $c->customerID }}"
-                {{ $invoice->customerID == $c->customerID ? 'selected' : '' }}>
-                {{ $c->fullName }}
-            </option>
-        @endforeach
-    </select>
+    <!-- Header -->
+    <div class="mb-3">
+        <h4 class="fw-semibold">Cập nhật hóa đơn</h4>
+    </div>
 
-    <!-- Payment -->
-     <label for="">Phương thức thanh toán</label>
-    <select name="paymentID" class="form-control">
-        @foreach($payments as $p)
-            <option value="{{ $p->paymentID }}"
-                {{ $invoice->paymentID == $p->paymentID ? 'selected' : '' }}>
-                {{ $p->name }}
-            </option>
-        @endforeach
-    </select>
+    <!-- Card -->
+    <div class="card shadow-sm">
+        <div class="card-body">
 
-    <h4>Món ăn</h4>
+            <form action="{{ route('foodInvoice.update', $invoice->foodInvoiceID) }}" method="POST">
+                @csrf
+                @method('PUT')
 
-    @foreach($foods as $food)
-        @php
-            $qty = $invoice->details->firstWhere('foodID', $food->foodID)->quantity ?? 0;
-        @endphp
+                <div class="row">
 
-        <div class="d-flex mb-2">
-            <span style="width:200px">
-                {{ $food->foodName }}
-            </span>
+                    <!-- Customer -->
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Khách hàng</label>
+                        <select name="customerID" class="form-select">
+                            @foreach($customers as $c)
+                                <option value="{{ $c->customerID }}"
+                                    {{ $invoice->customerID == $c->customerID ? 'selected' : '' }}>
+                                    {{ $c->fullName }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
 
-            <input type="number"
-                   name="foods[{{ $food->foodID }}]"
-                   value="{{ $qty }}"
-                   min="0">
+                    <!-- Payment -->
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Phương thức thanh toán</label>
+                        <select name="paymentID" class="form-select">
+                            @foreach($payments as $p)
+                                <option value="{{ $p->paymentID }}"
+                                    {{ $invoice->paymentID == $p->paymentID ? 'selected' : '' }}>
+                                    {{ $p->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                </div>
+
+                <!-- Food list -->
+                <div class="mb-3">
+                    <h5 class="fw-semibold mb-3">Món ăn</h5>
+
+                    <div class="card border">
+                        <div class="card-body">
+
+                            @foreach($foods as $food)
+                                @php
+                                    $detail = $invoice->details->firstWhere('foodID', $food->foodID);
+                                    $qty = $detail ? $detail->quantity : 0;
+                                @endphp
+
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+
+                                    <!-- Name -->
+                                    <div>
+                                        <strong>{{ $food->foodName }}</strong>
+                                    </div>
+
+                                    <!-- Quantity -->
+                                    <input type="number"
+                                           name="foods[{{ $food->foodID }}]"
+                                           value="{{ $qty }}"
+                                           min="0"
+                                           class="form-control"
+                                           style="width:90px">
+                                </div>
+                            @endforeach
+
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Button -->
+                <div class="d-flex justify-content-end">
+                    <a href="{{ route('foodInvoice.index') }}" 
+                       class="btn btn-secondary me-2">
+                        Quay lại
+                    </a>
+
+                    <button type="submit" class="btn btn-dark">
+                        Cập nhật
+                    </button>
+                </div>
+
+            </form>
+
         </div>
-    @endforeach
+    </div>
 
-    <button class="btn btn-primary mt-3">Cập nhật</button>
-</form>
+</div>
 @endsection

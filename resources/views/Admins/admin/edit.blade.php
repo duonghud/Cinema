@@ -1,49 +1,99 @@
 @extends('layouts.appAdmin')
 
 @section('content')
-    <form method="post" action="{{ route('admin.update', $admins->adminID) }}">
-        @csrf
-        @method('PUT')
+<div class="container mt-4">
 
-        <div>
-            <label>Họ tên:</label>
-            <input type="text" name="fullName" value="{{ $admins->fullName }}">
+    <!-- Header -->
+    <div class="mb-3">
+        <h4 class="fw-semibold">Cập nhật nhân viên</h4>
+    </div>
+
+    <!-- Error -->
+    @if ($errors->any())
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
         </div>
+    @endif
 
-        <div>
-            <label>Email:</label>
-            <input type="email" name="email" value="{{ $admins->email }}">
+    <!-- Card -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+
+            <form method="POST" action="{{ route('admin.update', $admins->adminID) }}">
+                @csrf
+                @method('PUT')
+
+                <!-- Name -->
+                <div class="mb-3">
+                    <label class="form-label">Họ tên</label>
+                    <input type="text"
+                           name="fullName"
+                           class="form-control"
+                           value="{{ old('fullName', $admins->fullName) }}">
+                </div>
+
+                <!-- Email -->
+                <div class="mb-3">
+                    <label class="form-label">Email</label>
+                    <input type="email"
+                           name="email"
+                           class="form-control"
+                           value="{{ old('email', $admins->email) }}">
+                </div>
+
+                <!-- Role -->
+                <div class="mb-3">
+                    <label class="form-label">Chức vụ</label>
+                    <select name="role" class="form-select">
+
+                        <option value="admin"
+                            {{ old('role', $admins->role) == 'admin' ? 'selected' : '' }}>
+                            Quản trị viên
+                        </option>
+
+                        <option value="ticket_staff"
+                            {{ old('role', $admins->role) == 'ticket_staff' ? 'selected' : '' }}>
+                            Nhân viên bán vé
+                        </option>
+
+                        <option value="food_staff"
+                            {{ old('role', $admins->role) == 'food_staff' ? 'selected' : '' }}>
+                            Nhân viên bán đồ ăn
+                        </option>
+
+                    </select>
+                </div>
+
+                <!-- Password -->
+                <div class="mb-3">
+                    <label class="form-label">
+                        Mật khẩu mới (bỏ trống nếu không đổi)
+                    </label>
+                    <input type="password"
+                           name="password"
+                           class="form-control">
+                </div>
+
+                <!-- Actions -->
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-dark">
+                        Cập nhật
+                    </button>
+
+                    <a href="{{ route('admin.index') }}" 
+                       class="btn btn-secondary">
+                        Quay lại
+                    </a>
+                </div>
+
+            </form>
+
         </div>
+    </div>
 
-        <div>
-            <label for="role">Chức vụ</label>
-            <select name="role" id="role">
-
-                <option value="Quản trị viên"
-                    {{ old('role', $admins->role) == 'Quản trị viên' ? 'selected' : '' }}>
-                    Quản trị viên
-                </option>
-
-                <option value="Nhân viên bán vé"
-                    {{ old('role', $admins->role) == 'Nhân viên bán vé' ? 'selected' : '' }}>
-                    Nhân viên bán vé
-                </option>
-
-                <option value="Nhân viên bán đồ ăn"
-                    {{ old('role', $admins->role) == 'Nhân viên bán đồ ăn' ? 'selected' : '' }}>
-                    Nhân viên bán đồ ăn
-                </option>
-
-            </select>
-        </div>
-
-        <div>
-            <label>Password mới (nếu muốn đổi):</label>
-            <input type="password" name="password">
-        </div>
-
-        <button type="submit" class="btn btn-primary">
-            Cập nhật
-        </button>
-    </form>
+</div>
 @endsection
