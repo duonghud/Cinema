@@ -18,7 +18,7 @@ class SeatController extends Controller
         $rooms = screeningRoom::all();
         $seatTypes = SeatType::all();
 
-        return view('admins.seat.index', compact('seats','rooms','seatTypes'));
+        return view('admins.manageCinema.seat.index', compact('seats','rooms','seatTypes'));
     }
 
     // FORM CREATE
@@ -27,7 +27,7 @@ class SeatController extends Controller
         $rooms = screeningRoom::all();
         $seatTypes = SeatType::all();
 
-        return view('admins.seat.create', compact('rooms','seatTypes'));
+        return view('admins.manageCinema.seat.create', compact('rooms','seatTypes'));
     }
 
     // STORE
@@ -58,7 +58,7 @@ class SeatController extends Controller
         $rooms = screeningRoom::all();
         $seatTypes = SeatType::all();
 
-        return view('admins.seat.edit', compact('seat','rooms','seatTypes'));
+        return view('admins.manageCinema.seat.edit', compact('seat','rooms','seatTypes'));
     }
 
     // UPDATE

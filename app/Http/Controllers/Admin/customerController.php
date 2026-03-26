@@ -5,86 +5,106 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Admin\customer;
-
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 class customerController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
         $customers = customer::all();
-        return view('admins.customer.index', ['customers' => $customers]);
+        return view('admins.manageUser.customer.index', ['customers' => $customers]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
-        return view('admins.customer.create');
+        return view('admins.manageUser.customer.create');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+
+
     public function store(Request $request)
     {
-        $request->validate([
-            'fullName' => 'required',
+        $validated = $request->validate([
+            'fullName' => 'required|string|max:255',
             'email' => 'required|email|unique:customers,email',
-            'phoneNumber' => 'required',
-            'address' => 'required',
-            'password' => 'required|string|min:8'
+            'password' => 'required|string|min:6',
+            'phoneNumber' => 'required|string|max:15',
+            'address' => 'required|string|max:255',
+        ], [
+            'fullName.required' => 'Họ tên không được để trống.',
+            'fullName.max' => 'Họ tên không được vượt quá 255 ký tự.',
+            'email.required' => 'Email không được để trống.',
+            'email.email' => 'Email không đúng định dạng.',
+            'email.unique' => 'Email này đã tồn tại.',
+            'password.required' => 'Mật khẩu không được để trống.',
+            'password.min' => 'Mật khẩu phải có ít nhất 6 ký tự.',
+            'phoneNumber.required' => 'Số điện thoại không được để trống.',
+            'phoneNumber.max' => 'Số điện thoại quá dài.',
+            'address.required' => 'Địa chỉ không được để trống.',
+            'address.max' => 'Địa chỉ quá dài.',
         ]);
 
-        $customers = new customer();
-        $customers->fullname = $request->input('fullName');
-        $customers->email = $request->input('email');
-        $customers->phoneNumber = $request->input('phoneNumber');
-        $customers->address = $request->input('address');
-        $customers->password = $request->input('password');
-        $customers->save();
+        Customer::create([
+            'fullName' => $validated['fullName'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+            'phoneNumber' => $validated['phoneNumber'],
+            'address' => $validated['address'],
+        ]);
 
-        return redirect()->route('customer.index')->with('success', 'Tạo thành công');
+        return redirect()->route('customer.index')
+            ->with('success', 'Khách hàng mới đã được thêm thành công.');
     }
 
     function edit(string $customerID)
     {
         $customers = customer::findOrFail($customerID);
-        return view('admins.customer.edit', ['customers' => $customers]);
+        return view('admins.manageUser.customer.edit', ['customers' => $customers]);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $customerID)
-    {
-        $customers = customer::findOrFail($customerID);
 
-        $request->validate([
-            'fullName' => 'required',
-            'email' => 'required|email|unique:customers,email,' . $customerID . ',customerID',
-            'phoneNumber' => 'required',
-            'address' => 'required',
-            'password' => 'nullable|min:8'
+    public function update(Request $request, $id)
+    {
+        $customer = Customer::findOrFail($id);
+
+        $validated = $request->validate([
+            'fullName' => 'required|string|max:255',
+            'email' => [
+                'required',
+                'email',
+                Rule::unique('customers')->ignore($customer->customerID, 'customerID'),
+            ],
+            'password' => 'nullable|string|min:6',
+            'phoneNumber' => 'required|string|max:15',
+            'address' => 'required|string|max:255',
+        ], [
+            'fullName.required' => 'Họ tên không được để trống.',
+            'fullName.max' => 'Họ tên không được vượt quá 255 ký tự.',
+            'email.required' => 'Email không được để trống.',
+            'email.email' => 'Email không đúng định dạng.',
+            'email.unique' => 'Email này đã tồn tại.',
+            'password.min' => 'Mật khẩu phải có ít nhất 6 ký tự.',
+            'phoneNumber.required' => 'Số điện thoại không được để trống.',
+            'phoneNumber.max' => 'Số điện thoại quá dài.',
+            'address.required' => 'Địa chỉ không được để trống.',
+            'address.max' => 'Địa chỉ quá dài.',
         ]);
 
-        $customers->fullname = $request->input('fullName');
-        $customers->email = $request->input('email');
-        $customers->phoneNumber = $request->input('phoneNumber');
-        $customers->address = $request->input('address');
-        if ($request->input('password')) {
-            $customers->password = $request->input('password');
-        }
-        $customers->save();
+        $customer->fullName = $validated['fullName'];
+        $customer->email = $validated['email'];
+        $customer->phoneNumber = $validated['phoneNumber'];
+        $customer->address = $validated['address'];
 
-        return redirect()->route('customer.index')->with('success', 'Sửa thành công');
+        if (!empty($validated['password'])) {
+            $customer->password = Hash::make($validated['password']);
+        }
+
+        $customer->save();
+
+        return redirect()->route('customer.index')
+            ->with('success', 'Cập nhật khách hàng thành công.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(string $id)
     {
         $customers = customer::findOrFail($id);

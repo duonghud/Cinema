@@ -17,7 +17,9 @@ class admin extends Model
         'role'
     ];
 
-    public function invoices() {
+
+    public function invoices()
+    {
         return $this->hasMany(Invoice::class, 'adminID');
     }
 

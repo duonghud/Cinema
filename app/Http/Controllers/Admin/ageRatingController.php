@@ -14,7 +14,7 @@ class ageRatingController extends Controller
     public function index()
     {
         $ageRatings = ageRating::all();
-        return view('admins.ageRating.index', compact('ageRatings'));
+        return view('admins.manageMovies.ageRating.index', compact('ageRatings'));
     }
 
     /**
@@ -22,7 +22,7 @@ class ageRatingController extends Controller
      */
     public function create()
     {
-        return view('admins.ageRating.create');
+        return view('admins.manageMovies.ageRating.create');
     }
 
     /**
@@ -51,7 +51,7 @@ class ageRatingController extends Controller
     {
         $ageRating = ageRating::findOrFail($id);
 
-        return view('admins.ageRating.edit', compact('ageRating'));
+        return view('admins.manageMovies.ageRating.edit', compact('ageRating'));
     }
 
     /**

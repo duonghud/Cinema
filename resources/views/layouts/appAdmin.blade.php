@@ -219,6 +219,9 @@
                     <a href="{{ route('screeningRoom.index') }}" class="{{ request()->routeIs('screeningRoom.*') ? 'active' : '' }}">
                         <i class="bi bi-tv me-2"></i> Phòng chiếu
                     </a>
+                    <a href="{{ route('screenType.index') }}" class="{{ request()->routeIs('screenType.*') ? 'active' : '' }}">
+                        <i class="bi bi-tv me-2"></i> Loại phòng chiếu
+                    </a>
                     <a href="{{ route('seat.index') }}" class="{{ request()->routeIs('seat.*') ? 'active' : '' }}">
                         <i class="bi bi-grid me-2"></i> Ghế
                     </a>
@@ -269,7 +272,7 @@
                     <small>{{ auth()->user()->email ?? 'admin@cinema.com' }}</small>
                 </div>
             </div>
-            <form action="{{ route('logout') }}" method="POST">
+            <form action="#" method="POST">
                 @csrf
                 <button class="btn btn-light w-100 btn-sm">
                     <i class="bi bi-box-arrow-right"></i> Đăng xuất
