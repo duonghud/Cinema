@@ -75,9 +75,7 @@
                             </small>
                         </td>
 
-                        <td>
-                            {{ \Carbon\Carbon::parse($movie->releaseDate)->format('d/m/Y') }}
-                        </td>
+                        <td>{{ $movie->releaseDate->format('d/m/Y') }}</td>
 
                         <!-- Age -->
                         <td>
@@ -119,7 +117,7 @@
 
                     </tr>
 
-                    @include('admins.movies.edit')
+                    @include('admins.manageMovies.movies.edit')
 
                     @endforeach
                 </tbody>
@@ -131,6 +129,6 @@
 
 </div>
 
-@include('admins.movies.create')
+@include('admins.manageMovies.movies.create')
 
 @endsection

@@ -14,7 +14,7 @@ class studioController extends Controller
     public function index()
     {
         $studios = studio::all();
-        return view('admins.studio.index', ['studios' => $studios]);
+        return view('admins.manageMovies.studio.index', ['studios' => $studios]);
     }
 
     /**
@@ -22,7 +22,7 @@ class studioController extends Controller
      */
     public function create()
     {
-        return view('admins.studio.create');
+        return view('admins.manageMovies.studio.create');
     }
 
     /**
@@ -52,7 +52,7 @@ class studioController extends Controller
     public function edit(string $studioID)
     {
         $studio = studio::findOrFail($studioID);
-        return view('admins.studio.edit', ['studio' => $studio]);
+        return view('admins.manageMovies.studio.edit', ['studio' => $studio]);
     }
 
     /**

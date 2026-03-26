@@ -16,7 +16,7 @@ class foodInvoiceController extends Controller
     public function index()
     {
         $invoices = FoodInvoice::with(['customer', 'payment', 'details.food'])->get();
-        return view('admins.foodInvoice.index', compact('invoices'));
+        return view('admins.manageFoods.foodInvoice.index', compact('invoices'));
     }
 
 
@@ -26,49 +26,64 @@ class foodInvoiceController extends Controller
         $payments = payment_method::all();
         $foods = Food::all();
 
-        return view('admins.foodInvoice.create', compact('customers', 'payments', 'foods'));
+        return view('admins.manageFoods.foodInvoice.create', compact('customers', 'payments', 'foods'));
     }
 
     public function store(Request $request)
     {
-        // Validate cơ bản
-        $request->validate([
+        // Validation
+        $validated = $request->validate([
             'customerID' => 'required|exists:customers,customerID',
-            'paymentID'  => 'required|exists:payments,paymentID',
-            'orderTime'  => 'required|date',
+            'paymentID' => 'required|exists:payments,paymentID',
+            'orderTime' => 'required|date',
+            'foods' => 'required|array',
+            'foods.*' => 'integer|min:0',
         ], [
-            'customerID.required' => 'Vui lòng chọn khách hàng',
-            'customerID.exists'   => 'Khách hàng không tồn tại',
-
-            'paymentID.required' => 'Vui lòng chọn phương thức thanh toán',
-            'paymentID.exists'   => 'Phương thức không hợp lệ',
-
-            'orderTime.required' => 'Vui lòng chọn thời gian',
-            'orderTime.date'     => 'Thời gian không hợp lệ',
+            'customerID.required' => 'Vui lòng chọn khách hàng.',
+            'customerID.exists' => 'Khách hàng không hợp lệ.',
+            'paymentID.required' => 'Vui lòng chọn phương thức thanh toán.',
+            'paymentID.exists' => 'Phương thức thanh toán không hợp lệ.',
+            'orderTime.required' => 'Vui lòng chọn thời gian đặt.',
+            'orderTime.date' => 'Thời gian đặt không hợp lệ.',
+            'foods.required' => 'Vui lòng chọn ít nhất một món ăn.',
+            'foods.*.integer' => 'Số lượng món ăn phải là số nguyên.',
+            'foods.*.min' => 'Số lượng món ăn phải lớn hơn hoặc bằng 0.',
         ]);
 
-        // Validate món ăn (ít nhất 1 món > 0)
-        $foods = $request->input('foods', []);
-        $hasFood = collect($foods)->filter(fn($q) => $q > 0)->count() > 0;
-
+        // Kiểm tra ít nhất 1 món được chọn
+        $hasFood = false;
+        foreach ($validated['foods'] as $quantity) {
+            if ($quantity > 0) {
+                $hasFood = true;
+                break;
+            }
+        }
         if (!$hasFood) {
-            return back()
-                ->withErrors(['foods' => 'Vui lòng chọn ít nhất 1 món'])
-                ->withInput();
+            return redirect()->back()->withInput()->withErrors(['foods' => 'Vui lòng chọn ít nhất một món ăn.']);
         }
 
-        // ===== Xử lý lưu (demo) =====
-        // $invoice = FoodInvoice::create([...]);
+        // Lưu hóa đơn
+        $invoice = FoodInvoice::create([
+            'customerID' => $validated['customerID'],
+            'paymentID' => $validated['paymentID'],
+            'orderTime' => $validated['orderTime'],
+        ]);
 
-        return redirect()->route('foodInvoice.index')
-            ->with('success', 'Tạo hóa đơn thành công!');
+        // Lưu chi tiết món ăn
+        foreach ($validated['foods'] as $foodID => $quantity) {
+            if ($quantity > 0) {
+                $invoice->foods()->attach($foodID, ['quantity' => $quantity]);
+            }
+        }
+
+        return redirect()->route('foodInvoice.index')->with('success', 'Tạo hóa đơn thành công!');
     }
 
 
     public function show($id)
     {
         $invoice = FoodInvoice::with(['customer', 'payment', 'details.food'])->findOrFail($id);
-        return view('admins.foodInvoiceDetail.index', compact('invoice'));
+        return view('admins.manageFoods.foodInvoiceDetail.index', compact('invoice'));
     }
 
     public function edit($id)
@@ -78,7 +93,7 @@ class foodInvoiceController extends Controller
         $customers = Customer::all();
         $payments = payment_method::all();
 
-        return view('admins.foodInvoice.edit', compact('invoice', 'foods', 'customers', 'payments'));
+        return view('admins.manageFoods.foodInvoice.edit', compact('invoice', 'foods', 'customers', 'payments'));
     }
 
     public function update(Request $request, $id)

@@ -272,7 +272,7 @@
                     <small>{{ auth()->user()->email ?? 'admin@cinema.com' }}</small>
                 </div>
             </div>
-            <form action="{{ route('logout') }}" method="POST">
+            <form action="#" method="POST">
                 @csrf
                 <button class="btn btn-light w-100 btn-sm">
                     <i class="bi bi-box-arrow-right"></i> Đăng xuất

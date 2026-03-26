@@ -16,7 +16,7 @@ class movieController extends Controller
         $ageRatings = ageRating::all();
         $studios = studio::all();
 
-        return view('admins.movies.index', compact('movies','ageRatings','studios'));
+        return view('admins.manageMovies.movies.index', compact('movies','ageRatings','studios'));
     }
 
     public function store(Request $request)

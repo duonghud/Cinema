@@ -16,7 +16,7 @@ class screeningRoomController extends Controller
         $room = screeningRoom::all();
         $screenTypes = screenType::all();
 
-        return view('admins.screeningRoom.index', compact('room', 'screenTypes'));
+        return view('admins.manageCinema.screeningRoom.index', compact('room', 'screenTypes'));
     }
 
 
@@ -25,30 +25,32 @@ class screeningRoomController extends Controller
     {
         $screenTypes = screenType::all();
 
-        return view('admins.screeningRoom.create', compact('screenTypes'));
+        return view('admins.manageCinema.screeningRoom.create', compact('screenTypes'));
     }
 
 
     // CREATE
     public function store(Request $request)
     {
-        $request->validate([
-            'roomName' => 'required',
-            'capacity' => 'required|integer',
-            'screenTypeID' => 'required'
+        $validated = $request->validate([
+            'roomName' => 'required|string|max:100',
+            'capacity' => 'required|integer|min:1',
+            'screenTypeID' => 'required|exists:screen_types,screenTypeID',
+        ], [
+            'roomName.required' => 'Tên phòng không được để trống.',
+            'roomName.max' => 'Tên phòng không được quá 100 ký tự.',
+            'capacity.required' => 'Sức chứa không được để trống.',
+            'capacity.integer' => 'Sức chứa phải là số nguyên.',
+            'capacity.min' => 'Sức chứa phải lớn hơn 0.',
+            'screenTypeID.required' => 'Vui lòng chọn loại phòng.',
+            'screenTypeID.exists' => 'Loại phòng không hợp lệ.',
         ]);
 
-        screeningRoom::create([
-            'roomName' => $request->roomName,
-            'capacity' => $request->capacity,
-            'screenTypeID' => $request->screenTypeID
-        ]);
+        ScreeningRoom::create($validated);
 
         return redirect()->route('screeningRoom.index')
-            ->with('success', 'Room added successfully');
+            ->with('success', 'Phòng chiếu mới đã được thêm thành công.');
     }
-
-
 
     // FORM EDIT
     public function edit(string $id)
@@ -56,7 +58,7 @@ class screeningRoomController extends Controller
         $room = screeningRoom::findOrFail($id);
         $screenTypes = screenType::all();
 
-        return view('admins.screeningRoom.edit', compact('room', 'screenTypes'));
+        return view('admins.manageCinema.screeningRoom.edit', compact('room', 'screenTypes'));
     }
 
 
