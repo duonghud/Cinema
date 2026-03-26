@@ -14,7 +14,7 @@ class genreController extends Controller
     public function index()
     {
         $genres = genre::all();
-        return view('admins.genre.index', ['genres' => $genres]);
+        return view('admins.manageMovies.genre.index', ['genres' => $genres]);
     }
 
     /**
@@ -22,7 +22,7 @@ class genreController extends Controller
      */
     public function create()
     {
-        return view('admins.genre.create');
+        return view('admins.manageMovies.genre.create');
     }
 
     /**
@@ -55,7 +55,7 @@ class genreController extends Controller
     public function edit(string $genreID)
     {
         $genres = genre::findOrFail($genreID);
-        return view('admins.genre.edit', ['genres' => $genres]);
+        return view('admins.manageMovies.genre.edit', ['genres' => $genres]);
     }
 
     /**

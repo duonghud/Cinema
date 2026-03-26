@@ -18,12 +18,12 @@ use App\Http\Controllers\Admin\SeatController;
 use App\Http\Controllers\Admin\ticketController;
 use App\Http\Controllers\Admin\showTimeController;
 use App\Http\Controllers\HomeController;
-use App\Models\Admin\showTime;
-use App\Models\Admin\ticket;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index']);
-Auth::routes();
+Route::middleware(['auth', 'role:admin'])->group(function () {
+    Route::get('/admin', [AdminController::class, 'index'])->name('admin.index');
+});
 
 Route::prefix('admins')->namespace('App\Http\Controllers\Admin')->group(function () {
     Route::resource('dashboard', DashBoardController::class);
@@ -38,7 +38,7 @@ Route::prefix('admins')->namespace('App\Http\Controllers\Admin')->group(function
     Route::resource('ageRating', AgeRatingController::class);
     Route::resource('movies', MovieController::class);
     Route::resource('screeningRoom', ScreeningRoomController::class);
-    Route::resource('screenType', ScreeningTypeController::class);   
+    Route::resource('screenType', ScreeningTypeController::class);
     Route::resource('seat', SeatController::class);
     Route::resource('seatType', SeatTypeController::class);
     Route::resource('ticket', ticketController::class);

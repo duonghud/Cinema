@@ -15,7 +15,7 @@ class FoodInvoiceDetailController extends Controller
     public function index()
     {
         $details = foodInvoiceDetail::with(['foodInvoice', 'food'])->get();
-        return view('admins.foodInvoiceDetail.index', compact('details'));
+        return view('admins.manageFoods.foodInvoiceDetail.index', compact('details'));
     }
 
     // Form thêm
@@ -24,7 +24,7 @@ class FoodInvoiceDetailController extends Controller
         $foodInvoices = foodInvoice::all();
         $foods = food::all();
 
-        return view('admins.foodInvoiceDetail.create', compact('foodInvoices', 'foods'));
+        return view('admins.manageFoods.foodInvoiceDetail.create', compact('foodInvoices', 'foods'));
     }
 
     // Lưu dữ liệu
@@ -53,7 +53,7 @@ class FoodInvoiceDetailController extends Controller
         $foodInvoices = foodInvoice::all();
         $foods = food::all();
 
-        return view('admins.foodInvoiceDetail.edit', compact('detail', 'foodInvoices', 'foods'));
+        return view('admins.manageFoods.foodInvoiceDetail.edit', compact('detail', 'foodInvoices', 'foods'));
     }
 
     // Cập nhật

@@ -14,7 +14,7 @@ class foodController extends Controller
     public function index()
     {
        $foods = Food::paginate(5);
-        return view('admins.food.index', ['foods' => $foods]);
+        return view('admins.manageFoods.food.index', ['foods' => $foods]);
     }
 
     /**
@@ -22,7 +22,7 @@ class foodController extends Controller
      */
     public function create()
     {
-        return view('admins.food.create');
+        return view('admins.manageFoods.food.create');
     }
 
     /**
@@ -59,7 +59,7 @@ class foodController extends Controller
     public function edit(string $foodID)
     {
         $foods = food::findOrFail($foodID);
-        return view('admins.food.edit', ['foods' => $foods]);
+        return view('admins.manageFoods.food.edit', ['foods' => $foods]);
     }
 
     /**

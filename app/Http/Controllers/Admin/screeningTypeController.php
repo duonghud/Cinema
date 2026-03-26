@@ -15,7 +15,7 @@ class screeningTypeController extends Controller
     public function index()
     {
         $screenTypes = screenType::all();
-        return view('admins.screenType.index', ['screenTypes' => $screenTypes]);
+        return view('admins.manageCinema.screenType.index', ['screenTypes' => $screenTypes]);
     }
 
     /**
@@ -23,7 +23,7 @@ class screeningTypeController extends Controller
      */
     public function create()
     {
-        return view('admins.screenType.create');
+        return view('admins.manageCinema.screenType.create');
     }
 
     /**
@@ -56,7 +56,7 @@ class screeningTypeController extends Controller
     public function edit(string $screenTypeID)
     {
         $screenTypes = screenType::findOrFail($screenTypeID);
-        return view('admins.screenType.edit', ['screenTypes' => $screenTypes]);
+        return view('admins.manageCinema.screenType.edit', ['screenTypes' => $screenTypes]);
     }
 
     /**

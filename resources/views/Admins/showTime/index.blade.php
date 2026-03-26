@@ -2,44 +2,111 @@
 
 @section('content')
 <div class="container mt-4">
-    <h3>Danh sách suất chiếu</h3>
 
-    <a href="{{ route('showTime.create') }}" class="btn btn-primary mb-3">+ Thêm</a>
-    <table class="table table-bordered">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Ngày</th>
-                <th>Giờ bắt đầu</th>
-                <th>Giờ kết thúc</th>
-                <th>Phim</th>
-                <th>Phòng</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach($showTimes as $item)
-            <tr>
-                <td>{{ $item->showTimeID }}</td>
-                <td>{{ $item->showDate }}</td>
-                <td>{{ substr($item->startTime, 0, 5) }}</td>
-                <td>{{ substr($item->endTime, 0, 5) }}</td>
-                <td>{{ $item->movie->movieTitle ?? '' }}</td>
-                <td>{{ $item->room->roomName ?? '' }}</td>
-                <td>
-                    <a href="{{ route('showTime.edit', $item->showTimeID) }}" class="btn btn-warning btn-sm">Sửa</a>
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="fw-semibold">Danh sách suất chiếu</h4>
 
-                    <form action="{{ route('showTime.destroy', $item->showTimeID) }}" method="POST" style="display:inline;">
-                        @csrf
-                        @method('DELETE')
-                        <button class="btn btn-danger btn-sm">Xóa</button>
-                    </form>
-                </td>
-            </tr>
-            @endforeach
-        </tbody>
-    </table>
+        <a href="{{ route('showTime.create') }}" 
+           class="btn btn-dark">
+            + Thêm suất chiếu
+        </a>
+    </div>
 
-    {{ $showTimes->links() }}
+    <!-- Card -->
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+
+            <table class="table table-hover align-middle mb-0">
+
+                <thead class="table-light">
+                    <tr>
+                        <th width="6%">ID</th>
+                        <th>Ngày</th>
+                        <th>Thời gian</th>
+                        <th>Phim</th>
+                        <th>Phòng</th>
+                        <th class="text-end" width="20%">Hành động</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @forelse($showTimes as $item)
+                        <tr>
+
+                            <!-- ID -->
+                            <td class="text-muted">
+                                {{ $item->showTimeID }}
+                            </td>
+
+                            <!-- Date -->
+                            <td>
+                                {{ \Carbon\Carbon::parse($item->showDate)->format('d/m/Y') }}
+                            </td>
+
+                            <!-- Time -->
+                            <td>
+                                <span class="badge bg-light text-dark">
+                                    {{ substr($item->startTime, 0, 5) }}
+                                    -
+                                    {{ substr($item->endTime, 0, 5) }}
+                                </span>
+                            </td>
+
+                            <!-- Movie -->
+                            <td class="fw-medium">
+                                {{ $item->movie->movieTitle ?? '---' }}
+                            </td>
+
+                            <!-- Room -->
+                            <td>
+                                <span class="badge bg-secondary">
+                                    {{ $item->room->roomName ?? '---' }}
+                                </span>
+                            </td>
+
+                            <!-- Actions -->
+                            <td class="text-end">
+
+                                <a href="{{ route('showTime.edit', $item->showTimeID) }}"
+                                   class="btn btn-sm btn-outline-dark me-2">
+                                    Sửa
+                                </a>
+
+                                <form action="{{ route('showTime.destroy', $item->showTimeID) }}" 
+                                      method="POST" 
+                                      class="d-inline">
+                                    @csrf
+                                    @method('DELETE')
+
+                                    <button type="submit"
+                                            class="btn btn-sm btn-outline-danger"
+                                            onclick="return confirm('Bạn có chắc muốn xóa?')">
+                                        Xóa
+                                    </button>
+                                </form>
+
+                            </td>
+
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">
+                                Không có suất chiếu nào
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+
+            </table>
+
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="mt-3 d-flex justify-content-end">
+        {{ $showTimes->links() }}
+    </div>
+
 </div>
 @endsection
