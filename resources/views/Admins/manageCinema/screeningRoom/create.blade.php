@@ -1,3 +1,4 @@
+<!--Đang sửa để tự động tạo vé-->
 @extends('layouts.appAdmin')
 
 @section('content')
@@ -8,17 +9,6 @@
         <h4 class="mb-4 fw-semibold text-dark">
             Thêm phòng chiếu
         </h4>
-
-        <!-- Alert lỗi tổng quát -->
-        @if ($errors->any())
-            <div class="alert alert-danger">
-                <ul class="mb-0">
-                    @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
-        @endif
 
         <form action="{{ route('screeningRoom.store') }}" method="POST">
             @csrf
@@ -39,7 +29,7 @@
             <!-- Capacity -->
             <div class="mb-3">
                 <label class="form-label text-muted">Sức chứa</label>
-                <input type="number" 
+                <input type="text" 
                        name="capacity" 
                        class="form-control @error('capacity') is-invalid @enderror"
                        placeholder="Ví dụ: 100"

@@ -18,6 +18,7 @@ return new class extends Migration
 
             $table->foreignId('showTimeID')->constrained('show_times', 'showTimeID');
             $table->foreignId('seatID')->constrained('seats', 'seatID');
+            $table->foreignId('invoiceID')->constrained('invoices', 'invoiceID');
 
             $table->unique(['showTimeID', 'seatID']);
         });

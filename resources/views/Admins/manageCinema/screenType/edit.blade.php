@@ -22,11 +22,12 @@
                     <input type="text" 
                            name="name" 
                            id="name" 
-                           class="form-control"
-                           value="{{ old('name', $screenTypes->name) }}">
+                           class="form-control @error('name') is-invalid @enderror"
+                           value="{{ old('name', $screenTypes->name) }}"
+                           placeholder="Nhập tên định dạng...">
 
                     @error('name')
-                        <small class="text-danger">{{ $message }}</small>
+                        <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
 

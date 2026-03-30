@@ -4,7 +4,7 @@
 
 <style>
     body {
-        background: #FFFFFF;
+        background: #5f5e5e;
         color: black;
     }
 
@@ -13,14 +13,14 @@
     }
 
     .screen {
-        background: rgba(143, 96, 182, 0.3);
+        background: rgba(53, 51, 55, 0.3);
         color: #fff;
         font-weight: bold;
         padding: 12px 0;
         border-radius: 8px;
         width: 80%;
         margin: 0 auto 40px;
-        box-shadow: 0 0 15px rgba(143, 96, 182, 0.3);
+        box-shadow: 0 0 15px rgba(102, 100, 105, 0.3);
     }
 
     .seat-container {
@@ -60,7 +60,7 @@
     }
 
     .normal {
-        background: #444;
+        background: #1b1818;
     }
 
     .vip {
@@ -107,6 +107,9 @@
         width: fit-content;
         margin: 20px auto;
     }
+    .screen { 
+        text-align: center;
+    }
 </style>
 
 <h2 class="text-center">Bố trí ghế </h2>
@@ -142,16 +145,16 @@
 </div>
 @endif
 
-<div class="seat-row">
+<div class="seat-row text-light">
     <span class="row-label">{{ $seat->rowSeat }}</span>
 
     @php $currentRow = $seat->rowSeat; @endphp
     @endif
 
     <div class="seat
-            @if($seat->seatTypeID == 6) normal
+            @if($seat->seatTypeID == 1) normal
             @elseif($seat->seatTypeID == 2) vip
-            @elseif($seat->seatTypeID == 5) couple
+            @elseif($seat->seatTypeID == 3) couple
             @endif">
 
         {{ $seat->rowSeat }}{{ $seat->colSeat }}

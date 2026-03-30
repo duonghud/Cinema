@@ -10,7 +10,10 @@ class food extends Model
     protected $primaryKey = 'foodID';
     public $timestamps = false;
 
-    public function foodInvoices() {
+
+    protected $fillable = ['foodName', 'price', 'foodType'];
+    public function foodInvoices()
+    {
         return $this->belongsToMany(
             FoodInvoice::class,
             'foodInvoiceDetail',

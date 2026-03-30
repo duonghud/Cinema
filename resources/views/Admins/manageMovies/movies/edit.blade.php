@@ -21,16 +21,16 @@
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-medium">Tên phim</label>
                             <input type="text" name="movieTitle"
-                                   class="form-control"
-                                   value="{{$movie->movieTitle}}">
+                                class="form-control"
+                                value="{{$movie->movieTitle}}">
                         </div>
 
                         <!-- Đạo diễn -->
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-medium">Đạo diễn</label>
                             <input type="text" name="director"
-                                   class="form-control"
-                                   value="{{$movie->director}}">
+                                class="form-control"
+                                value="{{$movie->director}}">
                         </div>
 
                     </div>
@@ -41,8 +41,8 @@
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-medium">Poster hiện tại</label><br>
                             <img src="{{ asset('posters/'.$movie->poster) }}"
-                                 width="80"
-                                 class="rounded shadow-sm mb-2">
+                                width="80"
+                                class="rounded shadow-sm mb-2">
 
                             <input type="file" name="poster" class="form-control">
                         </div>
@@ -51,8 +51,8 @@
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-medium">Trailer</label>
                             <input type="text" name="trailer"
-                                   class="form-control"
-                                   value="{{$movie->trailer}}">
+                                class="form-control"
+                                value="{{$movie->trailer}}">
                         </div>
 
                     </div>
@@ -63,8 +63,8 @@
                         <div class="col-md-4 mb-3">
                             <label class="form-label fw-medium">Phát hành</label>
                             <input type="date" name="releaseDate"
-                                   class="form-control"
-                                   value="{{$movie->releaseDate}}">
+                                class="form-control"
+                                value="{{ old('releaseDate', \Carbon\Carbon::parse($movie->releaseDate)->format('Y-m-d')) }}">
                         </div>
 
                         <!-- Age -->
@@ -72,23 +72,45 @@
                             <label class="form-label fw-medium">Kiểm duyệt</label>
                             <select name="ageRatingID" class="form-select">
                                 @foreach($ageRatings as $age)
-                                    <option value="{{$age->ageRatingID}}"
-                                        @if($movie->ageRatingID == $age->ageRatingID) selected @endif>
-                                        {{$age->code}}
-                                    </option>
+                                <option value="{{$age->ageRatingID}}"
+                                    @if($movie->ageRatingID == $age->ageRatingID) selected @endif>
+                                    {{$age->code}}
+                                </option>
                                 @endforeach
                             </select>
                         </div>
+
+                        <!-- Genre -->
+                        <div class="mb-3">
+                            <label class="form-label fw-medium">Thể loại</label>
+                            <div class="d-flex flex-wrap">
+                                @foreach($genres as $genre)
+                                <div class="form-check me-3">
+                                    <input class="form-check-input"
+                                        type="checkbox"
+                                        name="genreID[]"
+                                        value="{{ $genre->genreID }}"
+                                        id="genre{{ $genre->genreID }}"
+                                        {{-- tick sẵn nếu phim đã có thể loại này --}}
+                                        {{ $movie->genres->contains('genreID', $genre->genreID) ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="genre{{ $genre->genreID }}">
+                                        {{ $genre->name }}
+                                    </label>
+                                </div>
+                                @endforeach
+                            </div>
+                        </div>
+
 
                         <!-- Studio -->
                         <div class="col-md-4 mb-3">
                             <label class="form-label fw-medium">Hãng</label>
                             <select name="studioID" class="form-select">
                                 @foreach($studios as $studio)
-                                    <option value="{{$studio->studioID}}"
-                                        @if($movie->studioID == $studio->studioID) selected @endif>
-                                        {{$studio->name}}
-                                    </option>
+                                <option value="{{$studio->studioID}}"
+                                    @if($movie->studioID == $studio->studioID) selected @endif>
+                                    {{$studio->name}}
+                                </option>
                                 @endforeach
                             </select>
                         </div>
@@ -99,8 +121,8 @@
                     <div class="mb-3">
                         <label class="form-label fw-medium">Mô tả</label>
                         <textarea name="description"
-                                  rows="3"
-                                  class="form-control">{{$movie->description}}</textarea>
+                            rows="3"
+                            class="form-control">{{$movie->description}}</textarea>
                     </div>
 
                 </div>

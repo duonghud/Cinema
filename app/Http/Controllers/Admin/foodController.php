@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Admin\food;
+use GuzzleHttp\Promise\Create;
 
 class foodController extends Controller
 {
@@ -13,7 +14,7 @@ class foodController extends Controller
      */
     public function index()
     {
-       $foods = Food::paginate(5);
+        $foods = Food::paginate(5);
         return view('admins.manageFoods.food.index', ['foods' => $foods]);
     }
 
@@ -30,17 +31,24 @@ class foodController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'foodName' => 'required',
-            'price' => 'required',
-            'foodType' => 'required',
+        $validated =$request->validate([
+            'foodName' => 'required|string|max:255',
+            'price' => 'required|numeric|min:0',
+            'foodType' => 'required|string',
+        ], [
+            'foodName.required' => 'Tên món ăn không được để trống',
+            'foodName.string' => 'Tên món ăn phải là chuỗi ký tự',
+            'foodName.max' => 'Tên món ăn không được quá 255 ký tự',
+
+            'price.required' => 'Giá món ăn không được để trống',
+            'price.numeric' => 'Giá phải là số',
+            'price.min' => 'Giá phải lớn hơn hoặc bằng 0',
+
+            'foodType.required' => 'Loại món ăn không được để trống',
+            'foodType.string' => 'Loại món ăn phải là chuỗi ký tự',
         ]);
 
-        $foods = new food();
-        $foods->foodName = request('foodName');
-        $foods->price = request('price');
-        $foods->foodType = request('foodType');
-        $foods->save();
+        food::create($validated);   
 
         return redirect()->route('food.index')->with('success', 'Tạo thành công');
     }
@@ -70,9 +78,14 @@ class foodController extends Controller
         $foods = food::findOrFail($foodID);
 
         $request->validate([
-            'foodName' => 'required',
-            'price' => 'required',
-            'foodType' => 'required',
+            'foodName' => 'required|string|max:255',
+            'price' => 'required|numeric|min:0',
+            'foodType' => 'required|string',
+        ], [
+            'foodName.required' => 'Tên món ăn không được để trống',
+            'price.required' => 'Giá món ăn không được để trống',
+            'foodType.required' => 'Loại món ăn không được để trống',
+            // Thêm các message khác nếu muốn
         ]);
 
         $foods->foodName = $request->input('foodName');

@@ -35,7 +35,7 @@
 
                             <!-- ID -->
                             <td class="text-muted">
-                                #{{ $food->foodID }}
+                                {{ $food->foodID }}
                             </td>
 
                             <!-- Name -->
@@ -79,6 +79,14 @@
                             </td>
                         </tr>
                     @endforeach
+
+                    @if($foods ->isEmpty())
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-4">
+                            Chưa có dữ liệu đồ ăn
+                        </td>
+                    </tr>
+                    @endif
                 </tbody>
 
             </table>

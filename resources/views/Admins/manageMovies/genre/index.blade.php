@@ -67,7 +67,6 @@
                         </tr>
                     @endforeach
 
-                    <!-- Empty state -->
                     @if($genres->isEmpty())
                         <tr>
                             <td colspan="3" class="text-center text-muted py-4">

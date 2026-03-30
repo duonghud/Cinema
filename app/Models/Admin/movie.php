@@ -18,27 +18,37 @@ class movie extends Model
         'trailer',
         'releaseDate',
         'ageRatingID',
-        'studioID'
+        'studioID',
     ];
 
-    public function ageRating() {
-        return $this->belongsTo(AgeRating::class, 'ageRatingID');
-    }
+    protected $casts = [
+        'releaseDate' => 'date',
+    ];
 
-    public function studio() {
-        return $this->belongsTo(Studio::class, 'studioID');
-    }
 
-    public function genres() {
+    public function genres()
+    {
         return $this->belongsToMany(
             Genre::class,
-            'genreDetail',
+            'genre_details',
             'movieID',
             'genreID'
         );
     }
 
-    public function showTimes() {
+    public function showTimes()
+    {
         return $this->hasMany(ShowTime::class, 'movieID');
+    }
+
+
+    public function ageRating()
+    {
+        return $this->belongsTo(AgeRating::class, 'ageRatingID');
+    }
+
+    public function studio()
+    {
+        return $this->belongsTo(Studio::class, 'studioID');
     }
 }

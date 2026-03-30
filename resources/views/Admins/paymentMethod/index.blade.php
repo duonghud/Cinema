@@ -66,6 +66,14 @@
                             </td>
                         </tr>
                     @endforeach
+
+                    @if($paymentMethods ->isEmpty())
+                    <tr>
+                        <td colspan="3" class="text-center text-muted py-4">
+                            Chưa có dữ liệu phương thức thanh toán nào
+                        </td>
+                    </tr>
+                    @endif
                 </tbody>
 
             </table>
