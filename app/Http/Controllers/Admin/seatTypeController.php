@@ -32,15 +32,18 @@ class seatTypeController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'seatTypeName' => 'required'
+        $validated = $request->validate([
+            'seatTypeName' => 'required|string|max:50|unique:seat_types,seatTypeName',
+        ], [
+            'seatTypeName.required' => 'Tên kiểu ghế không được để trống.',
+            'seatTypeName.max' => 'Tên kiểu ghế không quá 50 ký tự.',
+            'seatTypeName.unique' => 'Tên kiểu ghế đã tồn tại.',
         ]);
 
-        $seatTypes = new seatType();
-        $seatTypes->seatTypeName = request('seatTypeName');
-        $seatTypes->save();
+        SeatType::create($validated);
 
-        return redirect()->route('seatType.index')->with('success', 'Tạo thành công');
+        return redirect()->route('seatType.index')
+            ->with('success', 'Kiểu ghế mới đã được thêm.');
     }
 
     /**
@@ -57,24 +60,28 @@ class seatTypeController extends Controller
     public function edit(string $seatTypeID)
     {
         $seatTypes = seatType::findOrFail($seatTypeID);
-        return view('seatType.edit', ['seatTypes' => $seatTypes]);
+        return view('admins.manageCinema.seatType.edit', ['seatTypes' => $seatTypes]);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $seatTypeID)
+    public function update(Request $request, $id)
     {
-        $seatTypes = seatType::findOrFail($seatTypeID);
+        $seatTypes = SeatType::findOrFail($id);
 
-        $request->validate([
-            'seatTypeName' => 'required'
+        $validated = $request->validate([
+            'seatTypeName' => 'required|string|max:50|unique:seat_types,seatTypeName,' . $seatTypes->seatTypeID . ',seatTypeID',
+        ], [
+            'seatTypeName.required' => 'Tên kiểu ghế không được để trống.',
+            'seatTypeName.max' => 'Tên kiểu ghế không quá 50 ký tự.',
+            'seatTypeName.unique' => 'Tên kiểu ghế đã tồn tại.',
         ]);
 
-        $seatTypes->seatTypeName = $request->input('seatTypeName');
-        $seatTypes->save();
+        $seatTypes->update($validated);
 
-        return redirect()->route('seatType.index')->with('success', 'Sửa thành công');
+        return redirect()->route('seatType.index')
+            ->with('success', 'Cập nhật kiểu ghế thành công.');
     }
 
     /**
@@ -91,6 +98,6 @@ class seatTypeController extends Controller
 
         SeatType::destroy($id);
 
-        return redirect()->back()->with('success', '✅ Xóa thành công!');
+        return redirect()->back()->with('success', 'Xóa thành công!');
     }
 }

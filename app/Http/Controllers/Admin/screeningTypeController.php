@@ -31,17 +31,19 @@ class screeningTypeController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'name' => 'required'
+        $validated = $request->validate([
+            'name' => 'required|string|max:50|unique:screen_types,name',
+        ], [
+            'name.required' => 'Tên định dạng không được để trống.',
+            'name.max' => 'Tên định dạng không quá 50 ký tự.',
+            'name.unique' => 'Tên định dạng đã tồn tại.',
         ]);
 
-        $screenTypes = new screenType();
-        $screenTypes->name = $request->input('name');
-        $screenTypes->save();
+        ScreenType::create($validated);
 
-        return redirect()->route('screenType.index')->with('success', 'Tạo thành công');
+        return redirect()->route('screenType.index')
+            ->with('success', 'Định dạng màn hình mới đã được thêm.');
     }
-
     /**
      * Display the specified resource.
      */
@@ -62,18 +64,22 @@ class screeningTypeController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $screenTypeID)
+    public function update(Request $request, $id)
     {
-        $screenTypes = screenType::findOrFail($screenTypeID);
+        $screenTypes = ScreenType::findOrFail($id);
 
-        $request->validate([
-            'name' => 'required'
+        $validated = $request->validate([
+            'name' => 'required|string|max:50|unique:screen_types,name,' . $screenTypes->screenTypeID . ',screenTypeID',
+        ], [
+            'name.required' => 'Tên định dạng không được để trống.',
+            'name.max' => 'Tên định dạng không quá 50 ký tự.',
+            'name.unique' => 'Tên định dạng đã tồn tại.',
         ]);
 
-        $screenTypes->name = $request->input('name');
-        $screenTypes->save();
+        $screenTypes->update($validated);
 
-        return redirect()->route('screenType.index')->with('success', 'Sửa thành công');
+        return redirect()->route('screenType.index')
+            ->with('success', 'Cập nhật định dạng màn hình thành công.');
     }
 
     /**

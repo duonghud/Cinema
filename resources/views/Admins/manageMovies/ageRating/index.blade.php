@@ -33,12 +33,12 @@
 
                 <tbody>
 
-                    @forelse($ageRatings as $item)
+                    @foreach($ageRatings as $item)
                     <tr>
 
                         <!-- ID -->
                         <td class="text-muted">
-                            #{{ $item->ageRatingID }}
+                            {{ $item->ageRatingID }}
                         </td>
 
                         <!-- Code -->
@@ -79,14 +79,15 @@
                         </td>
                     </tr>
 
-                    @empty
+
+                    @endforeach
+                    @if ($ageRatings -> isEmpty())
                     <tr>
-                        <td colspan="4" class="text-center text-muted py-5">
-                            <i>Chưa có dữ liệu kiểm duyệt</i>
+                        <td colspan="4" class="text-center text-muted py-4">
+                            Chưa có dữ liệu kiểm duyệt
                         </td>
                     </tr>
-                    @endforelse
-
+                    @endif                    
                 </tbody>
 
             </table>

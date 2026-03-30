@@ -1,6 +1,6 @@
 <style>
     .footer {
-        background-color: #10141B;
+        background-color: #0B0D13;
         text-decoration-color: ffffff;
     }
 </style>

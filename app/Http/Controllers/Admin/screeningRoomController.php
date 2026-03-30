@@ -63,18 +63,28 @@ class screeningRoomController extends Controller
 
 
     // UPDATE
-    public function update(Request $request, string $id)
+    public function update(Request $request, $id)
     {
-        $room = screeningRoom::findOrFail($id);
+        $room = ScreeningRoom::findOrFail($id);
 
-        $room->update([
-            'roomName' => $request->roomName,
-            'capacity' => $request->capacity,
-            'screenTypeID' => $request->screenTypeID
+        $validated = $request->validate([
+            'roomName' => 'required|string|max:100',
+            'capacity' => 'required|integer|min:1',
+            'screenTypeID' => 'required|exists:screen_types,screenTypeID',
+        ], [
+            'roomName.required' => 'Tên phòng không được để trống.',
+            'roomName.max' => 'Tên phòng không được quá 100 ký tự.',
+            'capacity.required' => 'Sức chứa không được để trống.',
+            'capacity.integer' => 'Sức chứa phải là số nguyên.',
+            'capacity.min' => 'Sức chứa phải lớn hơn 0.',
+            'screenTypeID.required' => 'Vui lòng chọn loại phòng.',
+            'screenTypeID.exists' => 'Loại phòng không hợp lệ.',
         ]);
 
+        $room->update($validated);
+
         return redirect()->route('screeningRoom.index')
-            ->with('success', 'Room updated successfully');
+            ->with('success', 'Cập nhật phòng chiếu thành công.');
     }
 
 

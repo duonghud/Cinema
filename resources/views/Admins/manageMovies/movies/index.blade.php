@@ -47,8 +47,8 @@
                         <!-- Poster -->
                         <td>
                             <img src="{{ asset('posters/'.$movie->poster) }}"
-                                 width="70"
-                                 class="rounded shadow-sm">
+                                width="70"
+                                class="rounded shadow-sm">
                         </td>
 
                         <!-- Trailer -->
@@ -84,7 +84,11 @@
                             </span>
                         </td>
 
-                        <td></td>
+                        <td>
+                            @foreach($movie->genres as $genre)
+                            <span class="badge bg-secondary">{{ $genre->name }}</span>
+                            @endforeach
+                        </td>
 
                         <!-- Studio -->
                         <td>
@@ -103,8 +107,8 @@
                             </button>
 
                             <form action="{{route('movies.destroy',$movie->movieID)}}"
-                                  method="POST"
-                                  class="d-inline">
+                                method="POST"
+                                class="d-inline">
                                 @csrf
                                 @method('DELETE')
 
@@ -117,9 +121,19 @@
 
                     </tr>
 
+
                     @include('admins.manageMovies.movies.edit')
 
                     @endforeach
+
+                    @if ($movies -> isEmpty())
+                    <tr>
+                        <td colspan="12" class="text-center text-muted py-4">
+                            Chưa có dữ liệu phim
+                        </td>
+                    </tr>
+                    @endif
+
                 </tbody>
 
             </table>
@@ -128,7 +142,9 @@
     </div>
 
 </div>
-
+<div class="mt-3">
+    {{ $movies->links() }}
+</div>
 @include('admins.manageMovies.movies.create')
 
 @endsection

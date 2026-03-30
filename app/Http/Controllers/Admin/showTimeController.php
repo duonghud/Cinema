@@ -7,12 +7,11 @@ use Illuminate\Http\Request;
 use App\Models\Admin\ShowTime;
 use App\Models\Admin\Movie;
 use App\Models\Admin\ScreeningRoom;
+use App\Http\Controllers\Admin\ticketController; // 🔥 thêm dòng này
 
 class ShowTimeController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    // LIST
     public function index()
     {
         $showTimes = ShowTime::with(['movie', 'room'])->paginate(10);
@@ -20,9 +19,7 @@ class ShowTimeController extends Controller
         return view('admins.showtime.index', compact('showTimes'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
+    // FORM CREATE
     public function create()
     {
         $movies = Movie::all();
@@ -31,17 +28,15 @@ class ShowTimeController extends Controller
         return view('admins.showtime.create', compact('movies', 'rooms'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+    // STORE + AUTO CREATE TICKET
     public function store(Request $request)
     {
         $request->validate([
             'showDate' => 'required|date',
             'startTime' => 'required',
             'endTime' => 'required|after:startTime',
-            'movieID' => 'required',
-            'roomID' => 'required',
+            'movieID' => 'required|exists:movies,movieID',
+            'roomID' => 'required|exists:screening_rooms,roomID',
         ], [
             'showDate.required' => 'Vui lòng chọn ngày chiếu.',
             'startTime.required' => 'Vui lòng chọn thời gian bắt đầu.',
@@ -51,7 +46,8 @@ class ShowTimeController extends Controller
             'roomID.required' => 'Vui lòng chọn phòng.',
         ]);
 
-        ShowTime::create([
+        // 🔥 TẠO SHOWTIME
+        $showTime = ShowTime::create([
             'showDate' => $request->showDate,
             'startTime' => $request->startTime,
             'endTime' => $request->endTime,
@@ -60,12 +56,10 @@ class ShowTimeController extends Controller
         ]);
 
         return redirect()->route('showTime.index')
-            ->with('success', 'Thêm suất chiếu thành công');
+            ->with('success', 'Thêm suất chiếu + tạo vé thành công');
     }
 
-    /**
-     * Display the specified resource.
-     */
+    // SHOW
     public function show(string $id)
     {
         $showTime = ShowTime::with(['movie', 'room'])->findOrFail($id);
@@ -73,29 +67,25 @@ class ShowTimeController extends Controller
         return view('admins.showtime.show', compact('showTime'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
+    // FORM EDIT
     public function edit(string $id)
     {
         $showTime = ShowTime::findOrFail($id);
         $movies = Movie::all();
         $rooms = ScreeningRoom::all();
 
-        return view('admins.showTime.edit', compact('showTime', 'movies', 'rooms'));
+        return view('admins.showtime.edit', compact('showTime', 'movies', 'rooms'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
+    // UPDATE
     public function update(Request $request, string $id)
     {
-        $showTime = showTime::findOrFail($id);
+        $showTime = ShowTime::findOrFail($id); // 🔥 fix chữ hoa
 
         $request->validate([
             'showDate' => 'required|date',
             'startTime' => 'required',
-            'endTime' => 'required',
+            'endTime' => 'required|after:startTime',
             'movieID' => 'required|exists:movies,movieID',
             'roomID' => 'required|exists:screening_rooms,roomID',
         ]);
@@ -112,12 +102,10 @@ class ShowTimeController extends Controller
             ->with('success', 'Cập nhật thành công');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
+    // DELETE
     public function destroy(string $id)
     {
-        $showTime = showTime::findOrFail($id);
+        $showTime = ShowTime::findOrFail($id); // 🔥 fix chữ hoa
         $showTime->delete();
 
         return redirect()->route('showTime.index')

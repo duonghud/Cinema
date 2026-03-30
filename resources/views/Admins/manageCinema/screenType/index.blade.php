@@ -67,6 +67,14 @@
                             </td>
                         </tr>
                     @endforeach
+
+                    @if ($screenTypes -> isEmpty())
+                    <tr>
+                        <td colspan="3" class="text-center text-muted py-4">
+                            Chưa có dữ liệu định dạng màn hình
+                        </td>
+                    </tr>
+                    @endif
                 </tbody>
 
             </table>

@@ -6,9 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class genreDetail extends Model
 {
-    protected $table = 'genreDetail';
+    protected $table = 'genre_details';
 
-    // composite key → Laravel không tự xử lý
     protected $primaryKey = null;
     public $incrementing = false;
 

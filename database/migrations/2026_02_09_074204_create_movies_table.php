@@ -19,7 +19,6 @@ return new class extends Migration
             $table->string('poster')->nullable();
             $table->string('trailer')->nullable();
             $table->date('releaseDate');
-
             $table->foreignId('ageRatingID')->constrained('age_ratings', 'ageRatingID');
             $table->foreignId('studioID')->constrained('studios', 'studioID');
 
@@ -32,6 +31,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('s');
+        Schema::dropIfExists('movies');
     }
 };

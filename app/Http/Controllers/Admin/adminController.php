@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Admin\admin;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 
 class adminController extends Controller
 {
@@ -13,8 +15,8 @@ class adminController extends Controller
      */
     public function index()
     {
-        $admins = admin::paginate(2);
-        return view('admins.admin.index', ['admins' => $admins]);
+        $admins = admin::paginate(10);
+        return view('admins.manageUser.admin.index', ['admins' => $admins]);
     }
 
     /**
@@ -22,7 +24,7 @@ class adminController extends Controller
      */
     public function create()
     {
-        return view('admins.admin.create');
+        return view('admins.manageUser.admin.create');
     }
 
     /**
@@ -30,26 +32,34 @@ class adminController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'fullName' => 'required',
+        // Validation
+        $validated = $request->validate([
+            'fullName' => 'required|string|max:255',
             'email' => 'required|email|unique:admins,email',
-            'password' => 'required|min:6',
-            'role' => 'required'
-        ],[
-            'fullName.required' => 'Tên không được để trong',
-            'email.required' => 'Email không được để trống',
-            'password.required' => 'Password không được để trống',
-            'role.required'=> 'Vui lòng chọn chức vụ'
+            'password' => 'required|string|min:6',
+            'role' => 'required|in:admin,ticket_staff,food_staff',
+        ], [
+            'fullName.required' => 'Họ tên không được để trống.',
+            'fullName.max' => 'Họ tên không được vượt quá 255 ký tự.',
+            'email.required' => 'Email không được để trống.',
+            'email.email' => 'Email không đúng định dạng.',
+            'email.unique' => 'Email này đã tồn tại.',
+            'password.required' => 'Mật khẩu không được để trống.',
+            'password.min' => 'Mật khẩu phải có ít nhất 6 ký tự.',
+            'role.required' => 'Chức vụ không được để trống.',
+            'role.in' => 'Chức vụ không hợp lệ.',
         ]);
 
-        $admins = new admin();
-        $admins->fullName = $request->input('fullName');
-        $admins->email = $request->input('email');
-        $admins->password = $request->input('password');
-        $admins->role = $request->input('role');
-        $admins->save();
+        // Tạo nhân viên mới
+        Admin::create([
+            'fullName' => $validated['fullName'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+            'role' => $validated['role'],
+        ]);
 
-        return redirect()->route('admin.index')->with('success', 'Tạo thành công');
+        return redirect()->route('admin.index')
+            ->with('success', 'Nhân viên mới đã được thêm thành công.');
     }
 
     /**
@@ -66,34 +76,51 @@ class adminController extends Controller
     public function edit(string $adminID)
     {
         $admins = admin::findOrFail($adminID);
-        return view('admins.admin.edit', ['admins' => $admins]);
+        return view('admins.manageUser.admin.edit', ['admins' => $admins]);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $adminID)
-    {
-        $admins = admin::findOrFail($adminID);
 
-        $request->validate([
-            'fullName' => 'required',
-            'email' => 'required|email|unique:admins,email,' . $adminID . ',adminID',
-            'password' => 'nullable|min:6',
-            'role' => 'required'
+    public function update(Request $request, $id)
+    {
+        $admin = Admin::findOrFail($id);
+
+        $validated = $request->validate([
+            'fullName' => 'required|string|max:255',
+            'email' => [
+                'required',
+                'email',
+                Rule::unique('admins')->ignore($admin->adminID, 'adminID'),
+            ],
+            'role' => 'required|in:admin,ticket_staff,food_staff',
+            'password' => 'nullable|string|min:6',
+        ], [
+            'fullName.required' => 'Họ tên không được để trống.',
+            'fullName.max' => 'Họ tên không được vượt quá 255 ký tự.',
+            'email.required' => 'Email không được để trống.',
+            'email.email' => 'Email không đúng định dạng.',
+            'email.unique' => 'Email này đã tồn tại.',
+            'role.required' => 'Chức vụ không được để trống.',
+            'role.in' => 'Chức vụ không hợp lệ.',
+            'password.min' => 'Mật khẩu phải có ít nhất 6 ký tự.',
         ]);
 
-        $admins->fullName = $request->input('fullName');
-        $admins->email = $request->input('email');
-        if ($request->input('password')) {
-            $admins->password = $request->input('password');
+        $admin->fullName = $validated['fullName'];
+        $admin->email = $validated['email'];
+        $admin->role = $validated['role'];
+
+        // Nếu nhập password mới, hash và update
+        if (!empty($validated['password'])) {
+            $admin->password = Hash::make($validated['password']);
         }
-        $admins->role = $request->input('role');
-        $admins->save();
 
-        return redirect()->route('admin.index')->with('success', 'Sửa thành công');
+        $admin->save();
+
+        return redirect()->route('admin.index')
+            ->with('success', 'Cập nhật nhân viên thành công.');
     }
-
     /**
      * Remove the specified resource from storage.
      */

@@ -4,12 +4,14 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Admin\Movie;
+use App\Models\Admin\showTime;
 
 class HomeController extends Controller
 {
     public function index()
     {
-        $movies = Movie::all(); // lấy tất cả phim
-        return view('welcome', compact('movies'));
+        $movies = Movie::all();
+        $showTimes = showTime::all();
+        return view('welcome', compact('movies', 'showTimes'));
     }
 }

@@ -10,6 +10,10 @@ class seatType extends Model
     protected $primaryKey = 'seatTypeID';
     public $timestamps = false;
 
+    protected $fillable = [
+        'seatTypeName',
+    ];
+
     public function seats() {
         return $this->hasMany(Seat::class, 'seatTypeID');
     }

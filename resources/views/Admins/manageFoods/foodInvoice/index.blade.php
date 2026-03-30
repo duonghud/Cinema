@@ -104,6 +104,14 @@
                         </td>
                     </tr>
                     @endforeach
+
+                    @if($invoices ->isEmpty())
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">
+                            Chưa có dữ liệu hóa đơn
+                        </td>
+                    </tr>
+                    @endif
                 </tbody>
 
             </table>

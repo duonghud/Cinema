@@ -84,6 +84,14 @@
                             </td>
                         </tr>
                     @endforeach
+
+                    @if ($customers -> isEmpty())
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">
+                            Chưa có dữ liệu khách hàng
+                        </td>
+                    </tr>
+                    @endif
                 </tbody>
 
             </table>

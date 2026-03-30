@@ -54,8 +54,13 @@
 
                     </tr>
                     @endforeach
-                </tbody>
-
+                    @if ($studios -> isEmpty())
+                    <tr>
+                        <td colspan="4" class="text-center text-muted py-4">
+                            Chưa có dữ liệu hãng sản xuất
+                        </td>
+                    </tr>
+                    @endif
             </table>
 
         </div>

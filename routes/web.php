@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\adminController;
 use App\Http\Controllers\Admin\ageRatingController;
 use App\Http\Controllers\Admin\customerController;
+use App\Http\Controllers\LoginReigster\CustomerAuthController;
 use App\Http\Controllers\Admin\DashBoardController;
 use App\Http\Controllers\Admin\foodController;
 use App\Http\Controllers\Admin\genreController;
@@ -34,6 +35,7 @@ Route::prefix('admins')->namespace('App\Http\Controllers\Admin')->group(function
     Route::resource('foodInvoice', foodInvoiceController::class);
     Route::resource('foodInvoiceDetail', FoodInvoiceDetailController::class);
     Route::resource('genre', GenreController::class);
+    Route::post('seat/generate', [SeatController::class, 'generate'])->name('seat.generate');
     Route::resource('studio', StudioController::class);
     Route::resource('ageRating', AgeRatingController::class);
     Route::resource('movies', MovieController::class);
@@ -44,3 +46,10 @@ Route::prefix('admins')->namespace('App\Http\Controllers\Admin')->group(function
     Route::resource('ticket', ticketController::class);
     Route::resource('showTime', showTimeController::class);
 });
+// routes/web.php
+Route::get('/movies/{movie}', [MovieController::class, 'show'])->name('movies.show');
+Route::resource('/auth/customerRegister', CustomerAuthController::class);
+
+Route::get('/login', function () {
+    return view('auth.customerLogin');
+})->name('login');

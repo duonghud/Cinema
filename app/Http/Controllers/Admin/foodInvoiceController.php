@@ -9,16 +9,24 @@ use App\Models\Admin\FoodInvoiceDetail;
 use App\Models\Admin\Food;
 use App\Models\Admin\Customer;
 use App\Models\Admin\payment_method;
+use Illuminate\Support\Facades\Auth;
 
-class foodInvoiceController extends Controller
+class FoodInvoiceController extends Controller
 {
 
     public function index()
     {
-        $invoices = FoodInvoice::with(['customer', 'payment', 'details.food'])->get();
-        return view('admins.manageFoods.foodInvoice.index', compact('invoices'));
-    }
+        $invoices = FoodInvoice::with([
+            'customer',
+            'payment',
+            'details.food'
+        ])->get();
 
+        return view(
+            'admins.manageFoods.foodInvoice.index',
+            compact('invoices')
+        );
+    }
 
     public function create()
     {
@@ -26,15 +34,18 @@ class foodInvoiceController extends Controller
         $payments = payment_method::all();
         $foods = Food::all();
 
-        return view('admins.manageFoods.foodInvoice.create', compact('customers', 'payments', 'foods'));
+        return view(
+            'admins.manageFoods.foodInvoice.create',
+            compact('customers', 'payments', 'foods')
+        );
     }
 
     public function store(Request $request)
     {
-        // Validation
+        // validation
         $validated = $request->validate([
             'customerID' => 'required|exists:customers,customerID',
-            'paymentID' => 'required|exists:payments,paymentID',
+            'paymentID' => 'required|exists:payment_methods,paymentID',
             'orderTime' => 'required|date',
             'foods' => 'required|array',
             'foods.*' => 'integer|min:0',
@@ -45,55 +56,98 @@ class foodInvoiceController extends Controller
             'paymentID.exists' => 'Phương thức thanh toán không hợp lệ.',
             'orderTime.required' => 'Vui lòng chọn thời gian đặt.',
             'orderTime.date' => 'Thời gian đặt không hợp lệ.',
-            'foods.required' => 'Vui lòng chọn ít nhất một món ăn.',
-            'foods.*.integer' => 'Số lượng món ăn phải là số nguyên.',
-            'foods.*.min' => 'Số lượng món ăn phải lớn hơn hoặc bằng 0.',
+            'foods.required' => 'Vui lòng chọn món ăn.',
         ]);
 
-        // Kiểm tra ít nhất 1 món được chọn
+
         $hasFood = false;
+
         foreach ($validated['foods'] as $quantity) {
             if ($quantity > 0) {
                 $hasFood = true;
                 break;
             }
         }
+
         if (!$hasFood) {
-            return redirect()->back()->withInput()->withErrors(['foods' => 'Vui lòng chọn ít nhất một món ăn.']);
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'foods' => 'Vui lòng chọn ít nhất một món ăn.'
+                ]);
         }
 
-        // Lưu hóa đơn
-        $invoice = FoodInvoice::create([
-            'customerID' => $validated['customerID'],
-            'paymentID' => $validated['paymentID'],
-            'orderTime' => $validated['orderTime'],
-        ]);
+        $total = 0;
 
-        // Lưu chi tiết món ăn
         foreach ($validated['foods'] as $foodID => $quantity) {
+
             if ($quantity > 0) {
-                $invoice->foods()->attach($foodID, ['quantity' => $quantity]);
+
+                $food = Food::find($foodID);
+
+                if ($food) {
+                    $total += $food->price * $quantity;
+                }
             }
         }
 
-        return redirect()->route('foodInvoice.index')->with('success', 'Tạo hóa đơn thành công!');
-    }
+        $invoice = FoodInvoice::create([
+            'customerID' => $validated['customerID'],
+            'paymentID' => $validated['paymentID'],
+            'adminID' => 1,
+            'orderDate' => $validated['orderTime'],
+            'total' => $total
+        ]);
 
+        foreach ($validated['foods'] as $foodID => $quantity) {
+
+            if ($quantity > 0) {
+
+                FoodInvoiceDetail::create([
+                    'foodInvoiceID' => $invoice->invoiceID,
+                    'foodID' => $foodID,
+                    'quantity' => $quantity
+                ]);
+            }
+        }
+
+
+        return redirect()
+            ->route('foodInvoice.index')
+            ->with('success', 'Tạo hóa đơn thành công!');
+    }
 
     public function show($id)
     {
-        $invoice = FoodInvoice::with(['customer', 'payment', 'details.food'])->findOrFail($id);
-        return view('admins.manageFoods.foodInvoiceDetail.index', compact('invoice'));
+        $invoice = FoodInvoice::with([
+            'customer',
+            'payment',
+            'details.food'
+        ])->findOrFail($id);
+
+        return view(
+            'admins.manageFoods.foodInvoiceDetail.index',
+            compact('invoice')
+        );
     }
 
     public function edit($id)
     {
         $invoice = FoodInvoice::with('details')->findOrFail($id);
+
         $foods = Food::all();
         $customers = Customer::all();
         $payments = payment_method::all();
 
-        return view('admins.manageFoods.foodInvoice.edit', compact('invoice', 'foods', 'customers', 'payments'));
+        return view(
+            'admins.manageFoods.foodInvoice.edit',
+            compact(
+                'invoice',
+                'foods',
+                'customers',
+                'payments'
+            )
+        );
     }
 
     public function update(Request $request, $id)
@@ -102,15 +156,25 @@ class foodInvoiceController extends Controller
 
         $invoice->update([
             'customerID' => $request->customerID,
-            'paymentID' => $request->paymentID
+            'paymentID' => $request->paymentID,
+            'orderDate' => $request->orderTime
         ]);
 
-        FoodInvoiceDetail::where('foodInvoiceID', $id)->delete();
 
+        // xóa chi tiết cũ
+        FoodInvoiceDetail::where(
+            'foodInvoiceID',
+            $id
+        )->delete();
+
+
+        // tính total mới
         $total = 0;
 
         foreach ($request->foods as $foodID => $qty) {
+
             if ($qty > 0) {
+
                 $food = Food::find($foodID);
 
                 FoodInvoiceDetail::create([
@@ -123,14 +187,22 @@ class foodInvoiceController extends Controller
             }
         }
 
-        $invoice->update(['total' => $total]);
+        $invoice->update([
+            'total' => $total
+        ]);
 
-        return redirect()->route('foodInvoice.index')->with('success', 'Cập nhật thành công');
+
+        return redirect()
+            ->route('foodInvoice.index')
+            ->with('success', 'Cập nhật thành công');
     }
 
     public function destroy($id)
     {
         FoodInvoice::findOrFail($id)->delete();
-        return redirect()->route('foodInvoice.index')->with('success', 'Xóa thành công');
+
+        return redirect()
+            ->route('foodInvoice.index')
+            ->with('success', 'Xóa thành công');
     }
 }

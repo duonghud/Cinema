@@ -1,3 +1,4 @@
+<!--Đang sửa để tự động tạo vé-->
 @extends('layouts.appAdmin')
 
 @section('content')
@@ -16,7 +17,7 @@
             </a>
         </div>
 
-        <!-- Error -->
+        <!-- Alert lỗi tổng quát -->
         @if ($errors->any())
             <div class="alert alert-danger border-0 shadow-sm">
                 <ul class="mb-0 ps-3">
@@ -36,9 +37,12 @@
                 <label class="form-label text-muted">Tên phòng</label>
                 <input type="text" 
                        name="roomName" 
-                       value="{{ $room->roomName }}"
-                       class="form-control"
+                       value="{{ old('roomName', $room->roomName) }}"
+                       class="form-control @error('roomName') is-invalid @enderror"
                        placeholder="Nhập tên phòng...">
+                @error('roomName')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
             </div>
 
             <!-- Capacity -->
@@ -46,21 +50,29 @@
                 <label class="form-label text-muted">Sức chứa</label>
                 <input type="number" 
                        name="capacity" 
-                       value="{{ $room->capacity }}"
-                       class="form-control">
+                       value="{{ old('capacity', $room->capacity) }}"
+                       class="form-control @error('capacity') is-invalid @enderror">
+                @error('capacity')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
             </div>
 
             <!-- Screen Type -->
             <div class="mb-4">
                 <label class="form-label text-muted">Loại phòng chiếu</label>
-                <select name="screenTypeID" class="form-select">
+                <select name="screenTypeID" 
+                        class="form-select @error('screenTypeID') is-invalid @enderror">
+                    <option value="">-- Chọn loại phòng --</option>
                     @foreach($screenTypes as $type)
                         <option value="{{ $type->screenTypeID }}"
-                            {{ $type->screenTypeID == $room->screenTypeID ? 'selected' : '' }}>
+                            {{ old('screenTypeID', $room->screenTypeID) == $type->screenTypeID ? 'selected' : '' }}>
                             {{ $type->name }}
                         </option>
                     @endforeach
                 </select>
+                @error('screenTypeID')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
             </div>
 
             <!-- Button -->
