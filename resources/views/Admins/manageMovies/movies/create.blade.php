@@ -68,6 +68,26 @@
                             </select>
                         </div>
 
+                        <!-- Genre -->
+                        <div class="mb-3">
+                            <label class="form-label fw-medium">Thể loại</label>
+                            <div class="d-flex flex-wrap">
+                                @foreach($genres as $genre)
+                                <div class="form-check me-3">
+                                    <input class="form-check-input"
+                                        type="checkbox"
+                                        name="genreID[]"
+                                        value="{{ $genre->genreID }}"
+                                        id="genre{{ $genre->genreID }}">
+                                    <label class="form-check-label" for="genre{{ $genre->genreID }}">
+                                        {{ $genre->name }}
+                                    </label>
+                                </div>
+                                @endforeach
+                            </div>
+                        </div>
+
+
                         <!-- Studio -->
                         <div class="col-md-4 mb-3">
                             <label class="form-label fw-medium">Hãng phim</label>
@@ -88,19 +108,6 @@
                         <label class="form-label fw-medium">Mô tả</label>
                         <textarea name="description" rows="3" class="form-control"></textarea>
                     </div>
-
-                    <!-- Thể loại (giữ nguyên code của bạn) -->
-                    <div class="mb-3">
-                        <label class="form-label fw-medium">Thể loại</label>
-                        <select name="ageRatingID" class="form-select">
-                            @foreach($ageRatings as $age)
-                            <option value="{{ $age->ageRatingID }}">
-                                {{ $age->code }}
-                            </option>
-                            @endforeach
-                        </select>
-                    </div>
-
                 </div>
 
                 <!-- Footer -->

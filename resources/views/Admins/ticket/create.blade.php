@@ -3,73 +3,102 @@
 @section('content')
 <div class="container py-4">
 
-    <div class="card shadow-lg border-0 rounded-4">
-        <div class="card-header bg-primary text-white rounded-top-4">
-            <h4 class="mb-0">
-                <i class="bi bi-ticket-perforated"></i> Thêm vé mới
-            </h4>
+    <div class="card  rounded-3">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Thêm vé mới</h5>
         </div>
 
-        <div class="card-body p-4">
-
+        <div class="card-body">
             <form action="{{ route('ticket.store') }}" method="POST">
                 @csrf
 
-                {{-- Giá --}}
+                {{-- PRICE --}}
                 <div class="mb-3">
-                    <label class="form-label fw-semibold">Giá vé</label>
-                    <div class="input-group">
-                        <span class="input-group-text">
-                            <i class="bi bi-cash"></i>
-                        </span>
-                        <input type="number" name="price" class="form-control"
-                               placeholder="Nhập giá vé">
-                    </div>
+                    <label class="form-label">Giá vé</label>
+                    <input 
+                        type="number" 
+                        name="price" 
+                        value="{{ old('price') }}"
+                        class="form-control @error('price') is-invalid @enderror"
+                        placeholder="Nhập giá vé"
+                    >
+                    @error('price')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
                 </div>
 
-                {{-- Trạng thái --}}
+                {{-- STATUS --}}
                 <div class="mb-3">
-                    <label class="form-label fw-semibold">Trạng thái</label>
-                    <select name="status" class="form-select">
+                    <label class="form-label">Trạng thái</label>
+                    <select 
+                        name="status" 
+                        class="form-control @error('status') is-invalid @enderror"
+                    >
                         <option value="">-- Chọn trạng thái --</option>
-                        <option value="available">Còn trống</option>
-                        <option value="booked">Đã đặt</option>
+                        <option value="available" {{ old('status') == 'available' ? 'selected' : '' }}>
+                            Còn trống
+                        </option>
+                        <option value="booked" {{ old('status') == 'booked' ? 'selected' : '' }}>
+                            Đã đặt
+                        </option>
                     </select>
+                    @error('status')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
                 </div>
 
-                {{-- Suất chiếu --}}
+                {{-- SHOWTIME --}}
                 <div class="mb-3">
-                    <label class="form-label fw-semibold">Suất chiếu</label>
-                    <select name="showTimeID" class="form-select">
-                        @foreach($showTimes as $st)
-                            <option value="{{ $st->showTimeID }}">
-                                Suất #{{ $st->showTimeID }} 
-                                ({{ $st->showDate }} - {{ $st->startTime }})
+                    <label class="form-label">Suất chiếu</label>
+                    <select 
+                        name="showTimeID" 
+                        class="form-control @error('showTimeID') is-invalid @enderror"
+                    >
+                        <option value="">-- Chọn suất chiếu --</option>
+                        @foreach($showTimes as $s)
+                            <option 
+                                value="{{ $s->showTimeID }}"
+                                {{ old('showTimeID') == $s->showTimeID ? 'selected' : '' }}
+                            >
+                                Suất chiếu #{{ $s->showTimeID }}
                             </option>
                         @endforeach
                     </select>
+                    @error('showTimeID')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
                 </div>
 
-                {{-- Ghế --}}
+                {{-- SEAT --}}
                 <div class="mb-3">
-                    <label class="form-label fw-semibold">Ghế</label>
-                    <select name="seatID" class="form-select">
+                    <label class="form-label">Ghế</label>
+                    <select 
+                        name="seatID" 
+                        class="form-control @error('seatID') is-invalid @enderror"
+                    >
+                        <option value="">-- Chọn ghế --</option>
                         @foreach($seats as $seat)
-                            <option value="{{ $seat->seatID }}">
-                                Ghế #{{ $seat->seatID }}
+                            <option 
+                                value="{{ $seat->seatID }}"
+                                {{ old('seatID') == $seat->seatID ? 'selected' : '' }}
+                            >
+                                Ghế {{ $seat->colSeat }}
                             </option>
                         @endforeach
                     </select>
+                    @error('seatID')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
                 </div>
 
-                {{-- Button --}}
-                <div class="d-flex justify-content-between mt-4">
+                {{-- BUTTON --}}
+                <div class="d-flex justify-content-between">
                     <a href="{{ route('ticket.index') }}" class="btn btn-secondary">
-                        <i class="bi bi-arrow-left"></i> Quay lại
+                        ← Quay lại
                     </a>
 
-                    <button class="btn btn-success px-4">
-                        <i class="bi bi-check-circle"></i> Lưu vé
+                    <button type="submit" class="btn btn-success">
+                        💾 Lưu vé
                     </button>
                 </div>
 

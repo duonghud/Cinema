@@ -7,8 +7,8 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h4 class="fw-semibold">Quản lý nhân viên</h4>
 
-        <a href="{{ route('admin.create') }}" 
-           class="btn btn-dark">
+        <a href="{{ route('admin.create') }}"
+            class="btn btn-dark">
             + Thêm nhân viên
         </a>
     </div>
@@ -31,60 +31,68 @@
 
                 <tbody>
                     @foreach($admins as $admin)
-                        <tr>
+                    <tr>
 
-                            <!-- ID -->
-                            <td class="text-muted">
-                                {{ $admin->adminID }}
-                            </td>
+                        <!-- ID -->
+                        <td class="text-muted">
+                            {{ $admin->adminID }}
+                        </td>
 
-                            <!-- Name -->
-                            <td class="fw-medium">
-                                {{ $admin->fullName }}
-                            </td>
+                        <!-- Name -->
+                        <td class="fw-medium">
+                            {{ $admin->fullName }}
+                        </td>
 
-                            <!-- Email -->
-                            <td>
-                                {{ $admin->email }}
-                            </td>
+                        <!-- Email -->
+                        <td>
+                            {{ $admin->email }}
+                        </td>
 
-                            <!-- Role -->
-                            <td>
-                                @if($admin->role == 'admin')
-                                    <span class="badge bg-danger">Quản trị</span>
-                                @elseif($admin->role == 'ticket_staff')
-                                    <span class="badge bg-primary">Bán vé</span>
-                                @elseif($admin->role == 'food_staff')
-                                    <span class="badge bg-warning text-dark">Đồ ăn</span>
-                                @else
-                                    <span class="badge bg-secondary">Khác</span>
-                                @endif
-                            </td>
+                        <!-- Role -->
+                        <td>
+                            @if($admin->role == 'admin')
+                            <span class="badge bg-danger">Quản trị</span>
+                            @elseif($admin->role == 'ticket_staff')
+                            <span class="badge bg-primary">Bán vé</span>
+                            @elseif($admin->role == 'food_staff')
+                            <span class="badge bg-warning text-dark">Đồ ăn</span>
+                            @else
+                            <span class="badge bg-secondary">Khác</span>
+                            @endif
+                        </td>
 
-                            <!-- Actions -->
-                            <td class="text-end">
+                        <!-- Actions -->
+                        <td class="text-end">
 
-                                <a href="{{ route('admin.edit', $admin->adminID) }}"
-                                   class="btn btn-sm btn-outline-dark me-2">
-                                    Sửa
-                                </a>
+                            <a href="{{ route('admin.edit', $admin->adminID) }}"
+                                class="btn btn-sm btn-outline-dark me-2">
+                                Sửa
+                            </a>
 
-                                <form action="{{ route('admin.destroy', $admin->adminID) }}" 
-                                      method="POST" 
-                                      class="d-inline">
-                                    @csrf
-                                    @method('DELETE')
+                            <form action="{{ route('admin.destroy', $admin->adminID) }}"
+                                method="POST"
+                                class="d-inline">
+                                @csrf
+                                @method('DELETE')
 
-                                    <button type="submit"
-                                            class="btn btn-sm btn-outline-danger"
-                                            onclick="return confirm('Bạn có chắc muốn xóa?')">
-                                        Xóa
-                                    </button>
-                                </form>
+                                <button type="submit"
+                                    class="btn btn-sm btn-outline-danger"
+                                    onclick="return confirm('Bạn có chắc muốn xóa?')">
+                                    Xóa
+                                </button>
+                            </form>
 
-                            </td>
-                        </tr>
+                        </td>
+                    </tr>
                     @endforeach
+
+                    @if($admins->isEmpty())
+                    <tr>
+                        <td colspan="4" class="text-center text-muted py-4">
+                            <i>Chưa có dữ liệu quản trị viên</i>
+                        </td>
+                    </tr>
+                    @endif
                 </tbody>
 
             </table>

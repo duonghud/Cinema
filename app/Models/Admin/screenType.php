@@ -10,7 +10,12 @@ class screenType extends Model
     protected $primaryKey = 'screenTypeID';
     public $timestamps = false;
 
-    public function rooms() {
+    protected $fillable = [
+        'name',
+    ];
+
+    public function rooms()
+    {
         return $this->hasMany(ScreeningRoom::class, 'screenTypeID');
     }
 }

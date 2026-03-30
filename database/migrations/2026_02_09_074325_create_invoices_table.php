@@ -17,7 +17,7 @@ return new class extends Migration
             $table->decimal('totalAmount', 10, 2);
 
             $table->foreignId('customerID')->constrained('customers', 'customerID');
-            $table->foreignId('adminID')->constrained('admins', 'adminID');
+            $table->foreignId('adminID')->constrained('admins', 'adminID')->nullable();
             $table->foreignId('paymentID')->constrained('payment_methods', 'paymentID');
         });
     }

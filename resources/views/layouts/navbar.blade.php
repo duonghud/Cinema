@@ -109,7 +109,7 @@
         </button>
 
             <ul class="navbar-nav mx-auto">
-                <li class="nav-item"><a href="" class="nav-link ">Trang chủ</a></li>
+                <li class="nav-item"><a href="#" class="nav-link ">Trang chủ</a></li>
                 <li class="nav-item"><a href="" class="nav-link">Lịch chiếu</a></li>
                 <li class="nav-item"><a href="" class="nav-link">Khuyến mãi</a></li>
                 <li class="nav-item"><a href="" class="nav-link">Giá vé</a></li>
@@ -119,7 +119,7 @@
             </ul>
 
             <div class="d-flex gap-2">
-                <a class="btn nav-btn btn-register" data-bs-toggle="modal" data-bs-target="#registerModal">Đăng ký</a>
+                <a href="#" class="btn nav-btn btn-register">Đăng ký</a>
                 <a class="btn nav-btn btn-login" data-bs-toggle="modal" data-bs-target="#loginModal">Đăng nhập</a>
             </div>
     </div>
