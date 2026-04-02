@@ -23,7 +23,7 @@
                     <input type="text"
                            name="code"
                            class="form-control @error('code') is-invalid @enderror"
-                           placeholder="Ví dụ: P, C13, C18"
+                           placeholder="Ví dụ: P, T13, T18"
                            value="{{ old('code') }}">
 
                     @error('code')

@@ -110,10 +110,10 @@
 
             <ul class="navbar-nav mx-auto">
                 <li class="nav-item"><a href="#" class="nav-link ">Trang chủ</a></li>
-                <li class="nav-item"><a href="" class="nav-link">Lịch chiếu</a></li>
-                <li class="nav-item"><a href="" class="nav-link">Khuyến mãi</a></li>
-                <li class="nav-item"><a href="" class="nav-link">Giá vé</a></li>
-                <li class="nav-item"><a href="" class="nav-link">Tin tức</a></li>
+                <li class="nav-item"><a href="#" class="nav-link">Lịch chiếu</a></li>
+                <li class="nav-item"><a href="#" class="nav-link">Khuyến mãi</a></li>
+                <li class="nav-item"><a href="#" class="nav-link">Giá vé</a></li>
+                <li class="nav-item"><a href="#" class="nav-link">Tin tức</a></li>
                 <li class="nav-item"><a href="layout/contact" class="nav-link">Liên hệ</a></li>
                 <li class="nav-item"><a href="" class="nav-link">Giới thiệu</a></li>
             </ul>

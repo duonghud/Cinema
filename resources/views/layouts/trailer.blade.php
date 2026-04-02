@@ -6,9 +6,6 @@
         <div class="modal-content bg-dark">
 
             <div class="modal-header border-0">
-
-                <h5 class="modal-title text-white">Trailer</h5>
-
                 <button type="button"
                         class="btn-close btn-close-white"
                         data-bs-dismiss="modal">
