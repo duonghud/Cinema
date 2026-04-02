@@ -71,7 +71,7 @@
                         <!-- Description -->
                         <td style="max-width:200px;">
                             <small class="text-muted">
-                                {{ Str::limit($movie->description, 80) }}
+                                {{ Str::limit($movie->description, 36) }}
                             </small>
                         </td>
 

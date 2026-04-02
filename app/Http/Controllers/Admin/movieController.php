@@ -31,9 +31,9 @@ class movieController extends Controller
             'description' => 'nullable',
             'ageRatingID' => 'required|exists:age_ratings,ageRatingID',
             'studioID' => 'required|exists:studios,studioID',
-            'genreID' => 'required|array', // kiểm tra là mảng
-            'genreID.*' => 'exists:genres,genreID', // từng phần tử phải tồn tại
-            'poster' => 'nullable|image|mimes:jpg,jpeg,png|max:2048'
+            'genreID' => 'required|array',
+            'genreID.*' => 'exists:genres,genreID', 
+            'poster' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048'
         ], [
             'movieTitle.required' => 'Tên phim không được để trống',
             'director.required' => 'Đạo diễn không được để trống',
@@ -45,6 +45,7 @@ class movieController extends Controller
             'genreID.required' => 'Vui lòng chọn ít nhất một thể loại',
             'genreID.*.exists' => 'Thể loại không hợp lệ',
             'poster.image' => 'File phải là hình ảnh',
+            'poster.mimes' => 'File phải đúng định dạng: jpg, jpeg, png, webp',
         ]);
 
         $data = $request->only([
@@ -86,12 +87,13 @@ class movieController extends Controller
             'studioID' => 'required|exists:studios,studioID',
             'genreID' => 'required|array',
             'genreID.*' => 'exists:genres,genreID',
-            'poster' => 'nullable|image|mimes:jpg,jpeg,png|max:2048'
+            'poster' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048'
         ], [
             'movieTitle.required' => 'Tên phim không được để trống',
             'director.required' => 'Đạo diễn không được để trống',
             'releaseDate.required' => 'Ngày phát hành không được để trống',
             'releaseDate.date' => 'Ngày phát hành không hợp lệ',
+            'poster.mimes' => 'File phải đúng định dạng: jpg, jpeg, png, webp',
         ]);
 
         $data = $request->only([

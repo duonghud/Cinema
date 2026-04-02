@@ -48,7 +48,13 @@ Route::prefix('admins')->namespace('App\Http\Controllers\Admin')->group(function
 });
 // routes/web.php
 Route::get('/movies/{movie}', [MovieController::class, 'show'])->name('movies.show');
-Route::resource('/auth/customerRegister', CustomerAuthController::class);
+// // Hiển thị form đăng ký
+// Route::get('/auth/customerRegister', [CustomerAuthController::class, 'create'])
+//     ->name('customerRegister.form');
+
+// // Xử lý dữ liệu đăng ký
+// Route::post('/auth/customerRegister', [CustomerAuthController::class, 'store'])
+//     ->name('customerRegister');
 
 Route::get('/login', function () {
     return view('auth.customerLogin');
