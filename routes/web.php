@@ -19,14 +19,21 @@ use App\Http\Controllers\Admin\SeatController;
 use App\Http\Controllers\Admin\ticketController;
 use App\Http\Controllers\Admin\showTimeController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\LoginReigster\AdminAuthController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index']);
-Route::middleware(['auth', 'role:admin'])->group(function () {
-    Route::get('/admin', [AdminController::class, 'index'])->name('admin.index');
+Route::middleware('role:admin')->group(function () {
+    Route::redirect('/admin', '/admins/dashboard')->name('admin.home');
 });
 
-Route::prefix('admins')->namespace('App\Http\Controllers\Admin')->group(function () {
+Route::prefix('admin')->group(function () {
+    Route::get('/login', [AdminAuthController::class, 'showLoginForm'])->name('admin.login');
+    Route::post('/login', [AdminAuthController::class, 'login'])->name('admin.login.submit');
+    Route::post('/logout', [AdminAuthController::class, 'logout'])->name('admin.logout');
+});
+
+Route::prefix('admins')->namespace('App\Http\Controllers\Admin')->middleware('role:admin')->group(function () {
     Route::resource('dashboard', DashBoardController::class);
     Route::resource('admin', AdminController::class);
     Route::resource('customer', CustomerController::class);

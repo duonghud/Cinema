@@ -4,7 +4,6 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class CheckRole
 {
@@ -14,14 +13,12 @@ class CheckRole
      * @param Closure $next
      * @param string $role
      */
-    public function handle(Request $request, Closure $next, $role)
+    public function handle(Request $request, Closure $next, string $role)
     {
-        if (!Auth::check()) {
-            return redirect()->route('login');
-        }
+        $admin = $request->session()->get('admin_auth');
 
-        if (Auth::user()->role !== $role) {
-            abort(403, 'Bạn không có quyền truy cập.');
+        if (!$admin) {
+            return redirect()->route('admin.login');
         }
 
         return $next($request);
