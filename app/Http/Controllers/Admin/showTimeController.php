@@ -46,7 +46,6 @@ class ShowTimeController extends Controller
             'roomID.required' => 'Vui lòng chọn phòng.',
         ]);
 
-        // 🔥 TẠO SHOWTIME
         $showTime = ShowTime::create([
             'showDate' => $request->showDate,
             'startTime' => $request->startTime,

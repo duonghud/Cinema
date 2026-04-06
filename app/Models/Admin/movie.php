@@ -51,4 +51,6 @@ class movie extends Model
     {
         return $this->belongsTo(Studio::class, 'studioID');
     }
+
+    
 }
