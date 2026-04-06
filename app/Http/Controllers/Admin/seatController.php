@@ -4,37 +4,51 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+
 use App\Models\Admin\Seat;
-use App\Models\Admin\screeningRoom;
+use App\Models\Admin\ScreeningRoom;
 use App\Models\Admin\SeatType;
 use App\Models\Admin\Ticket;
+use App\Models\Admin\ShowTime;
 
 class SeatController extends Controller
 {
+
     // LIST
-    public function index()
+    public function index(Request $request)
     {
-        $rooms = screeningRoom::all();
+        $rooms = ScreeningRoom::all();
         $seatTypes = SeatType::all();
 
+        $roomID = $request->roomID ?? $rooms->first()->roomID;
+
         $seats = Seat::with(['seatType', 'screeningRoom'])
+            ->where('roomID', $roomID)
             ->orderBy('rowSeat')
             ->orderBy('colSeat')
             ->get();
 
-        return view('admins.manageCinema.seat.index', compact('seats', 'rooms', 'seatTypes'));
+        return view(
+            'admins.manageCinema.seat.index',
+            compact('seats', 'rooms', 'seatTypes', 'roomID')
+        );
     }
 
-    // FORM CREATE (tạo thủ công)
+
+    // CREATE
     public function create()
     {
-        $rooms = screeningRoom::all();
+        $rooms = ScreeningRoom::all();
         $seatTypes = SeatType::all();
 
-        return view('admins.manageCinema.seat.create', compact('rooms', 'seatTypes'));
+        return view(
+            'admins.manageCinema.seat.create',
+            compact('rooms', 'seatTypes')
+        );
     }
 
-    // // STORE (tạo 1 ghế)
+
+    // STORE
     public function store(Request $request)
     {
         $request->validate([
@@ -44,6 +58,15 @@ class SeatController extends Controller
             'seatTypeID' => 'required'
         ]);
 
+        $exists = Seat::where('roomID', $request->roomID)
+            ->where('rowSeat', $request->rowSeat)
+            ->where('colSeat', $request->colSeat)
+            ->exists();
+
+        if ($exists) {
+            return back()->with('error', 'Ghế đã tồn tại');
+        }
+
         Seat::create([
             'rowSeat' => $request->rowSeat,
             'colSeat' => $request->colSeat,
@@ -52,84 +75,34 @@ class SeatController extends Controller
         ]);
 
         return redirect()->route('seat.index')
-            ->with('success', 'Tạo thêm ghế thành công');
+            ->with('success', 'Tạo ghế thành công');
     }
 
-    // public function generate(Request $request)
-    // {
-    //     $request->validate([
-    //         'roomID' => 'required|exists:screening_rooms,roomID'
-    //     ]);
 
-    //     $room = ScreeningRoom::findOrFail($request->roomID);
-
-    //     // Kiểm tra vé đã tồn tại
-    //     $hasTicket = Ticket::whereIn(
-    //         'seatID',
-    //         Seat::where('roomID', $room->roomID)->pluck('seatID')
-    //     )->exists();
-
-    //     if ($hasTicket) {
-    //         return redirect()->back()->with('error', 'Phòng này đã có vé → không thể tạo lại ghế');
-    //     }
-
-    //     $capacity = $room->capacity;
-    //     $seatsPerRow = 10;
-    //     $rows = ceil($capacity / $seatsPerRow);
-
-    //     $normal = SeatType::where('seatTypeName', 'normal')->first();
-    //     $vip = SeatType::where('seatTypeName', 'vip')->first();
-    //     $couple = SeatType::where('seatTypeName', 'couple')->first();
-
-    //     if (!$normal) {
-    //         return redirect()->back()->with('error', 'Chưa có seatType "normal" trong DB');
-    //     }
-
-    //     $count = 1;
-
-    //     for ($i = 0; $i < $rows; $i++) {
-    //         $row = chr(65 + $i);
-
-    //         for ($j = 1; $j <= $seatsPerRow; $j++) {
-    //             if ($count > $capacity) break;
-
-    //             if ($i >= $rows - 2 && $vip) {
-    //                 $typeID = $vip->seatTypeID;
-    //             } elseif ($j >= 9 && $couple) {
-    //                 $typeID = $couple->seatTypeID;
-    //             } else {
-    //                 $typeID = $normal->seatTypeID;
-    //             }
-
-    //             Seat::create([
-    //                 'rowSeat' => $row,
-    //                 'colSeat' => $j,
-    //                 'roomID' => $room->roomID,
-    //                 'seatTypeID' => $typeID
-    //             ]);
-
-    //             $count++;
-    //         }
-    //     }
-
-    //     return redirect()->route('seat.index')->with('success', 'Tạo ghế tự động thành công 🔥');
-    // }
-
-
-
-    // EDIT FORM
+    // EDIT
     public function edit(string $id)
     {
         $seat = Seat::findOrFail($id);
-        $rooms = screeningRoom::all();
+        $rooms = ScreeningRoom::all();
         $seatTypes = SeatType::all();
 
-        return view('admins.manageCinema.seat.edit', compact('seat', 'rooms', 'seatTypes'));
+        return view(
+            'admins.manageCinema.seat.edit',
+            compact('seat', 'rooms', 'seatTypes')
+        );
     }
+
 
     // UPDATE
     public function update(Request $request, string $id)
     {
+        $request->validate([
+            'rowSeat' => 'required',
+            'colSeat' => 'required',
+            'roomID' => 'required',
+            'seatTypeID' => 'required'
+        ]);
+
         $seat = Seat::findOrFail($id);
 
         $seat->update([
@@ -143,12 +116,50 @@ class SeatController extends Controller
             ->with('success', 'Cập nhật ghế thành công');
     }
 
+
     // DELETE
     public function destroy(string $id)
     {
-        Seat::destroy($id);
+        $seat = Seat::findOrFail($id);
+
+        $hasTicket = Ticket::where('seatID', $id)->exists();
+
+        if ($hasTicket) {
+            return back()->with('error', 'Ghế đã có vé');
+        }
+
+        $seat->delete();
 
         return redirect()->route('seat.index')
             ->with('success', 'Xóa ghế thành công');
+    }
+
+
+    // SELECT SEAT (CLIENT)
+    public function selectSeat($showtimeID)
+    {
+
+        // lấy suất chiếu
+        $showtime = ShowTime::findOrFail($showtimeID);
+
+        // lấy ghế theo phòng
+        $seats = Seat::where('roomID', $showtime->roomID)
+            ->orderBy('rowSeat')
+            ->orderBy('colSeat')
+            ->get();
+
+        // ghế đã đặt
+        $bookedSeats = Ticket::where('showTimeID', $showtimeID)
+            ->pluck('seatID')
+            ->toArray();
+
+        return view(
+            'system.seatSelect',
+            compact(
+                'seats',
+                'showtime',
+                'bookedSeats'
+            )
+        );
     }
 }

@@ -6,11 +6,12 @@ use Illuminate\Http\Request;
 use App\Models\Admin\Movie;
 use App\Models\Admin\showTime;
 
-class HomeController extends Controller
+class showController extends Controller
 {
     public function index()
     {
         $movies = Movie::all();
-        return view('system.welcome', compact('movies'));
+        $showTimes = showTime::all();
+        return view('Customer.showTime', compact('movies', 'showTimes'));
     }
 }

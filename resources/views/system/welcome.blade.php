@@ -3,11 +3,11 @@
 
 <div class="min-h-screen py-10">
 
-    <div class="container mx-auto px-10">
+    <div class="container mx-auto px-10 max-w-7xl">
 
         <div class="flex items-center gap-2 mb-6">
             <div class="rounded-full bg-red-500 w-4 h-4"></div>
-            <h3 class="font-bold md:text-2xl text-light">Phim sắp chiếu</h3>
+            <h3 class="font-bold md:text-2xl text-light">Phim đang chiếu</h3>
         </div>
 
         <div class="grid grid-cols-4 gap-8">
@@ -52,31 +52,8 @@
                             </span>
                         </p>
 
-                        <!-- Showtime -->
-                        @if($movie->showTimes->count() > 0)
-
-                        <div class="flex flex-wrap gap-2 mt-2">
-
-                            @foreach($movie->showTimes as $show)
-
-                                @php
-                                    $duration = (strtotime($show->endTime) - strtotime($show->startTime)) / 60;
-                                @endphp
-
-                                <span class="px-2 py-1 text-xs bg-red-500/20 text-red-400 rounded">
-                                    {{ substr($show->startTime,0,5) }}
-                                    - {{ $duration }}p
-                                </span>
-
-                            @endforeach
-
-                        </div>
-
-                        @else
-                            <p class="text-gray-500">Chưa có lịch chiếu</p>
-                        @endif
-
                     </div>
+
 
                     <!-- Title -->
                     <h2 class="text-base font-semibold text-white leading-tight line-clamp-2 group-hover:text-red-400 transition">
@@ -89,6 +66,11 @@
 
             @endforeach
 
+        </div>
+
+        <div class="flex items-center gap-2 mb-6">
+            <div class="rounded-full bg-red-500 w-4 h-4"></div>
+            <h3 class="font-bold md:text-2xl text-light">Phim sắp chiếu</h3>
         </div>
 
     </div>

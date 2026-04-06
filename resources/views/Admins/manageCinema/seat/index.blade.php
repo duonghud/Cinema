@@ -3,180 +3,134 @@
 @section('content')
 
 <style>
-    body {
-        background: #5f5e5e;
-        color: black;
-    }
 
-    h2 {
-        margin-bottom: 30px;
-    }
+.cinema-seat {
+    background: #2f2f2f;
+    padding: 20px;
+    border-radius: 10px;
+}
 
-    .screen {
-        background: rgba(53, 51, 55, 0.3);
-        color: #fff;
-        font-weight: bold;
-        padding: 12px 0;
-        border-radius: 8px;
-        width: 80%;
-        margin: 0 auto 40px;
-        box-shadow: 0 0 15px rgba(102, 100, 105, 0.3);
-    }
+.screen {
+    background: linear-gradient(to right,#f5a623,#f2c94c);
+    padding: 12px;
+    width: 80%;
+    margin: 20px auto;
+    border-radius: 50px;
+    text-align: center;
+    font-weight: bold;
+}
 
-    .seat-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
+.seat-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
 
-    .seat-row {
-        display: flex;
-        align-items: center;
-        margin: 8px 0;
-    }
+.row-label {
+    width: 40px;
+    color: white;
+}
 
-    .row-label {
-        width: 40px;
-        font-weight: bold;
-        font-size: 18px;
-    }
+.seat {
+    width: 45px;
+    height: 45px;
+    margin: 5px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    position: relative;
+}
 
-    .seat {
-        width: 45px;
-        height: 45px;
-        margin: 5px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 13px;
-        position: relative;
-        cursor: pointer;
-        transition: 0.3s;
-    }
+.normal {
+    background: #1f2937;
+}
 
-    .seat:hover {
-        transform: scale(1.1);
-    }
+.vip {
+    background: #f97316;
+}
 
-    .normal {
-        background: #1b1818;
-    }
+.couple {
+    background: #ef4444;
+}
 
-    .vip {
-        background: #ff9800;
-    }
+.legend {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    color: white;
+}
 
-    .couple {
-        background: #e91e63;
-    }
+.box {
+    width: 20px;
+    height: 20px;
+}
 
-    .seat-edit {
-        position: absolute;
-        top: -6px;
-        right: -6px;
-        font-size: 11px;
-        background: white;
-        color: black;
-        border-radius: 50%;
-        padding: 3px 5px;
-        text-decoration: none;
-    }
-
-    .legend {
-        display: flex;
-        justify-content: center;
-        gap: 20px;
-        margin: 20px;
-    }
-
-    .legend div {
-        display: flex;
-        align-items: center;
-        gap: 5px;
-    }
-
-    .box {
-        width: 20px;
-        height: 20px;
-        border-radius: 5px;
-    }
-
-    .btn-add {
-        display: block;
-        width: fit-content;
-        margin: 20px auto;
-    }
-    .screen { 
-        text-align: center;
-    }
 </style>
 
-<h2 class="text-center">Bố trí ghế </h2>
+<div class="cinema-seat">
 
+<h3 class="text-center text-white">Bố trí ghế</h3>
 
-<a href="{{ route('seat.create') }}" class="btn btn-primary mb-3">
-    <i class="bi bi-plus-circle"></i> Thêm ghế
+<a href="{{ route('seat.create') }}" class="btn btn-primary">
+    Thêm ghế
 </a>
 
-<div class="legend">
+<div class="legend mt-3">
+
     <div>
-        <div class="box normal"></div> Ghế Thường
+        <div class="box normal"></div> Ghế thường
     </div>
+
     <div>
         <div class="box vip"></div> Ghế VIP
     </div>
+
     <div>
-        <div class="box couple"></div> Ghế Đôi
+        <div class="box couple"></div> Ghế đôi
     </div>
+
 </div>
 
 <div class="screen">SCREEN</div>
 
-<div class="seat-container">
+@php $currentRow = null; @endphp
 
-    @php $currentRow = null; @endphp
+@foreach($seats as $seat)
 
-    @foreach($seats as $seat)
+@if($currentRow != $seat->rowSeat)
 
-    @if($currentRow != $seat->rowSeat)
-
-    @if($currentRow !== null)
+@if($currentRow !== null)
 </div>
 @endif
 
-<div class="seat-row text-light">
-    <span class="row-label">{{ $seat->rowSeat }}</span>
+<div class="seat-row">
 
-    @php $currentRow = $seat->rowSeat; @endphp
-    @endif
+<span class="row-label">
+    {{ $seat->rowSeat }}
+</span>
 
-    <div class="seat
-            @if($seat->seatTypeID == 1) normal
-            @elseif($seat->seatTypeID == 2) vip
-            @elseif($seat->seatTypeID == 3) couple
-            @endif">
+@php $currentRow = $seat->rowSeat; @endphp
 
-        {{ $seat->rowSeat }}{{ $seat->colSeat }}
+@endif
 
-        <a href="{{ route('seat.edit',$seat->seatID) }}" class="seat-edit">
-            ✏
-        </a>
-        <form action="{{ route('seat.destroy',$seat->seatID) }}" method="POST"
-            style="position:absolute; bottom:-6px; right:-6px;">
-            @csrf
-            @method('DELETE')
-            <button type="submit"
-                style="font-size:11px; background:red; color:white; border:none; border-radius:50%; padding:3px 6px;">
-                🗑
-            </button>
-        </form>
+<div class="seat
+@if($seat->seatTypeID==1) normal
+@elseif($seat->seatTypeID==2) vip
+@else couple
+@endif">
 
-    </div>
+{{ $seat->rowSeat }}{{ $seat->colSeat }}
 
-    @endforeach
+<a href="{{ route('seat.edit',$seat->seatID) }}"
+style="position:absolute;top:-5px;right:-5px">
+✏
+</a>
 
 </div>
+
+@endforeach
 
 </div>
 
