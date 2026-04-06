@@ -90,8 +90,7 @@
         <div class="row g-4 align-items-center">
             <div class="col-lg-8">
                 <span class="hero-chip mb-3">
-                    <i class="bi bi-stars"></i>
-                    CineMax Admin Overview
+                    CineMax Admin
                 </span>
                 <h3 class="fw-bold mb-2">Bảng điều khiển hệ thống rạp chiếu phim</h3>
                 <p class="mb-0 text-white-50">

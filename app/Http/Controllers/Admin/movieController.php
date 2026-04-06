@@ -120,7 +120,7 @@ class movieController extends Controller
     }
     public function show(Movie $movie)
     {
-        return view('show', compact('movie'));
+        return view('system.show', compact('movie'));
     }
 
 

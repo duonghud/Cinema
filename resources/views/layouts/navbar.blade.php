@@ -102,61 +102,73 @@
 <nav class="navbar navbar-expand-lg sticky-top">
     <div class="container">
 
-        <a href="" class="navbar-brand">VAI cinema</a>
+        <a href="{{ route('home') }}" class="navbar-brand">VAI cinema</a>
 
         <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#menu">
             <span class="navbar-toggler-icon"></span>
         </button>
 
-            <ul class="navbar-nav mx-auto">
-                <li class="nav-item"><a href="#" class="nav-link ">Trang chủ</a></li>
-                <li class="nav-item"><a href="#" class="nav-link">Lịch chiếu</a></li>
-                <li class="nav-item"><a href="#" class="nav-link">Khuyến mãi</a></li>
-                <li class="nav-item"><a href="#" class="nav-link">Giá vé</a></li>
-                <li class="nav-item"><a href="#" class="nav-link">Tin tức</a></li>
-                <li class="nav-item"><a href="layout/contact" class="nav-link">Liên hệ</a></li>
-                <li class="nav-item"><a href="" class="nav-link">Giới thiệu</a></li>
-            </ul>
+        <ul class="navbar-nav mx-auto">
+            <li class="nav-item"><a href="{{ route('home') }}" class="nav-link ">Trang chủ</a></li>
+            <li class="nav-item"><a href="{{ route('system.movie')}}" class="nav-link">Lịch chiếu</a></li>
+            <li class="nav-item"><a href="#" class="nav-link">Giá vé</a></li>
+            <li class="nav-item"><a href="#" class="nav-link">Tin tức</a></li>
+            <li class="nav-item"><a href="{{ route('contact') }}" class="nav-link">Liên hệ</a></li>
+            <li class="nav-item"><a href="" class="nav-link">Giới thiệu</a></li>
+        </ul>
 
-            <div class="d-flex gap-2">
-                <a href="#" class="btn nav-btn btn-register">Đăng ký</a>
-                <a class="btn nav-btn btn-login" data-bs-toggle="modal" data-bs-target="#loginModal">Đăng nhập</a>
+        <div class="d-flex gap-2">
+
+            @if(session('customer'))
+
+            <div class="dropdown">
+                <button class="btn nav-btn btn-login dropdown-toggle"
+                    data-bs-toggle="dropdown">
+                    <i class="fa fa-user"></i> {{ session('customer')->name }}
+                </button>
+
+                <ul class="dropdown-menu dropdown-menu-end bg-dark border-0 shadow">
+
+                    <li>
+                        <a class="dropdown-item text-white" href="#">
+                            Thông tin cá nhân
+                        </a>
+                    </li>
+
+                    <li>
+                        <hr class="dropdown-divider bg-secondary">
+                    </li>
+
+                    <li>
+                        <a class="dropdown-item text-danger"
+                            href="{{ route('customer.logout') }}">
+                            Đăng xuất
+                        </a>
+                    </li>
+
+                </ul>
             </div>
+
+            @else
+
+            <!-- Chưa đăng nhập -->
+            <a href="{{ route('customer.register.form') }}"
+                class="btn nav-btn btn-register">
+                Đăng ký
+            </a>
+
+            <a href="{{ route('auth.login') }}"
+                class="btn nav-btn btn-login">
+                Đăng nhập
+            </a>
+
+            @endif
+
+        </div>
     </div>
 </nav>
 
 
-<!-- LOGIN MODAL -->
-<div class="modal fade" id="loginModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content p-3">
-
-            <div class="modal-header border-0">
-                <h5 class="modal-title fw-bold">Đăng nhập</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-
-            <div class="modal-body">
-                <form>
-                    <div class="mb-3">
-                        <label class="form-label">Email</label>
-                        <input type="email" class="form-control" placeholder="Nhập email">
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Mật khẩu</label>
-                        <input type="password" class="form-control" placeholder="Nhập mật khẩu">
-                    </div>
-
-                    <button type="submit" class="btn w-100 btn-login mt-2">
-                        Đăng nhập
-                    </button>
-                </form>
-            </div>
-
-        </div>
-    </div>
-</div>
 
 
 <script>
