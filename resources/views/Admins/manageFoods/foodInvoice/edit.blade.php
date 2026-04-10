@@ -34,6 +34,10 @@
                             </option>
                             @endforeach
                         </select>
+
+                        @error('customerID')
+                        <small class="text-danger">{{ $message }}</small>
+                        @enderror
                     </div>
 
                     <!-- Payment -->
