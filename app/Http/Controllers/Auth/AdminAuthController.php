@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Admin\admin;
 use RuntimeException;
 use Illuminate\Support\Facades\Hash;
+
 class AdminAuthController extends Controller
 {
     public function showLoginForm()

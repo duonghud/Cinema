@@ -13,14 +13,6 @@
             + Tạo hóa đơn
         </a>
     </div>
-
-    <!-- Alert -->
-    @if(session('success'))
-        <div class="alert alert-success">
-            {{ session('success') }}
-        </div>
-    @endif
-
     <!-- Table -->
     <div class="card shadow-sm">
         <div class="card-body p-0">

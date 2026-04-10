@@ -39,7 +39,7 @@
                             <div class="alert alert-danger">{{ $errors->first() }}</div>
                         @endif
 
-                        <form action="{{ route('admin.login.submit') }}" method="POST" novalidate>
+                        <form action="{{ route('admin.login.post') }}" method="POST" novalidate>
                             @csrf
 
                             <div class="mb-3">

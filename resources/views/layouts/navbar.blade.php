@@ -157,7 +157,7 @@
 
                     <li>
                         <a class="dropdown-item text-danger"
-                            href="#">
+                            href="{{ route('home') }}}">
                             Đăng xuất
                         </a>
                     </li>
@@ -173,7 +173,7 @@
                 Đăng ký
             </a>
 
-            <a href="{{ route('auth.login') }}"
+            <a href="{{ route('auth.customerLogin') }}"
                 class="btn nav-btn btn-login">
                 Đăng nhập
             </a>
