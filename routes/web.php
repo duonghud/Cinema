@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\showController;
 use App\Http\Controllers\Auth\CustomerAuthController;
-
+use App\Http\Controllers\Auth\AdminAuthController;
 // Admin
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\DashBoardController;
@@ -40,27 +40,43 @@ Route::prefix('customer')->group(function () {
     // register
     Route::get('/register', [CustomerAuthController::class, 'showRegister'])
         ->name('customer.register.form');
-
     Route::post('/register', [CustomerAuthController::class, 'register'])
         ->name('customer.register');
 
     // login
     Route::get('/login', [CustomerAuthController::class, 'showLogin'])
-        ->name('auth.login');
-
-    Route::post('/login', [CustomerAuthController::class, 'login'])
+        ->name('auth.customerLogin');
+    Route::post('/login', [CustomerAuthController::class, 'customerLogin'])
         ->name('customer.login.post');
+
 
     // logout
     Route::post('/logout', [CustomerAuthController::class, 'logout'])
         ->name('customer.logout');
 });
 
+// ================== AUTH ADMIN ==================
+
+
+Route::prefix('admins')->group(function () {
+    // login form
+    Route::get('/login', [AdminAuthController::class, 'showLoginForm'])
+        ->name('admin.login');
+
+    // login submit
+    Route::post('/login', [AdminAuthController::class, 'login'])
+        ->name('admin.login.post');
+
+    // logout
+    Route::post('/logout', [AdminAuthController::class, 'logout'])
+        ->name('admin.logout');
+});
+
+
 
 // ================== ADMIN ==================
-Route::middleware(['auth', 'role:admin'])->group(function () {
-    Route::get('/admin', [AdminController::class, 'index'])
-        ->name('admin.index');
+Route::middleware('role:admin')->group(function () {
+    Route::redirect('/admin', '/admins/dashboard')->name('admin.home');
 });
 
 Route::prefix('admins')->group(function () {

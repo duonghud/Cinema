@@ -134,7 +134,7 @@
 
             <div class="text-center mt-3 text-light">
                 Bạn đã có tài khoản?
-                <a href="{{ route('auth.login') }}">Đăng nhập</a>
+                <a href="{{ route('auth.customerLogin') }}">Đăng nhập</a>
             </div>
 
         </form>

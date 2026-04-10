@@ -13,14 +13,6 @@
             + Tạo hóa đơn
         </a>
     </div>
-
-    <!-- Alert -->
-    @if(session('success'))
-        <div class="alert alert-success">
-            {{ session('success') }}
-        </div>
-    @endif
-
     <!-- Table -->
     <div class="card shadow-sm">
         <div class="card-body p-0">
@@ -55,9 +47,7 @@
 
                         <!-- Time -->
                         <td>
-                            {{ $foodInvoice->created_at 
-                                ? $foodInvoice->created_at->format('d/m/Y H:i') 
-                                : now()->format('d/m/Y H:i') }}
+                            {{ \Illuminate\Support\Carbon::parse($foodInvoice->orderDate)->format('d/m/Y H:i') }}
                         </td>
 
                         <!-- Payment -->
