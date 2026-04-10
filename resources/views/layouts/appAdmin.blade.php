@@ -230,18 +230,15 @@
         <!-- USER -->
         <div class="sidebar-user">
             <div class="d-flex align-items-center mb-2">
-                <div class="rounded-circle bg-light text-dark fw-bold d-flex align-items-center justify-content-center"
-                    style="width:40px;height:40px;">
-                    {{ strtoupper(substr(auth()->user()->name ?? 'A',0,1)) }}
+                <div class="rounded-circle bg-light text-dark fw-bold d-flex align-items-center justify-content-center" style="width:40px;height:40px;">
+                    {{ strtoupper(substr(session('admin_auth.fullName', 'A'), 0, 1)) }}
                 </div>
                 <div class="ms-2">
-                    <div class="fw-semibold">{{ auth()->user()->name ?? 'Admin' }}</div>
-                    <small>{{ auth()->user()->email ?? 'admin@cinema.com' }}</small>
+                    <div class="fw-semibold">{{ session('admin_auth.fullName', 'Admin') }}</div>
+                    <small>{{ session('admin_auth.email', 'admin@cinema.com') }}</small>
                 </div>
             </div>
-
-            <!-- FIX LOGOUT -->
-            <form action="#" method="POST">
+            <form action="{{ route('admin.logout') }}" method="POST">
                 @csrf
                 <button class="btn btn-light w-100 btn-sm">
                     <i class="bi bi-box-arrow-right"></i> Đăng xuất

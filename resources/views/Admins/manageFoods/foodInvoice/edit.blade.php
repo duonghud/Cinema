@@ -44,6 +44,7 @@
                         </select>
                     </div>
 
+
                 </div>
 
                 <!-- Food list -->
@@ -82,7 +83,7 @@
 
                 <!-- Button -->
                 <div class="d-flex justify-content-end">
-                    <a href="{{ route('foodInvoice.index') }}" 
+                    <a href="{{ route('foodInvoice.index') }}"
                        class="btn btn-secondary me-2">
                         Quay lại
                     </a>

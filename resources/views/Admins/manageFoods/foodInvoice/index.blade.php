@@ -55,9 +55,7 @@
 
                         <!-- Time -->
                         <td>
-                            {{ $foodInvoice->created_at 
-                                ? $foodInvoice->created_at->format('d/m/Y H:i') 
-                                : now()->format('d/m/Y H:i') }}
+                            {{ \Illuminate\Support\Carbon::parse($foodInvoice->orderDate)->format('d/m/Y H:i') }}
                         </td>
 
                         <!-- Payment -->
