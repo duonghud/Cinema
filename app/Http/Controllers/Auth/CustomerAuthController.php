@@ -6,11 +6,10 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\Admin\Customer;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Auth;
 
 class CustomerAuthController extends Controller
 {
-    // Hiển thị form đăng ký
+    // Form đăng ký
     public function showRegister()
     {
         return view('auth.register');
@@ -27,14 +26,12 @@ class CustomerAuthController extends Controller
             'address' => 'required',
         ], [
             'fullName.required' => 'Họ tên không được để trống',
-            'fullName.string' => 'Họ tên phải là chuỗi',
-            'fullName.max' => 'Họ tên tối đa 255 ký tự',
             'email.required' => 'Email không được để trống',
             'email.email' => 'Email không đúng định dạng',
-            'email.unique' => 'Email này đã tồn tại',
+            'email.unique' => 'Email đã tồn tại',
             'password.required' => 'Mật khẩu không được để trống',
-            'password.min' => 'Mật khẩu phải có ít nhất 6 ký tự',
-            'phoneNumber.required' => 'Số điện thoại không được để trống',
+            'password.min' => 'Mật khẩu ít nhất 6 ký tự',
+            'phoneNumber.required' => 'SĐT không được để trống',
             'address.required' => 'Địa chỉ không được để trống',
         ]);
 
@@ -46,8 +43,10 @@ class CustomerAuthController extends Controller
             'address' => $request->address,
         ]);
 
-        // login luôn sau khi đăng ký
-        Auth::guard('customer')->login($customer);
+        // lưu session
+        session([
+            'customer' => $customer
+        ]);
 
         return redirect('/')->with('success', 'Đăng ký thành công!');
     }
@@ -61,24 +60,37 @@ class CustomerAuthController extends Controller
     // Xử lý login
     public function login(Request $request)
     {
-        $credentials = $request->validate([
+        $request->validate([
             'email' => 'required|email',
-            'password' => 'required',
+            'password' => 'required'
+        ], [
+            'email.required' => 'Email không được để trống',
+            'password.required' => 'Mật khẩu không được để trống',
         ]);
 
-        if (Auth::guard('customer')->attempt($credentials)) {
-            return redirect('/')->with('success', 'Đăng nhập thành công!');
+        $customer = Customer::where('email', $request->email)->first();
+
+        if (!$customer) {
+            return back()->with('error', 'Email không tồn tại');
         }
 
-        return back()->withErrors([
-            'email' => 'Sai email hoặc mật khẩu'
+        if (!Hash::check($request->password, $customer->password)) {
+            return back()->with('error', 'Sai mật khẩu');
+        }
+
+        // lưu session
+        session([
+            'customer' => $customer
         ]);
+
+        return redirect('/')->with('success', 'Đăng nhập thành công!');
     }
 
     // logout
     public function logout()
     {
-        Auth::guard('customer')->logout();
-        return redirect('/');
+        session()->forget('customer');
+
+        return redirect('/')->with('success', 'Đã đăng xuất');
     }
-}
+}   

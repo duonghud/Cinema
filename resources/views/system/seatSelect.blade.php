@@ -23,14 +23,14 @@
 
     /* screen */
     .screen-wrapper {
-        width: 80%;
+        width: 60%;
         margin: 20px auto 50px;
         position: relative;
     }
 
     .screen {
         position: relative;
-        height: 60px;
+        height: 70px;
         width: 100%;
         background: linear-gradient(to bottom, #fbbf24, #f59e0b);
         clip-path: ellipse(90% 100% at 50% 100%);

@@ -97,6 +97,11 @@
     .navbar-brand {
         font-family: 'Julee', cursive;
     }
+
+    .dropdown-menu {
+        background-color: #ffffff;
+        opacity: 80%;
+    }
 </style>
 
 <nav class="navbar navbar-expand-lg sticky-top">
@@ -122,36 +127,47 @@
             @if(session('customer'))
 
             <div class="dropdown">
-                <button class="btn nav-btn btn-login dropdown-toggle"
-                    data-bs-toggle="dropdown">
-                    <i class="fa fa-user"></i> {{ session('customer')->name }}
-                </button>
 
-                <ul class="dropdown-menu dropdown-menu-end bg-dark border-0 shadow">
+                <a class="btn nav-btn dropdown-toggle d-flex align-items-center gap-2"
+                    data-bs-toggle="dropdown">
+                    <!-- Avatar/Icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                        viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M8 16A8 8 0 1 1 8 0a8 8 0 0 1 0 16m.847-8.145a2.502 2.502 0 1 0-1.694 0C5.471 8.261 4 9.775 4 11c0 .395.145.995 1 .995h6c.855 0 1-.6 1-.995c0-1.224-1.47-2.74-3.153-3.145" />
+                    </svg>
+
+                    <!-- Font Awesome icon -->
+                    <i class="fa fa-user-circle"></i>
+
+                    <!-- Tên khách hàng -->
+                    <span class="fw-semibold">
+                        {{ session('customer')->fullName }}
+                    </span>
+                </a>
+
+
+                <ul class="dropdown-menu dropdown-menu-end">
 
                     <li>
-                        <a class="dropdown-item text-white" href="#">
+                        <a class="dropdown-item"
+                            href="#">
                             Thông tin cá nhân
                         </a>
                     </li>
 
                     <li>
-                        <hr class="dropdown-divider bg-secondary">
-                    </li>
-
-                    <li>
                         <a class="dropdown-item text-danger"
-                            href="{{ route('customer.logout') }}">
+                            href="#">
                             Đăng xuất
                         </a>
                     </li>
 
                 </ul>
+
             </div>
 
             @else
 
-            <!-- Chưa đăng nhập -->
             <a href="{{ route('customer.register.form') }}"
                 class="btn nav-btn btn-register">
                 Đăng ký
