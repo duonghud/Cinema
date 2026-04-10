@@ -84,8 +84,9 @@ class FoodInvoiceController extends Controller
         }
 
         $selectedFoods = collect($validated['foods'])
-            ->filter(fn ($quantity) => (int) $quantity > 0)
-            ->mapWithKeys(fn ($quantity, $foodID) => [(int) $foodID => (int) $quantity]);
+
+            ->filter(fn($quantity) => (int) $quantity > 0)
+            ->mapWithKeys(fn($quantity, $foodID) => [(int) $foodID => (int) $quantity]);
 
         $foods = Food::whereIn('foodID', $selectedFoods->keys()->all())->get()->keyBy('foodID');
         $total = 0;
@@ -198,22 +199,38 @@ class FoodInvoiceController extends Controller
             'foods.*' => 'integer|min:0',
         ]);
 
+        // kiểm tra có món ăn nào được chọn không
+        $hasFood = false;
+        foreach ($validated['foods'] as $quantity) {
+            if ($quantity > 0) {
+                $hasFood = true;
+                break;
+            }
+        }
+
+        if (!$hasFood) {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'foods' => 'Vui lòng chọn ít nhất một món ăn.'
+                ]);
+        }
 
         // xóa chi tiết cũ
-        FoodInvoiceDetail::where(
-            'foodInvoiceID',
-            $id
-        )->delete();
-
+        FoodInvoiceDetail::where('foodInvoiceID', $id)->delete();
 
         // tính total mới
         $total = 0;
-
-        foreach ($request->foods as $foodID => $qty) {
-
+        foreach ($validated['foods'] as $foodID => $qty) {
             if ($qty > 0) {
-
                 $food = Food::find($foodID);
+                if (!$food) {
+                    return back()
+                        ->withInput()
+                        ->withErrors([
+                            'foods' => "Món ăn với ID {$foodID} không tồn tại."
+                        ]);
+                }
 
                 FoodInvoiceDetail::create([
                     'foodInvoiceID' => $id,
@@ -226,14 +243,17 @@ class FoodInvoiceController extends Controller
         }
 
         $invoice->update([
+            'customerID' => $validated['customerID'],
+            'paymentID' => $validated['paymentID'],
+            'orderDate' => $validated['orderTime'],
             'total' => $total
         ]);
-
 
         return redirect()
             ->route('foodInvoice.index')
             ->with('success', 'Cập nhật thành công');
     }
+
 
     public function destroy($id)
     {

@@ -54,11 +54,11 @@ class CustomerAuthController extends Controller
     // Form login
     public function showLogin()
     {
-        return view('auth.login');
+        return view('auth.customerLogin');
     }
 
     // Xử lý login
-    public function login(Request $request)
+    public function customerLogin(Request $request)
     {
         $request->validate([
             'email' => 'required|email',
@@ -93,4 +93,4 @@ class CustomerAuthController extends Controller
 
         return redirect('/')->with('success', 'Đã đăng xuất');
     }
-}   
+}
