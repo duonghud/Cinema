@@ -201,7 +201,7 @@
 
                 </div>
 
-                
+
                 <!-- FOOD -->
 
                 <a href="{{ route('food.index') }}" class="{{ request()->routeIs('food.*') ? 'active' : '' }}">

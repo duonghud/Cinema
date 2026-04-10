@@ -8,7 +8,7 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h4 class="fw-semibold">Quản lý hóa đơn đồ ăn</h4>
 
-        <a href="{{ route('foodInvoice.create') }}" 
+        <a href="{{ route('foodInvoice.create') }}"
            class="btn btn-dark">
             + Tạo hóa đơn
         </a>
@@ -59,7 +59,7 @@
 
                         <!-- Detail -->
                         <td>
-                            <a href="{{ route('foodInvoice.show', $foodInvoice->foodInvoiceID) }}" 
+                            <a href="{{ route('foodInvoice.show', $foodInvoice->foodInvoiceID) }}"
                                class="btn btn-sm btn-outline-primary">
                                 Xem
                             </a>
@@ -73,18 +73,18 @@
                         <!-- Actions -->
                         <td class="text-end">
 
-                            <a href="{{ route('foodInvoice.edit', $foodInvoice->foodInvoiceID) }}" 
+                            <a href="{{ route('foodInvoice.edit', $foodInvoice->foodInvoiceID) }}"
                                class="btn btn-sm btn-outline-dark me-2">
                                 Sửa
                             </a>
 
-                            <form action="{{ route('foodInvoice.destroy', $foodInvoice->foodInvoiceID) }}" 
-                                  method="POST" 
+                            <form action="{{ route('foodInvoice.destroy', $foodInvoice->foodInvoiceID) }}"
+                                  method="POST"
                                   class="d-inline">
                                 @csrf
                                 @method('DELETE')
 
-                                <button type="submit" 
+                                <button type="submit"
                                         class="btn btn-sm btn-outline-danger"
                                         onclick="return confirm('Bạn có chắc muốn xóa hóa đơn này?')">
                                     Xóa

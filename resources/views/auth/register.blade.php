@@ -120,10 +120,10 @@
                 <input type="text" name="address"
                     class="form-control @error('address') is-invalid @enderror"
                     placeholder="Địa chỉ">
-                
+
                 @error('address')
                     <div class="error-text">{{ $message }}</div>
-                @enderror    
+                @enderror
 
             </div>
 

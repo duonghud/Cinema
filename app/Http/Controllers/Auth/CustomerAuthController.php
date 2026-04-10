@@ -93,4 +93,4 @@ class CustomerAuthController extends Controller
 
         return redirect('/')->with('success', 'Đã đăng xuất');
     }
-}   
+}
