@@ -58,7 +58,7 @@ Route::prefix('customer')->group(function () {
 // ================== AUTH ADMIN ==================
 
 
-Route::prefix('admins')->group(function () {
+Route::prefix('admin')->group(function () {
     // login form
     Route::get('/login', [AdminAuthController::class, 'showLoginForm'])
         ->name('admin.login');

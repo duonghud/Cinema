@@ -84,6 +84,7 @@ class FoodInvoiceController extends Controller
         }
 
         $selectedFoods = collect($validated['foods'])
+
             ->filter(fn($quantity) => (int) $quantity > 0)
             ->mapWithKeys(fn($quantity, $foodID) => [(int) $foodID => (int) $quantity]);
 
