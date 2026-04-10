@@ -93,5 +93,25 @@ Route::prefix('admins')->group(function () {
 // ================== MOVIE DETAIL ==================
 Route::get('/movies/{movie}', [MovieController::class, 'show'])
     ->name('movies.show');
-Route::get('/select-seat/{id}',[SeatController::class, 'selectSeat'])
+Route::get('/select-seat/{id}', [SeatController::class, 'selectSeat'])
     ->name('seat.select');
+
+// ================== Middleware ====================
+Route::middleware('customer.login')->group(function () {
+
+    Route::get('/profile', function () {
+        return view('customer.profile');
+    })->name('customer.profile');
+
+    Route::get('/member', function () {
+        return view('customer.member');
+    })->name('customer.member');
+
+    Route::get('/booking', function () {
+        return view('booking.index');
+    })->name('booking');
+
+    Route::get('/payment', function () {
+        return view('payment.index');
+    })->name('payment');
+});

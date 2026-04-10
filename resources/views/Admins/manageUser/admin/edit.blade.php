@@ -8,16 +8,6 @@
         <h4 class="fw-semibold">Cập nhật nhân viên</h4>
     </div>
 
-    <!-- Alert lỗi tổng quát -->
-    @if ($errors->any())
-        <div class="alert alert-danger">
-            <ul class="mb-0">
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
 
     <!-- Card -->
     <div class="card shadow-sm">

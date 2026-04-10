@@ -58,7 +58,7 @@
 
     <div class="logins-box">
 
-        <h4 class="mb-4 text-light text-center">Đăng nhập Admin</h4>
+        <h4 class="mb-4 text-light text-center">Đăng nhập</h4>
 
         {{-- Thông báo lỗi --}}
         @if($errors->any())
