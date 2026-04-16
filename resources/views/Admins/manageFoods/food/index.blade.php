@@ -7,7 +7,7 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h4 class="fw-semibold">Quản lý đồ ăn</h4>
 
-        <a href="{{ route('food.create') }}" 
+        <a href="{{ route('food.create') }}"
            class="btn btn-dark">
             + Thêm món ăn
         </a>
@@ -23,6 +23,7 @@
                     <tr>
                         <th width="10%">ID</th>
                         <th>Tên đồ ăn</th>
+                        <th>Size</th>
                         <th>Giá</th>
                         <th>Loại</th>
                         <th class="text-end" width="25%">Hành động</th>
@@ -41,6 +42,11 @@
                             <!-- Name -->
                             <td class="fw-medium">
                                 {{ $food->foodName }}
+                            </td>
+
+                            <!-- Size -->
+                            <td>
+                                {{ $food->size }}
                             </td>
 
                             <!-- Price -->
@@ -63,8 +69,8 @@
                                     Sửa
                                 </a>
 
-                                <form action="{{ route('food.destroy', $food->foodID) }}" 
-                                      method="POST" 
+                                <form action="{{ route('food.destroy', $food->foodID) }}"
+                                      method="POST"
                                       class="d-inline">
                                     @csrf
                                     @method('DELETE')
@@ -82,7 +88,7 @@
 
                     @if($foods ->isEmpty())
                     <tr>
-                        <td colspan="5" class="text-center text-muted py-4">
+                        <td colspan="6" class="text-center text-muted py-4">
                             Chưa có dữ liệu đồ ăn
                         </td>
                     </tr>

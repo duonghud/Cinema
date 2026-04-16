@@ -35,6 +35,7 @@ class foodController extends Controller
             'foodName' => 'required|string|max:255',
             'price' => 'required|numeric|min:0',
             'foodType' => 'required|string',
+            'size' => 'required|in:S,M,L',
         ], [
             'foodName.required' => 'Tên món ăn không được để trống',
             'foodName.string' => 'Tên món ăn phải là chuỗi ký tự',
@@ -81,6 +82,7 @@ class foodController extends Controller
             'foodName' => 'required|string|max:255',
             'price' => 'required|numeric|min:0',
             'foodType' => 'required|string',
+            'size' => 'required|in:S,M,L',
         ], [
             'foodName.required' => 'Tên món ăn không được để trống',
             'price.required' => 'Giá món ăn không được để trống',
@@ -91,6 +93,7 @@ class foodController extends Controller
         $foods->foodName = $request->input('foodName');
         $foods->price = $request->input('price');
         $foods->foodType = $request->input('foodType');
+        $foods->size = $request->input('size');
         $foods->save();
 
         return redirect()->route('food.index')->with('success', 'Sửa thành công');
