@@ -25,9 +25,9 @@ class AdminAuthController extends Controller
             'email' => ['required', 'email'],
             'password' => ['required', 'string'],
         ], [
-            'email.required' => 'Vui long nhap email.',
-            'email.email' => 'Email khong dung dinh dang.',
-            'password.required' => 'Vui long nhap mat khau.',
+            'email.required' => 'Vui lòng nhập email.',
+            'email.email' => 'Email không đúng định dạng.',
+            'password.required' => 'Vui lòng nhập mật khẩu.',
         ]);
 
         $admin = admin::where('email', $credentials['email'])->first();
@@ -36,7 +36,7 @@ class AdminAuthController extends Controller
             return back()
                 ->withInput($request->only('email'))
                 ->withErrors([
-                    'email' => 'Email hoac mat khau khong chinh xac.',
+                    'email' => 'Email hoặc mật khẩu không chính xác.',
                 ]);
         }
 
@@ -57,7 +57,7 @@ class AdminAuthController extends Controller
             return back()
                 ->withInput($request->only('email'))
                 ->withErrors([
-                    'email' => 'Email hoac mat khau khong chinh xac.',
+                    'email' => 'Email hoặc mật khẩu không chính xác.',
                 ]);
         }
 
@@ -71,8 +71,8 @@ class AdminAuthController extends Controller
         $request->session()->regenerate();
 
         return redirect()
-            ->intended(route('dashboard.index'))
-            ->with('success', 'Dang nhap thanh cong.');
+            ->route('dashboard.index')
+            ->with('success', 'Đăng nhập thành công.');
     }
 
     public function logout(Request $request)
@@ -83,6 +83,6 @@ class AdminAuthController extends Controller
 
         return redirect()
             ->route('admin.login')
-            ->with('success', 'Da dang xuat khoi trang quan tri.');
+            ->with('success', 'Đã đăng xuất khỏi trang quản trị.');
     }
 }
