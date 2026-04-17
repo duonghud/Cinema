@@ -279,9 +279,9 @@
             Quay lại
         </button>
 
-        <button class="btn-pay">
+        <a class="btn-pay" href="{{ route('payment') }}">
             Thanh toán
-        </button>
+        </a>
 
     </div>
 

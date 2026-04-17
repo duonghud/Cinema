@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Admin\customer;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+
 class customerController extends Controller
 {
     public function index()

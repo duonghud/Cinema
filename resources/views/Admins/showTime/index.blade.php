@@ -80,8 +80,7 @@
                                 @method('DELETE')
 
                                 <button type="submit"
-                                    class="btn btn-sm btn-outline-danger"
-                                    onclick="return confirm('Bạn có chắc muốn xóa?')">
+                                    class="btn btn-sm btn-outline-danger">
                                     Xóa
                                 </button>
                             </form>

@@ -33,7 +33,7 @@ class foodController extends Controller
     {
         $validated =$request->validate([
             'foodName' => 'required|string|max:255',
-            'price' => 'required|numeric|min:0',
+            'price' => 'required|numeric|min:0|max:100000',
             'foodType' => 'required|string',
             'size' => 'required|in:S,M,L',
         ], [
@@ -44,6 +44,7 @@ class foodController extends Controller
             'price.required' => 'Giá món ăn không được để trống',
             'price.numeric' => 'Giá phải là số',
             'price.min' => 'Giá phải lớn hơn hoặc bằng 0',
+            'price.max' => 'Giá bán không được vượt quá 100000 nghìn',
 
             'foodType.required' => 'Loại món ăn không được để trống',
             'foodType.string' => 'Loại món ăn phải là chuỗi ký tự',

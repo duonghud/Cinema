@@ -9,7 +9,7 @@
         background: #020617;
         padding: 30px;
         border-radius: 12px;
-        box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
     }
 
     .form-control {
@@ -60,24 +60,21 @@
 
         <h4 class="mb-4 text-light text-center">Đăng nhập</h4>
 
-        {{-- Thông báo lỗi --}}
-        @if($errors->any())
-            <div class="alert alert-danger">
-                {{ $errors->first() }}
-            </div>
-        @endif
-
         <form method="POST" action="{{ route('customer.login.post') }}">
             @csrf
 
             <!-- Email -->
             <div class="mb-3">
                 <label class="text-light">Email</label>
-                <input type="email"
+                <input type="text"
                     name="email"
-                    class="form-control"
-                    placeholder="Nhập email"
-                    required>
+                    value="{{ old('email') }}"
+                    class="form-control @error('email') is-invalid @enderror"
+                    placeholder="Nhập email">
+
+                @error('email')
+                <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
             </div>
 
             <!-- Password -->
@@ -85,9 +82,12 @@
                 <label class="text-light">Mật khẩu</label>
                 <input type="password"
                     name="password"
-                    class="form-control"
-                    placeholder="Nhập mật khẩu"
-                    required>
+                    class="form-control @error('password') is-invalid @enderror"
+                    placeholder="Nhập mật khẩu">
+
+                @error('password')
+                <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
             </div>
 
             <!-- Button -->

@@ -53,17 +53,11 @@
 
                         <!-- Trailer -->
                         <td>
-                            @php
-                            $videoId = explode('v=', $movie->trailer);
-                            $videoId = isset($videoId[1]) ? explode('&', $videoId[1])[0] : '';
-                            @endphp
-
-                            <iframe width="140" height="80"
-                                class="rounded"
-                                src="https://www.youtube.com/embed/{{ $videoId }}"
-                                frameborder="0"
-                                allowfullscreen>
-                            </iframe>
+                            @if($movie->trailer)
+                            <video width="140" height="80" class="rounded" controls>
+                                <source src="{{ asset($movie->trailer) }}">
+                            </video>
+                            @endif
                         </td>
 
                         <td>{{ $movie->director }}</td>
@@ -99,24 +93,24 @@
 
                         <!-- Actions -->
                         <td class="text-end">
-
-                            <button class="btn btn-sm btn-outline-dark me-2"
-                                data-bs-toggle="modal"
-                                data-bs-target="#editModal{{$movie->movieID}}">
-                                Sửa
-                            </button>
-
-                            <form action="{{route('movies.destroy',$movie->movieID)}}"
-                                method="POST"
-                                class="d-inline">
-                                @csrf
-                                @method('DELETE')
-
-                                <button class="btn btn-sm btn-outline-danger">
-                                    Xóa
+                            <div class="d-flex justify-content-end gap-2 flex-wrap">
+                                <button class="btn btn-sm btn-outline-dark"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#editModal{{$movie->movieID}}">
+                                    Sửa
                                 </button>
-                            </form>
 
+                                <form action="{{ route('admin.movies.destroy', $movie->movieID) }}"
+                                    method="POST"
+                                    class="m-0">
+                                    @csrf
+                                    @method('DELETE')
+
+                                    <button class="btn btn-sm btn-outline-danger">
+                                        Xóa
+                                    </button>
+                                </form>
+                            </div>
                         </td>
 
                     </tr>

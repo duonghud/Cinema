@@ -2,7 +2,7 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content shadow">
 
-            <form action="{{ route('movies.update',$movie->movieID) }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ route('admin.movies.update',$movie->movieID) }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 @method('PUT')
 
@@ -63,8 +63,12 @@
                         <div class="col-md-4 mb-3">
                             <label class="form-label fw-medium">Phát hành</label>
                             <input type="date" name="releaseDate"
-                                class="form-control"
-                                value="{{ old('releaseDate', \Carbon\Carbon::parse($movie->releaseDate)->format('Y-m-d')) }}">
+                                class="form-control @error('releaseDate') is-invalid @enderror"
+                                value="{{ old('releaseDate', $movie->releaseDate->format('Y-m-d')) }}">
+
+                            @error('releaseDate')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
 
                         <!-- Age -->
@@ -139,7 +143,6 @@
                 </div>
 
             </form>
-
         </div>
     </div>
 </div>

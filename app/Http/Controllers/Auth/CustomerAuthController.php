@@ -61,29 +61,31 @@ class CustomerAuthController extends Controller
     public function customerLogin(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
-            'password' => 'required'
+            'email' => 'required|email|exists:customers,email',
+            'password' => 'required|min:6'
         ], [
             'email.required' => 'Email không được để trống',
+            'email.email' => 'Email không đúng định dạng',
+            'email.exists' => 'Email chưa được đăng ký',
+
             'password.required' => 'Mật khẩu không được để trống',
+            'password.min' => 'Mật khẩu phải có ít nhất 6 ký tự',
         ]);
 
         $customer = Customer::where('email', $request->email)->first();
 
-        if (!$customer) {
-            return back()->with('error', 'Email không tồn tại');
-        }
-
+        // Check mật khẩu
         if (!Hash::check($request->password, $customer->password)) {
-            return back()->with('error', 'Sai mật khẩu');
+            return back()->with('error', 'Mật khẩu không đúng');
         }
 
-        // lưu session
+        // Đăng nhập thành công
         session([
-            'customer' => $customer
+            'customer_id' => $customer->customerID,
+            'customer_name' => $customer->name
         ]);
 
-        return redirect('/')->with('success', 'Đăng nhập thành công!');
+        return redirect()->route('home')->with('success', 'Đăng nhập thành công!');
     }
 
     // logout

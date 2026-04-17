@@ -129,7 +129,7 @@
                             <i class="bi bi-film"></i>
                         </div>
                     </div>
-                    <a href="{{ route('movies.index') }}" class="text-decoration-none">Xem danh sách phim</a>
+                    <a href="{{ route('admin.movies.index') }}" class="text-decoration-none">Xem danh sách phim</a>
                 </div>
             </div>
         </div>
@@ -288,7 +288,7 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h5 class="fw-semibold mb-0">Phim mới cập nhật</h5>
-                        <a href="{{ route('movies.index') }}" class="small text-decoration-none">Quản lý phim</a>
+                        <a href="{{ route('admin.movies.index') }}" class="small text-decoration-none">Quản lý phim</a>
                     </div>
 
                     @forelse($latestMovies as $movie)

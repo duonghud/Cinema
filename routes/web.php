@@ -7,6 +7,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\showController;
 use App\Http\Controllers\Auth\CustomerAuthController;
 use App\Http\Controllers\Auth\AdminAuthController;
+
 // Admin
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\DashBoardController;
@@ -31,8 +32,11 @@ use App\Http\Controllers\Admin\InvoiceController;
 // ================== CLIENT ==================
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/show', [showController::class, 'index'])->name('show');
-Route::get('/contact', [HomeController::class, 'index'])->name('contact');
+Route::view('/contact', 'system.contact')->name('contact');
+Route::view('/ticket-price', 'system.ticketprice')->name('ticket.price');
+Route::view('/profile', 'system.profile')->name('system.profile');
 Route::get('/movie', [MovieController::class, 'index'])->name('system.movie');
+Route::get('/payment', [PaymentMethodController::class, 'index'])->name('system.payment');
 
 // ================== AUTH CUSTOMER ==================
 Route::prefix('customer')->group(function () {
@@ -58,7 +62,7 @@ Route::prefix('customer')->group(function () {
 // ================== AUTH ADMIN ==================
 
 
-Route::prefix('admin')->group(function () {
+Route::prefix('admins')->group(function () {
     // login form
     Route::get('/login', [AdminAuthController::class, 'showLoginForm'])
         ->name('admin.login');
@@ -97,7 +101,8 @@ Route::prefix('admins')->middleware('admin.auth')->group(function () {
 
     Route::resource('studio', StudioController::class);
     Route::resource('ageRating', AgeRatingController::class);
-    Route::resource('movies', MovieController::class);
+    Route::resource('movies', MovieController::class)
+        ->names('admin.movies');
     Route::resource('screeningRoom', ScreeningRoomController::class);
     Route::resource('screenType', ScreeningTypeController::class);
     Route::resource('seat', SeatController::class);

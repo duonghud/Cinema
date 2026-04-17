@@ -1,7 +1,7 @@
 <style>
     .navbar {
         transition: all .35s ease;
-        background: #0B0D13;
+        background: #10141b;
         padding: 14px 0;
     }
 
@@ -102,6 +102,41 @@
         background-color: #ffffff;
         opacity: 80%;
     }
+
+    .customer-dropdown {
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: white;
+        padding: 8px 14px;
+        border-radius: 50px;
+        transition: 0.3s;
+    }
+
+    .customer-dropdown:hover {
+        background: rgba(255, 255, 255, 0.15);
+        color: #ffc107;
+    }
+
+    .customer-avatar {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #ffc107, #ff9800);
+        color: #111;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        box-shadow: 0 2px 8px rgba(255, 193, 7, 0.3);
+    }
+
+    .customer-name {
+        max-width: 140px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
 </style>
 
 <nav class="navbar navbar-expand-lg sticky-top">
@@ -115,11 +150,11 @@
 
         <ul class="navbar-nav mx-auto">
             <li class="nav-item"><a href="{{ route('home') }}" class="nav-link ">Trang chủ</a></li>
-            <li class="nav-item"><a href="{{ route('system.movie')}}" class="nav-link">Lịch chiếu</a></li>
-            <li class="nav-item"><a href="#" class="nav-link">Giá vé</a></li>
+            <li class="nav-item"><a href="#" class="nav-link">Lịch chiếu</a></li>
+            <li class="nav-item"><a href="{{ route('ticket.price') }}" class="nav-link">Giá vé</a></li>
             <li class="nav-item"><a href="#" class="nav-link">Tin tức</a></li>
             <li class="nav-item"><a href="{{ route('contact') }}" class="nav-link">Liên hệ</a></li>
-            <li class="nav-item"><a href="" class="nav-link">Giới thiệu</a></li>
+            <li class="nav-item"><a href="#" class="nav-link">Giới thiệu</a></li>
         </ul>
 
         <div class="d-flex gap-2">
@@ -128,19 +163,14 @@
 
             <div class="dropdown">
 
-                <a class="btn nav-btn dropdown-toggle d-flex align-items-center gap-2"
+                <a class="btn nav-btn dropdown-toggle customer-dropdown d-flex align-items-center gap-2"
                     data-bs-toggle="dropdown">
-                    <!-- Avatar/Icon -->
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
-                        viewBox="0 0 16 16" fill="currentColor">
-                        <path d="M8 16A8 8 0 1 1 8 0a8 8 0 0 1 0 16m.847-8.145a2.502 2.502 0 1 0-1.694 0C5.471 8.261 4 9.775 4 11c0 .395.145.995 1 .995h6c.855 0 1-.6 1-.995c0-1.224-1.47-2.74-3.153-3.145" />
-                    </svg>
 
-                    <!-- Font Awesome icon -->
-                    <i class="fa fa-user-circle"></i>
+                    <div class="customer-avatar">
+                        {{ strtoupper(substr(session('customer')->fullName, 0, 2)) }}
+                    </div>
 
-                    <!-- Tên khách hàng -->
-                    <span class="fw-semibold">
+                    <span class="fw-semibold customer-name">
                         {{ session('customer')->fullName }}
                     </span>
                 </a>
@@ -150,16 +180,19 @@
 
                     <li>
                         <a class="dropdown-item"
-                            href="#">
+                            href="{{ route('system.profile') }}">
                             Thông tin cá nhân
                         </a>
                     </li>
 
                     <li>
-                        <a class="dropdown-item text-danger"
-                            href="{{ route('home') }}}">
-                            Đăng xuất
-                        </a>
+                        <form action="{{ route('customer.logout') }}" method="POST">
+                            @csrf
+                            <button type="submit" class="dropdown-item text-danger">
+                                Đăng xuất
+                            </button>
+                        </form>
+
                     </li>
 
                 </ul>

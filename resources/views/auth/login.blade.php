@@ -31,14 +31,6 @@
                             <p class="mb-0 text-secondary">Sử dụng tài khoản admin để tiếp tục.</p>
                         </div>
 
-                        @if (session('success'))
-                            <div class="alert alert-success">{{ session('success') }}</div>
-                        @endif
-
-                        @if ($errors->any())
-                            <div class="alert alert-danger">{{ $errors->first() }}</div>
-                        @endif
-
                         <form action="{{ route('admin.login.post') }}" method="POST" novalidate>
                             @csrf
 
@@ -58,6 +50,11 @@
                                         style="background: #1f2937; box-shadow: none;"
                                         required
                                     >
+                                    @error('email')
+                                        <div class="invalid-feedback">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
                                 </div>
                             </div>
 
@@ -76,6 +73,11 @@
                                         style="background: #1f2937; box-shadow: none;"
                                         required
                                     >
+                                    @error('email')
+                                        <div class="invalid-feedback">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
                                 </div>
                             </div>
 
