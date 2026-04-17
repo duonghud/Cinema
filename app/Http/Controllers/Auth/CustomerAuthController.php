@@ -80,18 +80,19 @@ class CustomerAuthController extends Controller
         }
 
         // Đăng nhập thành công
-        session([
-            'customer_id' => $customer->customerID,
-            'customer_name' => $customer->name
-        ]);
+        // Navbar và middleware đều đọc thông tin đăng nhập từ key customer
+        $request->session()->put('customer', $customer);
 
         return redirect()->route('home')->with('success', 'Đăng nhập thành công!');
     }
 
     // logout
-    public function logout()
+    public function logout(Request $request)
     {
-        session()->forget('customer');
+        // Xoa trang thai dang nhap customer va reset session khi logout.
+        $request->session()->forget('customer');
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
 
         return redirect('/')->with('success', 'Đã đăng xuất');
     }

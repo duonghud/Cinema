@@ -15,11 +15,10 @@ class CheckCustomerLogin
      */
     public function handle(Request $request, Closure $next): Response
     {
-
         if (!session('customer')) {
-
             return redirect()
-                ->route('auth.login')
+                // Chuyển đúng về form login cútomer neu chưa có sessopn đăng nhập
+                ->route('auth.customerLogin')
                 ->with('error', 'Vui lòng đăng nhập để tiếp tục');
         }
 

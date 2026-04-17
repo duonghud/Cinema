@@ -180,7 +180,7 @@
 
                     <li>
                         <a class="dropdown-item"
-                            href="{{ route('system.profile') }}">
+                            href="{{ route('customer.profile') }}">
                             Thông tin cá nhân
                         </a>
                     </li>
