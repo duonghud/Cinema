@@ -75,11 +75,13 @@ Route::prefix('admin')->group(function () {
 
 
 // ================== ADMIN ==================
+
 Route::middleware('admin.auth')->group(function () {
     Route::redirect('/admin', '/admins/dashboard')->name('admin.home');
 });
 
 Route::prefix('admins')->middleware('admin.auth')->group(function () {
+
 
     Route::resource('dashboard', DashBoardController::class);
     Route::resource('admin', AdminController::class);
