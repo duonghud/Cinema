@@ -3,7 +3,7 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content shadow">
 
-            <form action="{{ route('movies.store') }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ route('admin.movies.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
 
                 <!-- Header -->
@@ -27,9 +27,9 @@
                                 required>
 
                             @error('movieTitle')
-                                <div class="invalid-feedback">
-                                    {{ $message }}
-                                </div>
+                            <div class="invalid-feedback">
+                                {{ $message }}
+                            </div>
                             @enderror
                         </div>
 
@@ -42,9 +42,9 @@
                                 value="{{ old('director') }}">
 
                             @error('director')
-                                <div class="invalid-feedback">
-                                    {{ $message }}
-                                </div>
+                            <div class="invalid-feedback">
+                                {{ $message }}
+                            </div>
                             @enderror
                         </div>
 
@@ -60,25 +60,24 @@
                                 class="form-control @error('poster') is-invalid @enderror">
 
                             @error('poster')
-                                <div class="invalid-feedback">
-                                    {{ $message }}
-                                </div>
+                            <div class="invalid-feedback">
+                                {{ $message }}
+                            </div>
                             @enderror
                         </div>
 
                         <!-- Trailer -->
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-medium">Trailer</label>
-                            <input type="text"
+                            <input type="file"
                                 name="trailer"
-                                placeholder="YouTube link"
-                                class="form-control @error('trailer') is-invalid @enderror"
-                                value="{{ old('trailer') }}">
+                                accept="video/*"
+                                class="form-control @error('trailer') is-invalid @enderror">
 
                             @error('trailer')
-                                <div class="invalid-feedback">
-                                    {{ $message }}
-                                </div>
+                            <div class="invalid-feedback">
+                                {{ $message }}
+                            </div>
                             @enderror
                         </div>
 
@@ -95,9 +94,9 @@
                                 value="{{ old('releaseDate') }}">
 
                             @error('releaseDate')
-                                <div class="invalid-feedback">
-                                    {{ $message }}
-                                </div>
+                            <div class="invalid-feedback">
+                                {{ $message }}
+                            </div>
                             @enderror
                         </div>
 
@@ -110,17 +109,17 @@
                                 <option value="">-- Chọn độ tuổi --</option>
 
                                 @foreach($ageRatings as $age)
-                                    <option value="{{ $age->ageRatingID }}"
-                                        {{ old('ageRatingID') == $age->ageRatingID ? 'selected' : '' }}>
-                                        {{ $age->code }}
-                                    </option>
+                                <option value="{{ $age->ageRatingID }}"
+                                    {{ old('ageRatingID') == $age->ageRatingID ? 'selected' : '' }}>
+                                    {{ $age->code }}
+                                </option>
                                 @endforeach
                             </select>
 
                             @error('ageRatingID')
-                                <div class="invalid-feedback">
-                                    {{ $message }}
-                                </div>
+                            <div class="invalid-feedback">
+                                {{ $message }}
+                            </div>
                             @enderror
                         </div>
 
@@ -133,17 +132,17 @@
                                 <option value="">-- Chọn hãng phim --</option>
 
                                 @foreach($studios as $studio)
-                                    <option value="{{ $studio->studioID }}"
-                                        {{ old('studioID') == $studio->studioID ? 'selected' : '' }}>
-                                        {{ $studio->name }}
-                                    </option>
+                                <option value="{{ $studio->studioID }}"
+                                    {{ old('studioID') == $studio->studioID ? 'selected' : '' }}>
+                                    {{ $studio->name }}
+                                </option>
                                 @endforeach
                             </select>
 
                             @error('studioID')
-                                <div class="invalid-feedback">
-                                    {{ $message }}
-                                </div>
+                            <div class="invalid-feedback">
+                                {{ $message }}
+                            </div>
                             @enderror
                         </div>
 
@@ -155,29 +154,29 @@
                         <div class="d-flex flex-wrap">
 
                             @foreach($genres as $genre)
-                                <div class="form-check me-3">
+                            <div class="form-check me-3">
 
-                                    <input class="form-check-input"
-                                        type="checkbox"
-                                        name="genreID[]"
-                                        value="{{ $genre->genreID }}"
-                                        id="genre{{ $genre->genreID }}"
-                                        {{ (collect(old('genreID'))->contains($genre->genreID)) ? 'checked' : '' }}>
+                                <input class="form-check-input"
+                                    type="checkbox"
+                                    name="genreID[]"
+                                    value="{{ $genre->genreID }}"
+                                    id="genre{{ $genre->genreID }}"
+                                    {{ (collect(old('genreID'))->contains($genre->genreID)) ? 'checked' : '' }}>
 
-                                    <label class="form-check-label"
-                                        for="genre{{ $genre->genreID }}">
-                                        {{ $genre->name }}
-                                    </label>
+                                <label class="form-check-label"
+                                    for="genre{{ $genre->genreID }}">
+                                    {{ $genre->name }}
+                                </label>
 
-                                </div>
+                            </div>
                             @endforeach
 
                         </div>
 
                         @error('genreID')
-                            <div class="text-danger mt-1">
-                                {{ $message }}
-                            </div>
+                        <div class="text-danger mt-1">
+                            {{ $message }}
+                        </div>
                         @enderror
                     </div>
 
@@ -190,9 +189,9 @@
                             class="form-control @error('description') is-invalid @enderror">{{ old('description') }}</textarea>
 
                         @error('description')
-                            <div class="invalid-feedback">
-                                {{ $message }}
-                            </div>
+                        <div class="invalid-feedback">
+                            {{ $message }}
+                        </div>
                         @enderror
                     </div>
 
@@ -221,7 +220,7 @@
 <!-- Tự mở modal khi có lỗi -->
 @if ($errors->any())
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
+    document.addEventListener("DOMContentLoaded", function() {
         var createModal = new bootstrap.Modal(document.getElementById('createModal'));
         createModal.show();
     });

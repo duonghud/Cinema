@@ -7,10 +7,10 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h4 class="fw-semibold">Quản lý khách hàng</h4>
 
-        <a href="{{ route('customer.create') }}" 
+        <!-- <a href="#" 
            class="btn btn-dark">
             + Thêm khách hàng
-        </a>
+        </a> -->
     </div>
 
 
@@ -68,9 +68,9 @@
                                     Sửa
                                 </a>
 
-                                <form action="{{ route('customer.destroy', $customer->customerID) }}" 
+                                <!-- <form action="{{ route('customer.destroy', $customer->customerID) }}" 
                                       method="POST" 
-                                      class="d-inline">
+                                      class="d-inline"> 
                                     @csrf
                                     @method('DELETE')
 
@@ -79,7 +79,7 @@
                                             onclick="return confirm('Bạn có chắc muốn xóa?')">
                                         Xóa
                                     </button>
-                                </form>
+                                </form> -->
 
                             </td>
                         </tr>

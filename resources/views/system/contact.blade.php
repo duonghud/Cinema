@@ -1,61 +1,50 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="min-h-screen bg-gray-100 py-10 px-4">
-    <div class="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg overflow-hidden grid md:grid-cols-2">
+<div class="max-w-7xl mx-auto py-12 px-6">
 
-        <!-- LEFT: Info -->
-        <div class="bg-pink-500 text-white p-8 flex flex-col justify-center">
-            <h2 class="text-3xl font-bold mb-4">Liên hệ với chúng tôi</h2>
-            <p class="mb-6">Nếu bạn có câu hỏi hoặc cần hỗ trợ, hãy gửi tin nhắn cho chúng tôi.</p>
+    <div class="grid md:grid-cols-2 gap-10 items-start text-white">
 
-            <div class="space-y-3">
-                <p> Địa chỉ: Hà Nội</p>
-                <p> SĐT: 0123 456 789</p>
-                <p> Email: support@flowershop.com</p>
+        <!-- Nội dung -->
+        <div>
+            <h1 class="text-3xl font-bold mb-8 text-white">
+                Giới thiệu về Trung tâm Chiếu phim Quốc gia
+            </h1>
+
+            <div class="space-y-5 text-white leading-8 text-[17px]">
+                <p>
+                    <strong>Trung tâm Chiếu phim Quốc gia</strong>
+                    (tên giao dịch quốc tế là <strong>National Cinema Center</strong>)
+                    là đơn vị sự nghiệp công lập trực thuộc
+                    <strong>Bộ Văn hóa, Thể thao và Du lịch</strong>,
+                    có chức năng tổ chức chiếu phim phục vụ các nhiệm vụ chính trị, xã hội,
+                    hợp tác quốc tế; trưng bày điện ảnh; điều tra xã hội học về nhu cầu khán giả
+                    để phục vụ cho công tác định hướng phát triển ngành điện ảnh.
+                </p>
+
+                <p><strong>Ngày thành lập:</strong> 29/12/2026  </p>
+                <p><strong>Trụ sở:</strong> 87 Láng Hạ, Phường Ô Chợ Dừa, Thành phố Hà Nội</p>
+
+                <p>
+                    <strong>Website:</strong>
+                    <a href="{{ route('home') }}"
+                        target="_blank"
+                        class="text-blue-300 hover:underline">
+                        www.vaicinema.com.vn
+                    </a>
+                </p>
+
+                <p><strong>Email:</strong> pdichvuncc@gmail.com</p>
+                <p><strong>Số điện thoại:</strong> 024.3514 1791 / 024.3514 8647</p>
             </div>
         </div>
 
-        <!-- RIGHT: Form -->
-        <div class="p-8">
-            <h3 class="text-2xl font-semibold mb-6 text-gray-700">Gửi tin nhắn</h3>
-
-            @if(session('success'))
-                <div class="bg-green-100 text-green-700 p-3 rounded mb-4">
-                    {{ session('success') }}
-                </div>
-            @endif
-
-            <form action="{{ route('contact.send') }}" method="POST">
-                @csrf
-
-                <div class="mb-4">
-                    <label class="block text-gray-600 mb-1">Họ tên</label>
-                    <input type="text" name="name"
-                        class="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-pink-400"
-                        required>
-                </div>
-
-                <div class="mb-4">
-                    <label class="block text-gray-600 mb-1">Email</label>
-                    <input type="email" name="email"
-                        class="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-pink-400"
-                        required>
-                </div>
-
-                <div class="mb-4">
-                    <label class="block text-gray-600 mb-1">Tin nhắn</label>
-                    <textarea name="message" rows="4"
-                        class="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-pink-400"
-                        required></textarea>
-                </div>
-
-                <button type="submit"
-                    class="w-full bg-pink-500 text-white py-2 rounded-lg hover:bg-pink-600 transition">
-                    Gửi
-                </button>
-            </form>
+        <!-- Bản đồ -->
+        <div>
+            <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3724.3964834468625!2d105.81563109999999!3d21.016816!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3135ab649ee1bf5d%3A0x559afaae4a7e55fc!2zODcgUC4gTMOhbmcgSOG6oSwgQ2jhu6MgROG7q2EsIMOUIENo4bujIEThu6thLCBIw6AgTuG7mWksIFZp4buHdCBOYW0!5e0!3m2!1svi!2s!4v1776012401048!5m2!1svi!2s" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
         </div>
+
     </div>
+
 </div>
 @endsection

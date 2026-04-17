@@ -7,7 +7,8 @@ use Illuminate\Http\Request;
 use App\Models\Admin\ShowTime;
 use App\Models\Admin\Movie;
 use App\Models\Admin\ScreeningRoom;
-use App\Http\Controllers\Admin\ticketController; // 🔥 thêm dòng này
+use App\Http\Controllers\Admin\ticketController;
+use Carbon\Carbon;
 
 class ShowTimeController extends Controller
 {
@@ -29,6 +30,8 @@ class ShowTimeController extends Controller
     }
 
     // STORE + AUTO CREATE TICKET
+    
+
     public function store(Request $request)
     {
         $request->validate([
@@ -46,7 +49,44 @@ class ShowTimeController extends Controller
             'roomID.required' => 'Vui lòng chọn phòng.',
         ]);
 
-        $showTime = ShowTime::create([
+        //Không cho chọn ngày cũ
+        $today = Carbon::today();
+        $showDate = Carbon::parse($request->showDate);
+
+        if ($showDate->lt($today)) {
+            return back()->withErrors([
+                'showDate' => 'Không được chọn ngày cũ.'
+            ])->withInput();
+        }
+
+        //Tạo suất chiếu trước ít nhất 1 ngày
+        if ($showDate->lt($today->addDay())) {
+            return back()->withErrors([
+                'showDate' => 'Suất chiếu tạo trước ít nhất 1 ngày.'
+            ])->withInput();
+        }
+
+        //Kiểm tra trùng giờ trong cùng phòng
+        $isConflict = ShowTime::where('roomID', $request->roomID)
+            ->where('showDate', $request->showDate)
+            ->where(function ($query) use ($request) {
+                $query->whereBetween('startTime', [$request->startTime, $request->endTime])
+                    ->orWhereBetween('endTime', [$request->startTime, $request->endTime])
+                    ->orWhere(function ($q) use ($request) {
+                        $q->where('startTime', '<=', $request->startTime)
+                            ->where('endTime', '>=', $request->endTime);
+                    });
+            })
+            ->exists();
+
+        if ($isConflict) {
+            return back()->withErrors([
+                'startTime' => 'Suất chiếu bị trùng giờ trong cùng phòng.'
+            ])->withInput();
+        }
+
+        // Tạo suất chiếu
+        ShowTime::create([
             'showDate' => $request->showDate,
             'startTime' => $request->startTime,
             'endTime' => $request->endTime,
@@ -55,7 +95,7 @@ class ShowTimeController extends Controller
         ]);
 
         return redirect()->route('showTime.index')
-            ->with('success', 'Thêm suất chiếu + tạo vé thành công');
+            ->with('success', 'Thêm suất chiếu thành công');
     }
 
     // SHOW
@@ -79,7 +119,7 @@ class ShowTimeController extends Controller
     // UPDATE
     public function update(Request $request, string $id)
     {
-        $showTime = ShowTime::findOrFail($id); // 🔥 fix chữ hoa
+        $showTime = ShowTime::findOrFail($id);
 
         $request->validate([
             'showDate' => 'required|date',
@@ -88,6 +128,42 @@ class ShowTimeController extends Controller
             'movieID' => 'required|exists:movies,movieID',
             'roomID' => 'required|exists:screening_rooms,roomID',
         ]);
+
+        //Không cho chọn ngày cũ
+        $today = Carbon::today();
+        $showDate = Carbon::parse($request->showDate);
+
+        if ($showDate->lt($today)) {
+            return back()->withErrors([
+                'showDate' => 'Không được chọn ngày cũ.'
+            ])->withInput();
+        }
+
+        //Tạo suất chiếu trước ít nhất 1 ngày
+        if ($showDate->lt($today->addDay())) {
+            return back()->withErrors([
+                'showDate' => 'Suất chiếu tạo trước ít nhất 1 ngày.'
+            ])->withInput();
+        }
+
+        //Kiểm tra trùng giờ trong cùng phòng
+        $isConflict = ShowTime::where('roomID', $request->roomID)
+            ->where('showDate', $request->showDate)
+            ->where(function ($query) use ($request) {
+                $query->whereBetween('startTime', [$request->startTime, $request->endTime])
+                    ->orWhereBetween('endTime', [$request->startTime, $request->endTime])
+                    ->orWhere(function ($q) use ($request) {
+                        $q->where('startTime', '<=', $request->startTime)
+                            ->where('endTime', '>=', $request->endTime);
+                    });
+            })
+            ->exists();
+
+        if ($isConflict) {
+            return back()->withErrors([
+                'startTime' => 'Suất chiếu bị trùng giờ trong cùng phòng.'
+            ])->withInput();
+        }
 
         $showTime->update([
             'showDate' => $request->showDate,
