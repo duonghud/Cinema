@@ -11,9 +11,30 @@ use App\Models\Admin\payment_method;
 
 class InvoiceController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $invoices = Invoice::with(['customer', 'admin', 'payment'])->paginate(10);
+        $search = trim((string) $request->input('search'));
+
+        $invoices = Invoice::with(['customer', 'admin', 'payment'])
+            ->when($search, function ($query) use ($search) {
+                $query->where('invoiceID', 'like', "%{$search}%")
+                    ->orWhere('totalAmount', 'like', "%{$search}%")
+                    ->orWhere('createDate', 'like', "%{$search}%")
+                    ->orWhereHas('customer', function ($customerQuery) use ($search) {
+                        $customerQuery->where('fullName', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('admin', function ($adminQuery) use ($search) {
+                        $adminQuery->where('fullName', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('payment', function ($paymentQuery) use ($search) {
+                        $paymentQuery->where('name', 'like', "%{$search}%");
+                    });
+            })
+            ->paginate(5)
+            ->withQueryString();
+
         return view('admins.invoices.index', compact('invoices'));
     }
 

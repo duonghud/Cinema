@@ -13,9 +13,20 @@ class adminController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $admins = admin::paginate(10);
+        $search = trim((string) $request->input('search'));
+
+        $admins = admin::query()
+            ->when($search, function ($query) use ($search) {
+                $query->where('adminID', 'like', "%{$search}%")
+                    ->orWhere('fullName', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('role', 'like', "%{$search}%");
+            })
+            ->paginate(5)
+            ->withQueryString();
+
         return view('admins.manageUser.admin.index', ['admins' => $admins]);
     }
 
