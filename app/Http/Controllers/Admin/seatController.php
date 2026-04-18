@@ -19,14 +19,27 @@ class SeatController extends Controller
     {
         $rooms = ScreeningRoom::all();
         $seatTypes = SeatType::all();
+        $search = trim((string) $request->input('search'));
 
         $roomID = $request->roomID ?? $rooms->first()->roomID;
 
         $seats = Seat::with(['seatType', 'screeningRoom'])
             ->where('roomID', $roomID)
+            ->when($search, function ($query) use ($search) {
+                $query->where(function ($seatQuery) use ($search) {
+                    $seatQuery->where('seatID', 'like', "%{$search}%")
+                        ->orWhere('rowSeat', 'like', "%{$search}%")
+                        ->orWhere('colSeat', 'like', "%{$search}%")
+                        ->orWhereRaw("CONCAT(rowSeat, colSeat) LIKE ?", ["%{$search}%"])
+                        ->orWhereHas('seatType', function ($seatTypeQuery) use ($search) {
+                            $seatTypeQuery->where('seatTypeName', 'like', "%{$search}%");
+                        });
+                });
+            })
             ->orderBy('rowSeat')
             ->orderBy('colSeat')
-            ->get();
+            ->paginate(5)
+            ->withQueryString();
 
         return view(
             'admins.manageCinema.seat.index',

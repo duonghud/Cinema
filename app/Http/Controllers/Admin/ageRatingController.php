@@ -11,9 +11,19 @@ class ageRatingController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $ageRatings = ageRating::all();
+        $search = trim((string) $request->input('search'));
+
+        $ageRatings = ageRating::query()
+            ->when($search, function ($query) use ($search) {
+                $query->where('ageRatingID', 'like', "%{$search}%")
+                    ->orWhere('code', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
+            })
+            ->paginate(5)
+            ->withQueryString();
+
         return view('admins.manageMovies.ageRating.index', compact('ageRatings'));
     }
 

@@ -14,13 +14,32 @@ use Illuminate\Support\Facades\DB;
 class FoodInvoiceController extends Controller
 {
 
-    public function index()
+    public function index(Request $request)
     {
+        $search = trim((string) $request->input('search'));
+
         $invoices = FoodInvoice::with([
             'customer',
             'payment',
             'details.food'
-        ])->get();
+        ])
+            ->when($search, function ($query) use ($search) {
+                $query->where('foodInvoiceID', 'like', "%{$search}%")
+                    ->orWhere('orderDate', 'like', "%{$search}%")
+                    ->orWhere('total', 'like', "%{$search}%")
+                    ->orWhereHas('customer', function ($customerQuery) use ($search) {
+                        $customerQuery->where('fullName', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('payment', function ($paymentQuery) use ($search) {
+                        $paymentQuery->where('name', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('details.food', function ($foodQuery) use ($search) {
+                        $foodQuery->where('foodName', 'like', "%{$search}%");
+                    });
+            })
+            ->paginate(5)
+            ->withQueryString();
 
         return view(
             'admins.manageFoods.foodInvoice.index',

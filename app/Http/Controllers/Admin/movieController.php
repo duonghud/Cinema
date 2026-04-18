@@ -13,9 +13,30 @@ use Carbon\Carbon;
 
 class movieController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $movies = movie::with(['ageRating', 'studio', 'genres'])->paginate(5);
+        $search = trim((string) $request->input('search'));
+
+        $movies = movie::with(['ageRating', 'studio', 'genres'])
+            ->when($search, function ($query) use ($search) {
+                $query->where('movieID', 'like', "%{$search}%")
+                    ->orWhere('movieTitle', 'like', "%{$search}%")
+                    ->orWhere('director', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhere('releaseDate', 'like', "%{$search}%")
+                    ->orWhereHas('ageRating', function ($ageQuery) use ($search) {
+                        $ageQuery->where('code', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('studio', function ($studioQuery) use ($search) {
+                        $studioQuery->where('name', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('genres', function ($genreQuery) use ($search) {
+                        $genreQuery->where('name', 'like', "%{$search}%");
+                    });
+            })
+            ->paginate(5)
+            ->withQueryString();
+
         $ageRatings = ageRating::all();
         $studios = studio::all();
         $genres = genre::all();

@@ -13,9 +13,18 @@ class seatTypeController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $seatTypes = seatType::all();
+        $search = trim((string) $request->input('search'));
+
+        $seatTypes = seatType::query()
+            ->when($search, function ($query) use ($search) {
+                $query->where('seatTypeID', 'like', "%{$search}%")
+                    ->orWhere('seatTypeName', 'like', "%{$search}%");
+            })
+            ->paginate(5)
+            ->withQueryString();
+
         return view('admins.manageCinema.seatType.index', ['seatTypes' => $seatTypes]);
     }
 

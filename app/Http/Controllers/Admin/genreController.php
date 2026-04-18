@@ -11,9 +11,18 @@ class genreController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $genres = genre::all();
+        $search = trim((string) $request->input('search'));
+
+        $genres = genre::query()
+            ->when($search, function ($query) use ($search) {
+                $query->where('genreID', 'like', "%{$search}%")
+                    ->orWhere('name', 'like', "%{$search}%");
+            })
+            ->paginate(5)
+            ->withQueryString();
+
         return view('admins.manageMovies.genre.index', ['genres' => $genres]);
     }
 

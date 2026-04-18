@@ -11,9 +11,22 @@ class screeningRoomController extends Controller
 {
 
     // READ - danh sách
-    public function index()
+    public function index(Request $request)
     {
-        $room = screeningRoom::all();
+        $search = trim((string) $request->input('search'));
+
+        $room = screeningRoom::with('screenType')
+            ->when($search, function ($query) use ($search) {
+                $query->where('roomID', 'like', "%{$search}%")
+                    ->orWhere('roomName', 'like', "%{$search}%")
+                    ->orWhere('capacity', 'like', "%{$search}%")
+                    ->orWhereHas('screenType', function ($screenTypeQuery) use ($search) {
+                        $screenTypeQuery->where('name', 'like', "%{$search}%");
+                    });
+            })
+            ->paginate(5)
+            ->withQueryString();
+
         $screenTypes = screenType::all();
 
         return view('admins.manageCinema.screeningRoom.index', compact('room', 'screenTypes'));

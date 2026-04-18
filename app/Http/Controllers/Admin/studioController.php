@@ -11,9 +11,18 @@ class studioController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $studios = studio::all();
+        $search = trim((string) $request->input('search'));
+
+        $studios = studio::query()
+            ->when($search, function ($query) use ($search) {
+                $query->where('studioID', 'like', "%{$search}%")
+                    ->orWhere('name', 'like', "%{$search}%");
+            })
+            ->paginate(5)
+            ->withQueryString();
+
         return view('admins.manageMovies.studio.index', ['studios' => $studios]);
     }
 

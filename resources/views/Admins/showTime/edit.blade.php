@@ -24,7 +24,8 @@
                         <input type="date"
                                name="showDate"
                                class="form-control @error('showDate') is-invalid @enderror"
-                               value="{{ old('showDate', $showTime->showDate) }}">
+                               value="{{ old('showDate', $showTime->showDate) }}"
+                               min="{{ now()->addDay()->format('Y-m-d') }}">
                         @error('showDate')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -100,12 +101,12 @@
 
                 <!-- Buttons -->
                 <div class="d-flex justify-content-end">
-                    <a href="{{ route('showTime.index') }}" 
+                    <a href="{{ route('showTime.index') }}"
                        class="btn btn-light me-2">
                         Quay lại
                     </a>
 
-                    <button type="submit" 
+                    <button type="submit"
                             class="btn btn-dark">
                         Cập nhật
                     </button>

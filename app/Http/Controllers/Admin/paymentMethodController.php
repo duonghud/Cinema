@@ -11,9 +11,18 @@ class paymentMethodController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $paymentMethods = payment_method::all();
+        $search = trim((string) $request->input('search'));
+
+        $paymentMethods = payment_method::query()
+            ->when($search, function ($query) use ($search) {
+                $query->where('paymentID', 'like', "%{$search}%")
+                    ->orWhere('name', 'like', "%{$search}%");
+            })
+            ->paginate(5)
+            ->withQueryString();
+
         return view('admins.paymentMethod.index', ['paymentMethods' => $paymentMethods]);
     }
 
