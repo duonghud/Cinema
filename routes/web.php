@@ -96,6 +96,16 @@ Route::prefix('admins')->middleware('admin.auth')->group(function () {
     Route::resource('foodInvoiceDetail', FoodInvoiceDetailController::class);
     Route::resource('genre', GenreController::class);
 
+    // ================= SEAT AJAX =================
+    Route::get('seat/ajax/{roomID}', [SeatController::class, 'getSeatsByRoom'])
+        ->name('seat.ajax.list');
+
+    Route::post('seat/ajax-store', [SeatController::class, 'store'])
+        ->name('seat.ajax.store');
+
+    Route::delete('seat/ajax-delete/{id}', [SeatController::class, 'destroy'])
+        ->name('seat.ajax.delete');
+
     Route::post('seat/generate', [SeatController::class, 'generate'])
         ->name('seat.generate');
 

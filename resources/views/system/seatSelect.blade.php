@@ -287,39 +287,40 @@
 
 </div>
 <script>
-    document.querySelectorAll('.seat').forEach(seat => {
+    //Xử lý chọn ghế
+    document.addEventListener("DOMContentLoaded", function() {
 
-        seat.addEventListener('click', function() {
+        document.addEventListener('click', function(e) {
 
-            if (this.classList.contains('booked')) return;
+            let seat = e.target.closest('.seat');
+            if (!seat) return;
 
-            this.classList.toggle('selected');
+            if (seat.classList.contains('booked')) return;
+
+            seat.classList.toggle('selected');
 
         });
 
+        // TIMER
+        let time = 300;
+
+        let timer = setInterval(() => {
+            let m = Math.floor(time / 60);
+            let s = time % 60;
+
+            if (s < 10) s = "0" + s;
+
+            document.getElementById("timer").innerText = m + ":" + s;
+
+            if (time <= 0) {
+                clearInterval(timer);
+                window.location.href = "{{ route('home') }}";
+                return;
+            }
+
+            time--;
+        }, 1000);
+
     });
-
-
-    let time = 300;
-
-    let timer = setInterval(() => {
-
-        let m = Math.floor(time / 60);
-        let s = time % 60;
-
-        if (s < 10) s = "0" + s;
-
-        document.getElementById("timer").innerText = m + ":" + s;
-
-        if (time <= 0) {
-
-            clearInterval(timer);
-            window.location.href = "{{ route('home') }}";
-            return;
-        }
-
-        time--;
-
-    }, 1000);
 </script>
 </div>

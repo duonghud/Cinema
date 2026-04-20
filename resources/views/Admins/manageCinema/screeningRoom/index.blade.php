@@ -70,9 +70,15 @@
                 </tr>
             @endforeach
             </tbody>
+            @if ($room -> isEmpty())
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-4">
+                            Chưa có dữ liệu phòng chiếu
+                        </td>
+                    </tr>
+                    @endif
 
         </table>
     </div>
-
 </div>
 @endsection
