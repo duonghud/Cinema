@@ -13,9 +13,25 @@ use Carbon\Carbon;
 class ShowTimeController extends Controller
 {
     // LIST
-    public function index()
+    public function index(Request $request)
     {
-        $showTimes = ShowTime::with(['movie', 'room'])->paginate(10);
+        $search = trim((string) $request->input('search'));
+
+        $showTimes = ShowTime::with(['movie', 'room'])
+            ->when($search, function ($query) use ($search) {
+                $query->where('showTimeID', 'like', "%{$search}%")
+                    ->orWhere('showDate', 'like', "%{$search}%")
+                    ->orWhere('startTime', 'like', "%{$search}%")
+                    ->orWhere('endTime', 'like', "%{$search}%")
+                    ->orWhereHas('movie', function ($movieQuery) use ($search) {
+                        $movieQuery->where('movieTitle', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('room', function ($roomQuery) use ($search) {
+                        $roomQuery->where('roomName', 'like', "%{$search}%");
+                    });
+            })
+            ->paginate(5)
+            ->withQueryString();
 
         return view('admins.showtime.index', compact('showTimes'));
     }

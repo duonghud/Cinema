@@ -11,9 +11,35 @@ use App\Models\Admin\Seat;
 class TicketController extends Controller
 {
     // LIST
-    public function index()
+    public function index(Request $request)
     {
-        $tickets = Ticket::with(['showTime', 'seat'])->get();
+        $search = trim((string) $request->input('search'));
+
+        $tickets = Ticket::with(['showTime.movie', 'showTime.room', 'seat'])
+            ->when($search, function ($query) use ($search) {
+                $query->where('ticketID', 'like', "%{$search}%")
+                    ->orWhere('status', 'like', "%{$search}%")
+                    ->orWhere('price', 'like', "%{$search}%")
+                    ->orWhereHas('seat', function ($seatQuery) use ($search) {
+                        $seatQuery->where('seatID', 'like', "%{$search}%")
+                            ->orWhere('rowSeat', 'like', "%{$search}%")
+                            ->orWhere('colSeat', 'like', "%{$search}%")
+                            ->orWhereRaw("CONCAT(rowSeat, colSeat) LIKE ?", ["%{$search}%"]);
+                    })
+                    ->orWhereHas('showTime', function ($showTimeQuery) use ($search) {
+                        $showTimeQuery->where('showTimeID', 'like', "%{$search}%")
+                            ->orWhere('showDate', 'like', "%{$search}%")
+                            ->orWhereHas('movie', function ($movieQuery) use ($search) {
+                                $movieQuery->where('movieTitle', 'like', "%{$search}%");
+                            })
+                            ->orWhereHas('room', function ($roomQuery) use ($search) {
+                                $roomQuery->where('roomName', 'like', "%{$search}%");
+                            });
+                    });
+            })
+            ->paginate(5)
+            ->withQueryString();
+
         return view('admins.ticket.index', compact('tickets'));
     }
 

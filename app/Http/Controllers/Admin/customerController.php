@@ -10,9 +10,21 @@ use Illuminate\Validation\Rule;
 
 class customerController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $customers = customer::all();
+        $search = trim((string) $request->input('search'));
+
+        $customers = customer::query()
+            ->when($search, function ($query) use ($search) {
+                $query->where('customerID', 'like', "%{$search}%")
+                    ->orWhere('fullName', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phoneNumber', 'like', "%{$search}%")
+                    ->orWhere('address', 'like', "%{$search}%");
+            })
+            ->paginate(5)
+            ->withQueryString();
+
         return view('admins.manageUser.customer.index', ['customers' => $customers]);
     }
 
