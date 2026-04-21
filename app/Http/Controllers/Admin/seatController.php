@@ -19,17 +19,33 @@ class SeatController extends Controller
     {
         $rooms = ScreeningRoom::all();
         $seatTypes = SeatType::all();
+        $search = trim((string) $request->input('search'));
 
         $roomID = $request->roomID ?? optional($rooms->first())->roomID;
 
         $seats = Seat::with(['seatType', 'screeningRoom'])
             ->where('roomID', $roomID)
+            ->when($search, function ($query) use ($search) {
+                $query->where(function ($seatQuery) use ($search) {
+                    $seatQuery->where('seatID', 'like', "%{$search}%")
+                        ->orWhere('rowSeat', 'like', "%{$search}%")
+                        ->orWhere('colSeat', 'like', "%{$search}%")
+                        ->orWhereRaw("CONCAT(rowSeat, colSeat) LIKE ?", ["%{$search}%"])
+                        ->orWhereHas('seatType', function ($seatTypeQuery) use ($search) {
+                            $seatTypeQuery->where('seatTypeName', 'like', "%{$search}%");
+                        });
+                });
+            })
             ->orderBy('rowSeat')
             ->orderBy('colSeat')
-            ->get();
+            ->paginate(5)
+            ->withQueryString();
 
         return view('admins.manageCinema.seat.index', compact(
-            'seats', 'rooms', 'seatTypes', 'roomID'
+            'seats',
+            'rooms',
+            'seatTypes',
+            'roomID'
         ));
     }
 
@@ -52,7 +68,7 @@ class SeatController extends Controller
             'seatTypeID' => 'required|exists:seat_types,seatTypeID'
         ]);
 
-        // 🔒 khóa nếu có suất chiếu
+        // 
         if (ShowTime::where('roomID', $request->roomID)->exists()) {
             return back()->with('error', 'Phòng đang có suất chiếu');
         }
@@ -84,7 +100,7 @@ class SeatController extends Controller
 
         if (ShowTime::where('roomID', $request->roomID)->exists()) {
             return response()->json([
-                'error' => 'Phòng đang có suất chiếu'
+                'error' => 'Phòng đang có suất chiếu không thể tạo ghế'
             ], 400);
         }
 
@@ -110,7 +126,9 @@ class SeatController extends Controller
         $seatTypes = SeatType::all();
 
         return view('admins.manageCinema.seat.edit', compact(
-            'seat', 'rooms', 'seatTypes'
+            'seat',
+            'rooms',
+            'seatTypes'
         ));
     }
 
@@ -162,7 +180,7 @@ class SeatController extends Controller
 
         if (ShowTime::where('roomID', $seat->roomID)->exists()) {
             return response()->json([
-                'error' => 'Phòng đang có suất chiếu'
+                'error' => 'Phòng đang có suất chiếu không thể xóa'
             ], 400);
         }
 
@@ -187,6 +205,44 @@ class SeatController extends Controller
         return response()->json($seats);
     }
 
+    public function updateMultiple(Request $request)
+    {
+        $request->validate([
+            'seatIDs' => 'required|array|min:1',
+            'seatTypeID' => 'required|exists:seat_types,seatTypeID'
+        ]);
+
+        $firstSeat = Seat::whereIn('seatID', $request->seatIDs)->first();
+
+        if (ShowTime::where('roomID', $firstSeat->roomID)->exists()) {
+            return back()->with('error', 'Phòng đang có suất chiếu');
+        }
+
+        Seat::whereIn('seatID', $request->seatIDs)
+            ->update(['seatTypeID' => $request->seatTypeID]);
+
+        return redirect()->route('seat.index')
+            ->with('success', 'Cập nhật thành công');
+    }
+
+    public function editMultiple(Request $request)
+    {
+        $ids = explode(',', $request->seatIDs);
+
+        $seats = Seat::whereIn('seatID', $ids)->get();
+        $seatTypes = SeatType::all();
+        $rooms = ScreeningRoom::all();
+
+        $roomID = $seats->first()?->roomID;
+
+        return view('admins.manageCinema.seat.edit-multiple', compact(
+            'seats',
+            'seatTypes',
+            'rooms',
+            'roomID'
+        ));
+    }
+
     // ================= UPDATE TYPE =================
     public function updateType(Request $request)
     {
@@ -202,12 +258,14 @@ class SeatController extends Controller
             return response()->json(['error' => 'Không tìm thấy ghế'], 404);
         }
 
+        // check showtime
         if (ShowTime::where('roomID', $firstSeat->roomID)->exists()) {
             return response()->json([
-                'error' => 'Phòng đang có suất chiếu'
+                'error' => 'Phòng đang có suất chiếu không thể sửa'
             ], 400);
         }
 
+        // chỉ update ghế chưa có vé
         $validSeatIDs = Seat::whereIn('seatID', $request->seatIDs)
             ->whereNotIn('seatID', function ($q) {
                 $q->select('seatID')->from('tickets');
@@ -220,7 +278,8 @@ class SeatController extends Controller
         return response()->json([
             'success' => true,
             'updated' => $updated,
-            'skipped' => count($request->seatIDs) - $updated
+            'skipped' => count($request->seatIDs) - $updated,
+            'roomID' => $firstSeat->roomID
         ]);
     }
 

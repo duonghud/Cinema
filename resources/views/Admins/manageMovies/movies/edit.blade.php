@@ -49,12 +49,26 @@
 
                         <!-- Trailer -->
                         <div class="col-md-6 mb-3">
-                            <label class="form-label fw-medium">Trailer</label>
-                            <input type="text" name="trailer"
-                                class="form-control"
-                                value="{{$movie->trailer}}">
+                            <label class="form-label fw-medium">Trailer</label><br>
+
+                            @if($movie->trailer)
+                            <video width="120" class="rounded shadow-sm mb-2" controls>
+                                <source src="{{ asset($movie->trailer) }}">
+                            </video>
+                            @endif
+
+                            <input type="file" name="trailer" class="form-control">
                         </div>
 
+                        <!-- Thời lượng -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-medium">Thời lượng</label>
+                            <input type="number" name="duration"
+                                class="form-control"
+                                value="{{$movie->duration}}"
+                                placeholder="Nhập thời lượng (phút)"
+                                min="0">
+                        </div>
                     </div>
 
                     <div class="row">

@@ -39,7 +39,7 @@
         height: 2px;
         left: 50%;
         bottom: -6px;
-        background: #D93F40;
+        background: linear-gradient(135deg, #FB5C5C, #C7ABAC);
         transition: .3s;
         transform: translateX(-50%);
     }
@@ -50,36 +50,92 @@
     }
 
     .nav-btn {
-        padding: 10px 26px;
-        border-radius: 50px;
+        position: relative;
+        overflow: hidden;
+        padding: 10px 28px;
+        border-radius: 999px;
         font-weight: 600;
         font-size: 15px;
         letter-spacing: .3px;
-        transition: all .25s ease;
+        transition: all .3s ease;
     }
 
+    /* ===== Đăng ký ===== */
     .btn-register {
-        background: transparent;
-        border: 1px solid #ffffff;
+        background: linear-gradient(180deg,
+                rgba(255, 255, 255, 0.07),
+                rgba(255, 255, 255, 0.02));
+        border: 1px solid rgba(255, 255, 255, 0.15);
         color: #fff;
+        box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1),
+            0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+
+    /* shine effect */
+    .btn-register::before {
+        content: "";
+        position: absolute;
+        opacity: 1;
+        top: 0;
+        left: -80%;
+        width: 10%;
+        height: 100%;
+        background: linear-gradient(120deg,
+                transparent,
+                rgba(255, 255, 255, 0.5),
+                transparent);
+        transform: skewX(-25deg);
+        transition: 0.7s;
     }
 
     .btn-register:hover {
-        background: #1E293B;
-        color: #ffffff;
-        border: 1px solid #ffffff;
-        transform: translateY(1px) scale(1.03);
+        background: rgba(255, 255, 255, 0.06);
+        color: #fff;
+
+        border-color: rgba(255, 255, 255, 0.2);
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.14),
+            0 10px 24px rgba(255, 255, 255, 0.04);
+        transform: translateY(-4px);
     }
 
+    .btn-register:hover::before {
+        left: 120%;
+    }
+
+
+    /* ===== Đăng nhập ===== */
     .btn-login {
-        background: linear-gradient(135deg, #86171C, #EC2931);
+        background: linear-gradient(135deg, #FF5055, #FF5B6E, #FF7265);
         color: #fff;
         border: none;
+        box-shadow: 0 6px 18px rgba(255, 80, 85, 0.5);
+    }
+
+    /* shine nhẹ */
+    .btn-login::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -80%;
+        width: 20%;
+        height: 100%;
+        background: linear-gradient(120deg,
+                transparent,
+                rgba(255, 255, 255, 0.3),
+                transparent);
+        transform: skewX(-25deg);
+        transition: 0.8s;
     }
 
     .btn-login:hover {
-        transform: translateY(1px) scale(1.03);
+        transform: translateY(-4px);
         color: #fff;
+        box-shadow: 0 10px 25px rgba(255, 80, 85, 0.7);
+    }
+
+    .btn-login:hover::before {
+        left: 120%;
     }
 
     .navbar-toggler {
@@ -212,7 +268,6 @@
             </a>
 
             @endif
-
         </div>
     </div>
 </nav>

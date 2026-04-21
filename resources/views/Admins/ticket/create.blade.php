@@ -82,7 +82,7 @@
                                 value="{{ $seat->seatID }}"
                                 {{ old('seatID') == $seat->seatID ? 'selected' : '' }}
                             >
-                                Ghế {{ $seat->colSeat }}
+                                Ghế {{ $seat->colSeat }} - {{ $seat->seatType->seatTypeName }}
                             </option>
                         @endforeach
                     </select>

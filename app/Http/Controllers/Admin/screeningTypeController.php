@@ -12,9 +12,18 @@ class screeningTypeController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $screenTypes = screenType::all();
+        $search = trim((string) $request->input('search'));
+
+        $screenTypes = screenType::query()
+            ->when($search, function ($query) use ($search) {
+                $query->where('screenTypeID', 'like', "%{$search}%")
+                    ->orWhere('name', 'like', "%{$search}%");
+            })
+            ->paginate(5)
+            ->withQueryString();
+
         return view('admins.manageCinema.screenType.index', ['screenTypes' => $screenTypes]);
     }
 

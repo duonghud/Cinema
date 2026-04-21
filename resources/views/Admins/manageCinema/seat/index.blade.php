@@ -1,7 +1,6 @@
 @extends('layouts.appAdmin')
 
 @section('content')
-
 <style>
     body {
         background: #0b1220;
@@ -59,6 +58,9 @@
 
     .seat.couple {
         background: #ff4d4f;
+    }
+    .seat.maintenance {
+        background: #6F0E10;    
     }
 
     .seat.booked {
@@ -119,6 +121,10 @@
         background: #ff4d4f;
     }
 
+    .box.maintenance {
+        background: #6f0e10;
+    }
+
     .seat {
         position: relative;
     }
@@ -158,6 +164,7 @@
             </option>
             @endforeach
         </select>
+        <button type="button" onclick="goEditPage()" class="btn btn-primary">Cập nhật</button>
     </form>
 
     <!-- màn hình -->
@@ -168,27 +175,23 @@
 
     <!-- GRID -->
     <div id="seatGrid" class="seat-grid"></div>
+    <form id="editForm" method="GET" action="{{ route('seat.editMultiple') }}">
+        <input type="hidden" name="seatIDs" id="seatIDsInput">
+    </form>
 
-    <!-- BUTTON -->
-    <div class="text-center mt-3">
-        <button onclick="changeType(1)" class="btn btn-secondary">Ghế thường</button>
-        <button onclick="changeType(2)" class="btn btn-warning">Ghế VIP</button>
-        <button onclick="changeType(3)" class="btn btn-danger">Ghế đôi</button>
-    </div>
 
     <!-- LEGEND -->
     <div class="legend">
-        <div class="legend-item"><span class="box booked"></span> Đã đặt</div>
-        <div class="legend-item"><span class="box selected"></span> Ghế bạn chọn</div>
         <div class="legend-item"><span class="box normal"></span> Ghế thường</div>
         <div class="legend-item"><span class="box vip"></span> Ghế VIP</div>
         <div class="legend-item"><span class="box couple"></span> Ghế đôi</div>
+        <div class="legend-item"><span class="box maintenance"></span> Ghế bảo trì</div>
     </div>
-
 </div>
+<div id="errorBox" class="alert alert-danger d-none"></div>
 
 <script>
-    const currentRoom = @json($roomID);
+    const currentRoom = "{{ $roomID }}";
     const rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
     const cols = 14;
 
@@ -196,21 +199,18 @@
     let isMouseDown = false;
     let selectedSeats = [];
 
-    // kéo chuột
     document.addEventListener('mousedown', () => isMouseDown = true);
     document.addEventListener('mouseup', () => isMouseDown = false);
 
-    // load ghế
     function loadSeats() {
         fetch(`/admins/seat/ajax/${currentRoom}`)
             .then(res => res.json())
             .then(data => {
-                seatsData = data;
+                seatsData = data; // 
                 renderGrid();
             });
     }
 
-    // render
     function renderGrid() {
         let html = '';
 
@@ -221,33 +221,38 @@
             for (let i = 1; i <= cols; i++) {
 
                 let seat = seatsData.find(s =>
-                    s.rowSeat === row && s.colSeat == i
+                    s.rowSeat === row && Number(s.colSeat) === i
                 );
 
                 if (seat) {
+                    let seatClass = '';
+
+                    if (seat.seatTypeID == 2) seatClass = 'normal';
+                    else if (seat.seatTypeID == 1) seatClass = 'vip';
+                    else if (seat.seatTypeID == 3) seatClass = 'couple';
+                    else if (seat.seatTypeID == 4) seatClass = 'maintenance';
+
                     html += `
-                <div class="seat 
-                    ${seat.seatTypeID == 1 ? 'normal' : ''}
-                    ${seat.seatTypeID == 2 ? 'vip' : ''}
-                    ${seat.seatTypeID == 3 ? 'couple' : ''}"
-                    data-id="${seat.seatID}"
-                    onmouseover="handleHover(this)">
+                    <div class="seat ${seatClass}"
+                        data-id="${seat.seatID}"
+                        data-type="${seat.seatTypeID}"
+                        onmouseover="handleHover(this)">
 
-                    ${row}${i}
+                        ${row}${i}
 
-                    <div class="delete-btn" 
-                        onclick="deleteSeat(${seat.seatID}, event)">
-                        ×
+                        <div class="delete-btn"
+                            onclick="deleteSeat(${seat.seatID}, event)">
+                            ×
+                        </div>
+
                     </div>
-
-                </div>
                 `;
                 } else {
                     html += `
-                <div class="seat empty"
-                    onclick="createSeat('${row}', ${i})">
-                    +
-                </div>
+                    <div class="seat empty"
+                        onclick="createSeat('${row}', ${i})">
+                        +
+                    </div>
                 `;
                 }
             }
@@ -258,7 +263,6 @@
         document.getElementById('seatGrid').innerHTML = html;
     }
 
-    // kéo chọn
     function handleHover(el) {
         if (!isMouseDown) return;
 
@@ -270,10 +274,8 @@
         }
     }
 
-    // tạo ghế
     function createSeat(row, col) {
 
-        // render ngay lập tức
         seatsData.push({
             seatID: 'temp_' + Date.now(),
             rowSeat: row,
@@ -283,7 +285,6 @@
 
         renderGrid();
 
-        // gọi API thật
         fetch(`/admins/seat/ajax-store`, {
                 method: 'POST',
                 headers: {
@@ -297,13 +298,19 @@
                     seatTypeID: 1
                 })
             })
-            .then(() => loadSeats()); // sync lại
+            .then(res => res.json())
+            .then(res => {
+                if (res.error) {
+                    showError(res.error);
+                    loadSeats();
+                } else {
+                    loadSeats();
+                }
+            });
     }
 
-    // xoá ghế
     function deleteSeat(id, e) {
-
-        if (e) e.stopPropagation(); // Tránh lan ghế
+        if (e) e.stopPropagation();
 
         fetch(`/admins/seat/ajax-delete/${id}`, {
                 method: 'DELETE',
@@ -311,12 +318,16 @@
                     'X-CSRF-TOKEN': '{{ csrf_token() }}'
                 }
             })
-            .then(() => loadSeats());
+            .then(res => res.json())
+            .then(res => {
+                if (res.error) {
+                    showError(res.error);
+                }
+                loadSeats();
+            });
     }
 
-    // đổi loại
     function changeType(type) {
-
         if (selectedSeats.length === 0) {
             alert('Chưa chọn ghế');
             return;
@@ -339,7 +350,66 @@
             });
     }
 
-    // load
+    function cycleSeatType(seatID, currentType) {
+        let nextType = 1;
+
+        if (currentType == 1) nextType = 2;
+        else if (currentType == 2) nextType = 3;
+        else if (currentType == 3) nextType = 4;
+
+        fetch(`/admins/seat/ajax-update-type`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({
+                seatIDs: [seatID],
+                seatTypeID: nextType
+            })
+        }).then(() => loadSeats());
+    }   
+
+    function showError(message) {
+        const wrapper = document.querySelector('.modern-toast-wrapper');
+
+        const toast = document.createElement('div');
+        toast.className = 'modern-toast toast-error';
+
+        toast.innerHTML = `
+        <div class="toast-icon">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+        </div>
+        <div class="toast-content">
+            <div class="toast-title">Lỗi</div>
+            <div class="toast-text">${message}</div>
+        </div>
+        <button class="toast-close" onclick="this.parentElement.remove()">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    `;
+
+        wrapper.appendChild(toast);
+
+        // auto ẩn giống layout
+        setTimeout(() => {
+            toast.style.transition = '.4s';
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateX(40px)';
+            setTimeout(() => toast.remove(), 400);
+        }, 4000);
+    }
+
+    function goEditPage() {
+        if (selectedSeats.length === 0) {
+            showError('Chưa chọn ghế');
+            return;
+        }
+
+        document.getElementById('seatIDsInput').value = selectedSeats.join(',');
+        document.getElementById('editForm').submit();
+    }
+
     loadSeats();
 </script>
 

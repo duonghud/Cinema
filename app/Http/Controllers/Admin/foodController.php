@@ -12,9 +12,21 @@ class foodController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $foods = Food::paginate(5);
+        $search = trim((string) $request->input('search'));
+
+        $foods = Food::query()
+            ->when($search, function ($query) use ($search) {
+                $query->where('foodID', 'like', "%{$search}%")
+                    ->orWhere('foodName', 'like', "%{$search}%")
+                    ->orWhere('foodType', 'like', "%{$search}%")
+                    ->orWhere('size', 'like', "%{$search}%")
+                    ->orWhere('price', 'like', "%{$search}%");
+            })
+            ->paginate(5)
+            ->withQueryString();
+
         return view('admins.manageFoods.food.index', ['foods' => $foods]);
     }
 

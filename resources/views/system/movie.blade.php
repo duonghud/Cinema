@@ -45,7 +45,7 @@
                             <span class="text-gray-400">
                                 {{ $movie->genres->pluck('name')->join(', ') }}
                                 |
-                                {{ \Carbon\Carbon::parse($movie->releaseDate)->format('d/m/Y') }}
+                                {{ $movie->releaseDate->format('d/m/Y') }}
                             </span>
                         </p>
 

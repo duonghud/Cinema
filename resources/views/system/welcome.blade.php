@@ -2,29 +2,122 @@
     .btn-buy-ticket {
         display: inline-flex;
         align-items: center;
-        padding: 8px 24px;
+        padding: 10px 26px;
 
-        background: linear-gradient(to right, #f55454, #ec4899);
+        position: relative;
+        overflow: hidden;
+
+        background: linear-gradient(135deg, #f55454, #ec4899);
         color: white;
-        border-radius: 8px;
+        border-radius: 999px;
 
         text-decoration: none;
 
         transition: all 0.3s ease;
         transform: translateY(0) scale(1);
 
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 6px 18px rgba(255, 80, 85, 0.5);
     }
 
+    /* ===== shine effect ===== */
+    .btn-buy-ticket::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -80%;
+        width: 10%;
+        height: 100%;
+
+        background: linear-gradient(120deg,
+                transparent,
+                rgba(255, 255, 255, 0.5),
+                transparent);
+
+        transform: skewX(-25deg);
+        transition: 0.8s;
+    }
+
+    /* hover */
     .btn-buy-ticket:hover {
         transform: translateY(-4px) scale(1.05);
-        box-shadow: 0 10px 25px rgba(255, 0, 0, 0.6);
+        box-shadow: 0 12px 30px rgba(255, 0, 0, 0.6);
+    }
+
+    /* shine chạy */
+    .btn-buy-ticket:hover::before {
+        left: 120%;
     }
 
     .btn-buy-ticket .icon {
         width: 20px;
         height: 20px;
         margin-right: 8px;
+    }
+
+    .movie-card {
+        position: relative;
+        display: block;
+        overflow: hidden;
+        border-radius: 12px;
+    }
+
+    /* ảnh */
+    .movie-img {
+        width: 100%;
+        height: 320px;
+        object-fit: cover;
+        transition: transform 0.5s ease, filter 0.5s ease;
+    }
+
+    /* zoom + tối */
+    .movie-card:hover .movie-img {
+        transform: scale(1.08);
+        filter: brightness(0.8);
+    }
+
+    /* overlay tối */
+    .movie-card::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(to top,
+                rgba(0, 0, 0, 0.7),
+                transparent);
+        opacity: 0;
+        transition: 0.4s;
+    }
+
+    .movie-card:hover::after {
+        opacity: 1;
+    }
+
+    /* ===== shine effect ===== */
+    .movie-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -80%;
+        width: 50%;
+        height: 100%;
+
+        background: linear-gradient(120deg,
+                transparent,
+                rgba(255, 255, 255, 0.18),
+                transparent);
+
+        transform: skewX(-25deg);
+        transition: 0.7s;
+        z-index: 2;
+    }
+
+    /* chạy shine */
+    .movie-card:hover::before {
+        left: 120%;
+    }
+
+    /* shadow nổi */
+    .movie-card:hover {
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
     }
 </style>
 
@@ -137,9 +230,8 @@
 
             <div class="group bg-[#10141B]/60 rounded-xl overflow-hidden hover:shadow-2xl transition">
 
-                <a href="{{ route('movies.show', $movie) }}">
-                    <img src="{{ asset('posters/'.$movie->poster) }}"
-                        class="w-full h-80 object-cover group-hover:scale-105 transition">
+                <a href="{{ route('movies.show', $movie) }}" class="movie-card">
+                    <img src="{{ asset('posters/'.$movie->poster) }}" class="movie-img">
                 </a>
 
                 <div class="p-4">
@@ -169,9 +261,8 @@
 
             <div class="group bg-[#10141B]/60 rounded-xl overflow-hidden hover:shadow-2xl transition">
 
-                <a href="{{ route('movies.show', $movie) }}">
-                    <img src="{{ asset('posters/'.$movie->poster) }}"
-                        class="w-full h-80 object-cover group-hover:scale-105 transition">
+                <a href="{{ route('movies.show', $movie) }}" class="movie-card">
+                    <img src="{{ asset('posters/'.$movie->poster) }}" class="movie-img">
                 </a>
 
 
