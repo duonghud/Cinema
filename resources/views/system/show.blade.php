@@ -146,6 +146,7 @@
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {
+        // Tabs
         const tabs = document.querySelectorAll('.date-tab');
         tabs.forEach(tab => {
             tab.addEventListener('click', function() {
@@ -162,7 +163,8 @@
                 document.getElementById('date-' + date).classList.remove('hidden');
             });
         });
-        
+
+        // Suất chiếu
         document.querySelectorAll('.showtime-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 let url = this.getAttribute('data-url');
@@ -170,11 +172,38 @@
                     .then(response => response.text())
                     .then(html => {
                         document.getElementById('seat-container').innerHTML = html;
+                        attachSeatEvents(); // Gắn lại sự kiện cho ghế sau khi load
                     })
                     .catch(err => console.error(err));
             });
         });
     });
+
+    // Hàm gắn sự kiện cho ghế
+    function attachSeatEvents() {
+        const seats = document.querySelectorAll("#seat-container .seat");
+        const selectedSeats = [];
+
+        seats.forEach(seat => {
+            seat.addEventListener("click", function() {
+                if (seat.classList.contains("booked")) return;
+
+                const seatCode = seat.textContent.trim();
+
+                if (seat.classList.contains("selected")) {
+                    seat.classList.remove("selected");
+                    const index = selectedSeats.indexOf(seatCode);
+                    if (index > -1) selectedSeats.splice(index, 1);
+                } else {
+                    seat.classList.add("selected");
+                    selectedSeats.push(seatCode);
+                }
+
+                document.getElementById("selectedSeats").innerText = selectedSeats.join(", ");
+                document.getElementById("seatInput").value = selectedSeats.join(",");
+            });
+        });
+    }
 </script>
 
 @endsection

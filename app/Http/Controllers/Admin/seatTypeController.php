@@ -43,10 +43,15 @@ class seatTypeController extends Controller
     {
         $validated = $request->validate([
             'seatTypeName' => 'required|string|max:50|unique:seat_types,seatTypeName',
+            'price' => 'required|numeric|min:0|max:500000'
         ], [
             'seatTypeName.required' => 'Tên kiểu ghế không được để trống.',
             'seatTypeName.max' => 'Tên kiểu ghế không quá 50 ký tự.',
             'seatTypeName.unique' => 'Tên kiểu ghế đã tồn tại.',
+            'price.required' => 'Giá không được để trống.',
+            'price.numeric' => 'Giá phải là một số.',
+            'price.min' => 'Giá không được nhỏ hơn 0.',
+            'price.max' => 'Giá không được lớn hơn 500.000đ'
         ]);
 
         SeatType::create($validated);
@@ -81,10 +86,15 @@ class seatTypeController extends Controller
 
         $validated = $request->validate([
             'seatTypeName' => 'required|string|max:50|unique:seat_types,seatTypeName,' . $seatTypes->seatTypeID . ',seatTypeID',
+            'price' => 'required|numeric|min:0|max:500000',
         ], [
             'seatTypeName.required' => 'Tên kiểu ghế không được để trống.',
             'seatTypeName.max' => 'Tên kiểu ghế không quá 50 ký tự.',
             'seatTypeName.unique' => 'Tên kiểu ghế đã tồn tại.',
+            'price.required' => 'Giá không được để trống.',
+            'price.numeric' => 'Giá phải là một số.',
+            'price.min' => 'Giá không được nhỏ hơn 0.',
+            'price.max' => 'Giá không được lớn hơn 500.000đ'
         ]);
 
         $seatTypes->update($validated);

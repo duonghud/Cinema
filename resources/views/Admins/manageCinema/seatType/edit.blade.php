@@ -29,6 +29,31 @@
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
             </div>
+            
+            <!-- Price -->
+            <div class="mb-3">
+                <label for="price" class="form-label">Giá</label>
+                <input type="text" 
+                       name="price" 
+                       id="price" 
+                       class="form-control @error('price') is-invalid @enderror"
+                       value="{{ old('price', $seatTypes->price) }}"
+                       placeholder="Nhập giá"
+                       min="0"
+                       max="500000">
+
+                @error('price')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+            </div>
+                       class="form-control @error('seatTypeName') is-invalid @enderror"
+                       value="{{ old('seatTypeName', $seatTypes->seatTypeName) }}"
+                       placeholder="Nhập kiểu ghế (VIP, Thường...)">
+
+                @error('seatTypeName')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+            </div>
 
             <!-- Button -->
             <div class="d-flex justify-content-end">

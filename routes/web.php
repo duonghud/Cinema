@@ -96,6 +96,22 @@ Route::prefix('admins')->middleware('admin.auth')->group(function () {
     Route::resource('foodInvoiceDetail', FoodInvoiceDetailController::class);
     Route::resource('genre', GenreController::class);
 
+    // ================= SEAT AJAX =================
+    Route::get('seat/ajax/{roomID}', [SeatController::class, 'getSeatsByRoom'])
+        ->name('seat.ajax.list');
+
+    Route::post('seat/ajax-store', [SeatController::class, 'storeAjax'])
+        ->name('seat.ajax.store');
+
+    Route::get('seat/edit-multiple', [SeatController::class, 'editMultiple'])
+        ->name('seat.editMultiple');
+
+    Route::post('seat/update-multiple', [SeatController::class, 'updateMultiple'])
+        ->name('seat.updateMultiple');
+        
+    Route::delete('seat/ajax-delete/{id}', [SeatController::class, 'deleteAjax'])
+        ->name('seat.ajax.delete');
+
     Route::post('seat/generate', [SeatController::class, 'generate'])
         ->name('seat.generate');
 
@@ -122,9 +138,6 @@ Route::get('/select-seat/{id}', [SeatController::class, 'selectSeat'])
 // ================== Middleware ====================
 Route::middleware('customer.login')->group(function () {
 
-    Route::get('/profile', function () {
-        return view('customer.profile');
-    })->name('customer.profile');
 
     Route::get('/member', function () {
         return view('customer.member');
