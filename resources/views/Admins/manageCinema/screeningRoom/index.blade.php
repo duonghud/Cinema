@@ -69,12 +69,10 @@
                 </td>
             </tr>
             @endif
-
         </table>
     </div>
     </table>
 </div>
-
 <div class="mt-3">
     {{ $room->links() }}
 </div>
