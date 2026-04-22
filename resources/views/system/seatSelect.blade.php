@@ -4,7 +4,6 @@
         font-family: Arial, sans-serif;
     }
 
-    /* header */
     .top-bar {
         display: flex;
         justify-content: space-between;
@@ -21,7 +20,6 @@
         font-weight: bold;
     }
 
-    /* screen */
     .screen-wrapper {
         width: 60%;
         margin: 20px auto 50px;
@@ -48,8 +46,6 @@
         border-radius: 50% / 100%;
     }
 
-
-    /* seat */
     .seat-row {
         display: flex;
         justify-content: center;
@@ -74,30 +70,28 @@
         transform: scale(1.1);
     }
 
-    /* types */
     .normal {
         background: #1f2937;
-        /* xám đậm */
     }
 
     .vip {
         background: #fb923c;
-        /* cam nổi bật */
     }
 
     .couple {
         background: #ef4444;
-        /* đỏ tươi */
+    }
+
+    .maintenance {
+        background: #7f1d1d;
     }
 
     .selected {
-        background: #3b82f6;
-        /* xanh dương */
+        background: #3b82f6 !important;
     }
 
     .booked {
         background: #1f2937;
-        /* giữ màu xám nhưng thêm icon đỏ */
         cursor: not-allowed;
     }
 
@@ -112,7 +106,6 @@
         right: 4px;
     }
 
-    /* legend */
     .legend {
         display: flex;
         justify-content: center;
@@ -133,7 +126,6 @@
         border-radius: 5px;
     }
 
-    /* bottom */
     .bottom {
         display: flex;
         justify-content: space-between;
@@ -158,168 +150,159 @@
         color: white;
         cursor: pointer;
         font-weight: bold;
+        text-decoration: none;
     }
 </style>
 
-
 <div class="container">
 
-    <!-- top -->
+    <!-- TOP -->
     <div class="top-bar">
-
-        <div class="">
+        <div>
             Giờ chiếu: <b>{{ $showtime->startTime }}</b>
         </div>
 
         <div class="timer">
             Thời gian chọn ghế: <span id="timer"></span>
         </div>
-
     </div>
 
-
-    <!-- screen -->
-
+    <!-- SCREEN -->
     <div class="screen-wrapper">
-
         <div class="screen"></div>
-
-        <div class="screen-shadow"></div>
-
     </div>
 
     <h2 class="text-center mb-4">
         Phòng chiếu số {{ $showtime->room->roomName }}
     </h2>
 
-
-    @php $currentRow=null; @endphp
+    <!-- SEATS -->
+    @php $currentRow = null; @endphp
 
     @foreach($seats as $seat)
 
-    @if($currentRow!=$seat->rowSeat)
+    @if($currentRow !== $seat->rowSeat)
 
-    @if($currentRow!==null)
+    @if($currentRow !== null)
 </div>
 @endif
 
 <div class="seat-row">
-
-    @php $currentRow=$seat->rowSeat; @endphp
+    @php $currentRow = $seat->rowSeat; @endphp
 
     @endif
 
     <div class="seat
-
             @if(in_array($seat->seatID,$bookedSeats))
                 booked
-            @elseif($seat->seatTypeID==1)
-                normal
             @elseif($seat->seatTypeID==2)
+                normal
+            @elseif($seat->seatTypeID==1)
                 vip
-            @else
+            @elseif($seat->seatTypeID==3)
                 couple
+            @else
+                maintenance
             @endif
-
         ">
-
         {{ $seat->rowSeat }}{{ $seat->colSeat }}
-
     </div>
 
     @endforeach
 
-</div>
+</div> {{-- đóng row cuối --}}
 
-
-<!-- legend -->
-
+<!-- LEGEND -->
 <div class="legend">
-
     <div class="legend-item">
-        <div class="box booked"></div>
-        Đã đặt
+        <div class="box booked"></div> Đã đặt
     </div>
-
     <div class="legend-item">
-        <div class="box selected"></div>
-        Ghế bạn chọn
+        <div class="box selected"></div> Ghế bạn chọn
     </div>
-
     <div class="legend-item">
-        <div class="box normal"></div>
-        Ghế thường
+        <div class="box normal"></div> Ghế thường
     </div>
-
     <div class="legend-item">
-        <div class="box vip"></div>
-        Ghế VIP
+        <div class="box vip"></div> Ghế VIP
     </div>
-
     <div class="legend-item">
-        <div class="box couple"></div>
-        Ghế đôi
+        <div class="box couple"></div> Ghế đôi
     </div>
-
 </div>
 
 
-<!-- bottom -->
 
+<!-- BOTTOM -->
 <div class="bottom">
-
     <div>
-        Ghế đã chọn:<br>
+        <div style="margin-top:20px; text-align:center;">
+            Ghế đã chọn: <span id="selectedSeats" style="font-weight:bold; color:#3b82f6;"></span>
+        </div>
         Tổng tiền: 0đ
     </div>
 
-    <div>
+    <form action="{{ route('payment') }}" method="POST">
+        @csrf
+        <input type="hidden" name="showtime_id" value="{{ $showtime->id }}">
+        <input type="hidden" name="seats" id="seatInput">
 
-        <button class="btn-back">
-            Quay lại
-        </button>
-
-        <a class="btn-pay" href="{{ route('payment') }}">
-            Thanh toán
-        </a>
-
-    </div>
+        <div class="bottom">
+            <button type="button" class="btn-back" onclick="history.back()">Quay lại</button>
+            <button type="submit" class="btn-pay">Thanh toán</button>
+        </div>
+    </form>
 
 </div>
+</div>
+
+<!-- JS -->
 <script>
-    document.querySelectorAll('.seat').forEach(seat => {
+    document.addEventListener("DOMContentLoaded", function() {
+        const seats = document.querySelectorAll(".seat");
+        const selectedSeats = [];
 
-        seat.addEventListener('click', function() {
+        seats.forEach(seat => {
+            seat.addEventListener("click", function() {
+                if (seat.classList.contains("booked")) return;
 
-            if (this.classList.contains('booked')) return;
+                const seatCode = seat.textContent.trim();
 
-            this.classList.toggle('selected');
+                if (seat.classList.contains("selected")) {
+                    seat.classList.remove("selected");
+                    const index = selectedSeats.indexOf(seatCode);
+                    if (index > -1) selectedSeats.splice(index, 1);
+                } else {
+                    seat.classList.add("selected");
+                    selectedSeats.push(seatCode);
+                }
 
+                // Hiển thị danh sách ghế đã chọn
+                document.getElementById("selectedSeats").innerText = selectedSeats.join(", ");
+                // Cập nhật hidden input để gửi sang backend
+                document.getElementById("seatInput").value = selectedSeats.join(",");
+            });
         });
 
+        // TIMER
+        let time = 300;
+
+        let timer = setInterval(() => {
+            let m = Math.floor(time / 60);
+            let s = time % 60;
+
+            if (s < 10) s = "0" + s;
+
+            document.getElementById("timer").innerText = m + ":" + s;
+
+            if (time <= 0) {
+                clearInterval(timer);
+                window.location.href = "{{ route('home') }}";
+                return;
+            }
+
+            time--;
+        }, 1000);
+
     });
-
-
-    let time = 300;
-
-    let timer = setInterval(() => {
-
-        let m = Math.floor(time / 60);
-        let s = time % 60;
-
-        if (s < 10) s = "0" + s;
-
-        document.getElementById("timer").innerText = m + ":" + s;
-
-        if (time <= 0) {
-
-            clearInterval(timer);
-            window.location.href = "{{ route('home') }}";
-            return;
-        }
-
-        time--;
-
-    }, 1000);
 </script>
-</div>

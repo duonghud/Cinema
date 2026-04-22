@@ -23,6 +23,7 @@
                         <th>Tên phim</th>
                         <th>Poster</th>
                         <th>Trailer</th>
+                        <th>Thời lượng</th>
                         <th>Đạo diễn</th>
                         <th>Mô tả</th>
                         <th>Phát hành</th>
@@ -48,6 +49,7 @@
                                     </video>
                                 @endif
                             </td>
+                            <td>{{ $movie->duration }} phút</td>
                             <td>{{ $movie->director }}</td>
                             <td style="max-width:200px;">
                                 <small class="text-muted">{{ Str::limit($movie->description, 36) }}</small>

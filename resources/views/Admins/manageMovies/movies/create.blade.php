@@ -81,6 +81,23 @@
                             @enderror
                         </div>
 
+                        <!--Thời lượng-->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-medium">Thời lượng</label>
+                            <input type="number"
+                                name="duration"
+                                class="form-control @error('duration') is-invalid @enderror"
+                                value="{{ old('duration') }}"
+                                placeholder="Nhập thời lượng (phút)"
+                                min="0">
+
+                            @error('duration')
+                            <div class="invalid-feedback">
+                                {{ $message }}
+                            </div>
+                            @enderror
+                        </div>
+
                     </div>
 
                     <div class="row">

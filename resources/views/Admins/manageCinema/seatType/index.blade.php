@@ -21,6 +21,7 @@
                     <tr>
                         <th width="10%">ID</th>
                         <th>Kiểu ghế</th>
+                        <th>Giá tiền</th>
                         <th class="text-end" width="25%">Hành động</th>
                     </tr>
                 </thead>
@@ -31,6 +32,9 @@
                             <td class="text-muted">{{ $seatType->seatTypeID }}</td>
                             <td class="fw-medium">
                                 <span class="badge bg-light text-dark">{{ $seatType->seatTypeName }}</span>
+                            </td>
+                            <td class="fw-medium">
+                                <span class="badge bg-light text-dark">{{ $seatType->price }}</span>
                             </td>
                             <td class="text-end">
                                 <a href="{{ route('seatType.edit', $seatType->seatTypeID) }}" class="btn btn-sm btn-outline-dark me-2">

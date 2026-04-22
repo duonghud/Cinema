@@ -11,7 +11,7 @@
     </div>
 
     @include('admins.partials.page-search', [
-        'placeholder' => 'Tìm theo tên phòng, sức chứa hoặc loại màn'
+    'placeholder' => 'Tìm theo tên phòng, sức chứa hoặc loại màn'
     ])
 
     <div class="bg-white border rounded-3 shadow-sm">
@@ -28,45 +28,53 @@
 
             <tbody>
                 @forelse($room as $r)
-                    <tr class="border-bottom">
-                        <td class="text-muted">{{ $r->roomID }}</td>
-                        <td class="fw-medium">{{ $r->roomName }}</td>
-                        <td>{{ $r->capacity }}</td>
-                        <td>
-                            @if($r->screenType)
-                                <span class="text-secondary">{{ $r->screenType->name }}</span>
-                            @else
-                                <span class="text-muted">N/A</span>
-                            @endif
-                        </td>
-                        <td class="text-end">
-                            <a href="{{ route('screeningRoom.edit', $r->roomID) }}" class="btn btn-sm btn-outline-dark me-2">
-                                Sửa
-                            </a>
+                <tr class="border-bottom">
+                    <td class="text-muted">{{ $r->roomID }}</td>
+                    <td class="fw-medium">{{ $r->roomName }}</td>
+                    <td>{{ $r->capacity }}</td>
+                    <td>
+                        @if($r->screenType)
+                        <span class="text-secondary">{{ $r->screenType->name }}</span>
+                        @else
+                        <span class="text-muted">N/A</span>
+                        @endif
+                    </td>
+                    <td class="text-end">
+                        <a href="{{ route('screeningRoom.edit', $r->roomID) }}" class="btn btn-sm btn-outline-dark me-2">
+                            Sửa
+                        </a>
 
-                            <form action="{{ route('screeningRoom.destroy', $r->roomID) }}" method="POST" class="d-inline">
-                                @csrf
-                                @method('DELETE')
+                        <form action="{{ route('screeningRoom.destroy', $r->roomID) }}" method="POST" class="d-inline">
+                            @csrf
+                            @method('DELETE')
 
-                                <button class="btn btn-sm btn-outline-danger">
-                                    Xóa
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
+                            <button class="btn btn-sm btn-outline-danger">
+                                Xóa
+                            </button>
+                        </form>
+                    </td>
+                </tr>
                 @empty
-                    <tr>
-                        <td colspan="5" class="text-center text-muted py-4">
-                            Chưa có dữ liệu phòng chiếu
-                        </td>
-                    </tr>
+                <tr>
+                    <td colspan="5" class="text-center text-muted py-4">
+                        Chưa có dữ liệu phòng chiếu
+                    </td>
+                </tr>
                 @endforelse
             </tbody>
+            @if ($room -> isEmpty())
+            <tr>
+                <td colspan="5" class="text-center text-muted py-4">
+                    Chưa có dữ liệu phòng chiếu
+                </td>
+            </tr>
+            @endif
         </table>
     </div>
-
-    <div class="mt-3">
-        {{ $room->links() }}
-    </div>
+    </table>
+</div>
+<div class="mt-3">
+    {{ $room->links() }}
+</div>
 </div>
 @endsection

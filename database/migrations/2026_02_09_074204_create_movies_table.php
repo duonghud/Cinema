@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('poster')->nullable();
             $table->string('trailer')->nullable();
             $table->date('releaseDate');
+            $table->integer('duration');
             $table->foreignId('ageRatingID')->constrained('age_ratings', 'ageRatingID');
             $table->foreignId('studioID')->constrained('studios', 'studioID');
 

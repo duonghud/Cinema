@@ -27,6 +27,21 @@
                 @enderror
             </div>
 
+            <!-- Price -->
+            <div class="mb-3">
+                <label for="price" class="form-label">Giá tiền</label>
+                <input type="text" 
+                       name="price" 
+                       id="price" 
+                       placeholder="Nhập giá"
+                       class="form-control @error('price') is-invalid @enderror"
+                       value="{{ old('price') }}">
+
+                @error('price')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+            </div>
+
             <!-- Buttons -->
             <div class="d-flex justify-content-end">
                 <a href="{{ route('seatType.index') }}" 

@@ -14,20 +14,6 @@
 
             @foreach($movies as $movie)
 
-            @php
-                $videoID = '';
-
-                if(str_contains($movie->trailer,'watch?v=')){
-                    $videoID = explode('watch?v=',$movie->trailer)[1];
-                }
-                elseif(str_contains($movie->trailer,'youtu.be/')){
-                    $videoID = explode('youtu.be/',$movie->trailer)[1];
-                }
-                else{
-                    $videoID = $movie->trailer;
-                }
-            @endphp
-
             <div class="group relative rounded-xl overflow-hidden bg-[#10141B]/60 backdrop-blur hover:shadow-2xl transition">
 
                 <!-- Poster -->
@@ -36,6 +22,17 @@
                         <img src="{{ asset('posters/'.$movie->poster) }}" 
                              class="w-full h-80 object-cover group-hover:scale-105 transition duration-300">
                     </a>
+
+                    <!-- Trailer preview (hover) -->
+                    @if($movie->trailer)
+                    <div class="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+
+                        <video width="220" class="rounded" muted autoplay loop>
+                            <source src="{{ asset($movie->trailer) }}">
+                        </video>
+
+                    </div>
+                    @endif
                 </div>
 
                 <!-- Info -->
@@ -54,9 +51,8 @@
 
                     </div>
 
-
                     <!-- Showtime -->
-                        @if($movie->showTimes->count() > 0)
+                    @if($movie->showTimes->count() > 0)
 
                         <div class="flex flex-wrap gap-2 mt-2">
 
@@ -75,10 +71,9 @@
 
                         </div>
 
-                        @else
-                            <p class="text-gray-500">Chưa có lịch chiếu</p>
-                        @endif
-                    
+                    @else
+                        <p class="text-gray-500">Chưa có lịch chiếu</p>
+                    @endif
 
                     <!-- Title -->
                     <h2 class="text-base font-semibold text-white leading-tight line-clamp-2 group-hover:text-red-400 transition">
@@ -93,7 +88,8 @@
 
         </div>
 
-        <div class="flex items-center gap-2 mb-6">
+        <!-- Upcoming -->
+        <div class="flex items-center gap-2 mb-6 mt-10">
             <div class="rounded-full bg-red-500 w-4 h-4"></div>
             <h3 class="font-bold md:text-2xl text-light">Phim sắp chiếu</h3>
         </div>

@@ -51,6 +51,7 @@ class movieController extends Controller
             'director' => 'required|max:255',
             'releaseDate' => 'required|date',
             'trailer' => 'nullable|mimes:mp4,mov,avi,webm|max:100000',
+            'duration' => 'nullable|integer|min:0',
             'description' => 'nullable',
             'ageRatingID' => 'required|exists:age_ratings,ageRatingID',
             'studioID' => 'required|exists:studios,studioID',
@@ -110,7 +111,8 @@ class movieController extends Controller
             'movieTitle' => 'required|max:255',
             'director' => 'required|max:255',
             'releaseDate' => 'required|date',
-            'trailer' => 'nullable|url',
+            'trailer' => 'nullable|mimes:mp4,mov,avi,webm|max:100000',
+            'duration' => 'nullable|integer|min:0',
             'description' => 'nullable',
             'ageRatingID' => 'required|exists:age_ratings,ageRatingID',
             'studioID' => 'required|exists:studios,studioID',
@@ -151,7 +153,7 @@ class movieController extends Controller
                 return back()->withErrors([
                     'releaseDate' => 'Phim đã có suất chiếu, không thể thay đổi ngày phát hành.'
                 ])->withInput()
-                ->with('edit_id', $movie->movieID);
+                    ->with('edit_id', $movie->movieID);
             }
         }
 
@@ -160,6 +162,23 @@ class movieController extends Controller
             $filename = time() . '.' . $file->getClientOriginalExtension();
             $file->move(public_path('posters'), $filename);
             $data['poster'] = $filename;
+        }
+
+        if ($request->hasFile('trailer')) {
+
+            // Xóa file cũ
+            if ($movie->trailer && file_exists(public_path($movie->trailer))) {
+                unlink(public_path($movie->trailer));
+            }
+
+            $trailerName = time() . '_trailer.' . $request->trailer->extension();
+
+            $request->trailer->move(
+                public_path('uploads/trailers'),
+                $trailerName
+            );
+
+            $data['trailer'] = 'uploads/trailers/' . $trailerName;
         }
 
         $movie->update($data);
