@@ -2,38 +2,23 @@
 @section('content')
 
 <div class="text-white">
-
-    <!-- HEADER -->
     <div class="relative z-10 px-10 py-4 flex justify-between items-center">
-
         <div class="absolute inset-0">
-            <img src="{{ asset('posters/'.$movie->poster) }}"
+            <img src="{{ asset('posters/' . $movie->poster) }}"
                 class="w-full h-full object-cover">
 
-            <div class="absolute inset-0 
-                        bg-gradient-to-r 
-                        from-black 
-                        via-black/90 
-                        to-black/70">
-            </div>
+            <div class="absolute inset-0 bg-gradient-to-r from-black via-black/90 to-black/70"></div>
         </div>
 
-        <!-- CONTENT -->
         <div class="relative z-10 px-10 py-4">
-
             <div class="w-full pt-10 pb-20">
-
                 <div class="grid grid-cols-3 gap-10 items-center">
-
-                    <!-- POSTER -->
                     <div>
-                        <img src="{{ asset('posters/'.$movie->poster) }}"
+                        <img src="{{ asset('posters/' . $movie->poster) }}"
                             class="rounded-2xl shadow-2xl">
                     </div>
 
-                    <!-- INFO -->
                     <div class="col-span-2 space-y-3">
-
                         <h1 class="text-3xl font-bold uppercase">
                             {{ $movie->movieTitle }} - {{ $movie->ageRating->code ?? 'T16' }}
                             <span class="text-sm border px-2 py-1 rounded ml-2">2D</span>
@@ -45,14 +30,12 @@
                             Đạo diễn: {{ $movie->director }}
                         </p>
 
-                        @php $show = $movie->showTimes->first(); @endphp
-
                         <p class="text-gray-300">
                             Thời lượng:
-                            @if($show)
-                            {{ (strtotime($show->endTime) - strtotime($show->startTime)) / 60 }} phút
+                            @if($movie->duration)
+                            {{ $movie->duration }} phút
                             @else
-                            Chưa có lịch chiếu
+                            Chưa có thông tin
                             @endif
                         </p>
 
@@ -64,12 +47,10 @@
                             {{ $movie->description }}
                         </p>
 
-                        <!-- AGE WARNING -->
                         <p class="text-red-500 text-sm">
                             Kiểm duyệt: {{ $movie->ageRating->code ?? 'T16' }} - {{ $movie->ageRating->description }}
                         </p>
 
-                        <!-- BUTTON -->
                         <div class="flex gap-6 pt-3">
                             <button
                                 onclick="openTrailer('{{ $movie->trailer }}')"
@@ -77,24 +58,17 @@
                                 Xem trailer
                             </button>
                         </div>
-
                     </div>
-
                 </div>
-
             </div>
-
         </div>
-
     </div>
-
 
     @php
     $dates = $movie->showTimes->groupBy('showDate');
     $firstDate = $dates->keys()->first();
     @endphp
 
-    <!-- DATE TABS -->
     <div class="mt-0 flex h-[91px] justify-start sm:justify-center bg-[#1A1D23] overflow-x-auto" role="tablist">
         @foreach($dates as $date => $shows)
         @php
@@ -103,14 +77,18 @@
         $month = date('m', strtotime($date));
         $weekday = date('l', strtotime($date));
         $weekMap = [
-        'Monday' => 'Thứ hai','Tuesday' => 'Thứ ba','Wednesday' => 'Thứ tư',
-        'Thursday' => 'Thứ năm','Friday' => 'Thứ sáu','Saturday' => 'Thứ bảy','Sunday' => 'Chủ nhật'
+            'Monday' => 'Thứ hai',
+            'Tuesday' => 'Thứ ba',
+            'Wednesday' => 'Thứ tư',
+            'Thursday' => 'Thứ năm',
+            'Friday' => 'Thứ sáu',
+            'Saturday' => 'Thứ bảy',
+            'Sunday' => 'Chủ nhật'
         ];
         @endphp
 
         <button class="date-tab focus:outline-none" data-date="{{ $date }}" aria-selected="{{ $isActive ? 'true' : 'false' }}">
-            <div class="w-[72px] h-full flex flex-col items-center justify-center text-xs transition-colors
-                            {{ $isActive ? 'bg-red-600' : 'bg-transparent hover:bg-[#2A2F38]' }}">
+            <div class="w-[72px] h-full flex flex-col items-center justify-center text-xs transition-colors {{ $isActive ? 'bg-red-600' : 'bg-transparent hover:bg-[#2A2F38]' }}">
                 <p>Th. {{ $month }}</p>
                 <p class="text-xl font-bold">{{ $day }}</p>
                 <p>{{ $weekMap[$weekday] }}</p>
@@ -119,8 +97,6 @@
         @endforeach
     </div>
 
-
-    <!-- SHOWTIMES -->
     <div class="mt-8 pb-20">
         @foreach($dates as $date => $shows)
         <div class="showtime-row {{ $date == $firstDate ? '' : 'hidden' }}" id="date-{{ $date }}">
@@ -129,7 +105,7 @@
                 <button
                     class="px-12 py-3 border border-gray-600 rounded-full hover:border-red-500 hover:text-red-400 transition showtime-btn"
                     data-url="{{ route('seat.select', $show->showTimeID) }}">
-                    {{ substr($show->startTime,0,5) }}
+                    {{ substr($show->startTime, 0, 5) }}
                 </button>
                 @endforeach
             </div>
@@ -137,16 +113,13 @@
         @endforeach
     </div>
 
-    <!-- SEAT CONTAINER -->
     <div id="seat-container" class="mt-6"></div>
-
 </div>
 
 @include('layouts.trailer')
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        // Tabs
         const tabs = document.querySelectorAll('.date-tab');
         tabs.forEach(tab => {
             tab.addEventListener('click', function() {
@@ -164,7 +137,6 @@
             });
         });
 
-        // Suất chiếu
         document.querySelectorAll('.showtime-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 let url = this.getAttribute('data-url');
@@ -172,14 +144,13 @@
                     .then(response => response.text())
                     .then(html => {
                         document.getElementById('seat-container').innerHTML = html;
-                        attachSeatEvents(); // Gắn lại sự kiện cho ghế sau khi load
+                        attachSeatEvents();
                     })
                     .catch(err => console.error(err));
             });
         });
     });
 
-    // Hàm gắn sự kiện cho ghế
     function attachSeatEvents() {
         const seats = document.querySelectorAll("#seat-container .seat");
         const selectedSeats = [];

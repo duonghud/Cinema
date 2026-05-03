@@ -34,7 +34,11 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/show', [showController::class, 'index'])->name('show');
 Route::view('/contact', 'system.contact')->name('contact');
 Route::view('/ticket-price', 'system.ticketprice')->name('ticket.price');
-Route::view('/profile', 'system.profile')->name('system.profile');
+Route::get('/profile', function () {
+    $customer = session('customer');
+
+    return view('system.profile', compact('customer'));
+})->name('customer.profile');
 Route::get('/movie', [MovieController::class, 'index'])->name('system.movie');
 Route::get('/payment', [PaymentMethodController::class, 'index'])->name('system.payment');
 
