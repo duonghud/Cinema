@@ -36,7 +36,7 @@
                             <td>
                                 <span class="badge bg-light text-dark">
                                     {{ substr($item->startTime, 0, 5) }}-{{ substr($item->endTime, 0, 5) }}
-                                    ({{ (strtotime($item->endTime) - strtotime($item->startTime)) / 60 }} phút)
+                                    ({{ $item->movie->duration ?? ((strtotime($item->endTime) - strtotime($item->startTime)) / 60) }} phút)
                                 </span>
                             </td>
                             <td class="fw-medium">{{ $item->movie->movieTitle ?? '---' }}</td>
