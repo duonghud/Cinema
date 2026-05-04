@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Admin\screeningRoom;
 use App\Models\Admin\screenType;
+use App\Models\Admin\Seat;
 
 class screeningRoomController extends Controller
 {
@@ -44,26 +45,39 @@ class screeningRoomController extends Controller
 
     // CREATE
     public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'roomName' => 'required|string|max:100',
-            'capacity' => 'required|integer|min:1',
-            'screenTypeID' => 'required|exists:screen_types,screenTypeID',
-        ], [
-            'roomName.required' => 'Tên phòng không được để trống.',
-            'roomName.max' => 'Tên phòng không được quá 100 ký tự.',
-            'capacity.required' => 'Sức chứa không được để trống.',
-            'capacity.integer' => 'Sức chứa phải là số nguyên.',
-            'capacity.min' => 'Sức chứa phải lớn hơn 0.',
-            'screenTypeID.required' => 'Vui lòng chọn loại phòng.',
-            'screenTypeID.exists' => 'Loại phòng không hợp lệ.',
-        ]);
+{
+    $validated = $request->validate([
+        'roomName' => 'required|string|max:100',
+        'rows' => 'required|integer|min:1|max:20',
+        'cols' => 'required|integer|min:1|max:20',
+        'screenTypeID' => 'required|exists:screen_types,screenTypeID',
+    ]);
 
-        ScreeningRoom::create($validated);
+    $capacity = $request->rows * $request->cols;
 
-        return redirect()->route('screeningRoom.index')
-            ->with('success', 'Phòng chiếu mới đã được thêm thành công.');
+    $room = ScreeningRoom::create([
+        'roomName' => $request->roomName,
+        'capacity' => $capacity,
+        'screenTypeID' => $request->screenTypeID,
+    ]);
+
+    $rows = range('A', chr(64 + $request->rows));
+
+    foreach ($rows as $row) {
+        for ($col = 1; $col <= $request->cols; $col++) {
+
+            Seat::create([
+                'roomID' => $room->roomID,
+                'rowSeat' => $row,
+                'colSeat' => $col,
+                'seatTypeID' => 2
+            ]);
+        }
     }
+
+    return redirect()->route('seat.index', ['roomID' => $room->roomID])
+        ->with('success', 'Tạo phòng + ghế thành công');
+}
 
     // FORM EDIT
     public function edit(string $id)

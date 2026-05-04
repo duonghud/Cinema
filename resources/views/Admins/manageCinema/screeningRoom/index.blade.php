@@ -40,6 +40,11 @@
                         @endif
                     </td>
                     <td class="text-end">
+
+                        <a href="{{ route('seat.index', $r->roomID) }}" class="btn btn-sm btn-outline-primary">
+                            Xem ghế
+                        </a>
+                        
                         <a href="{{ route('screeningRoom.edit', $r->roomID) }}" class="btn btn-sm btn-outline-dark me-2">
                             Sửa
                         </a>

@@ -1,13 +1,10 @@
 @extends('layouts.appAdmin')
 
 @section('content')
-<style>
-    body {
-        background: #0b1220;
-        color: white;
-    }
 
-    /* màn hình */
+<style>
+    body { background: #0b1220; color: white; }
+
     .screen-bar {
         width: 60%;
         height: 40px;
@@ -16,138 +13,48 @@
         border-radius: 50%;
     }
 
-    /* GRID */
-    .seat-grid {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        align-items: center;
-    }
+    .seat-grid { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+    .seat-row { display: flex; gap: 8px; align-items: center; }
+    .row-label { width: 30px; }
 
-    .seat-row {
-        display: flex;
-        gap: 8px;
-        align-items: center;
-    }
-
-    .row-label {
-        width: 30px;
-    }
-
-    /* GHẾ */
     .seat {
-        width: 40px;
-        height: 40px;
+        width: 40px; height: 40px;
         border-radius: 8px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        font-size: 12px;
-        cursor: pointer;
-        transition: 0.2s;
-        user-select: none;
-    }
-
-    .seat.normal {
-        background: #374151;
-    }
-
-    .seat.vip {
-        background: #f97316;
-    }
-
-    .seat.couple {
-        background: #ff4d4f;
-    }
-    .seat.maintenance {
-        background: #6F0E10;    
-    }
-
-    .seat.booked {
-        background: red;
-        pointer-events: none;
-    }
-
-    .seat.empty {
-        background: #111;
-        border: 1px dashed #555;
-    }
-
-    .seat.selected {
-        outline: 3px solid #3b82f6;
-    }
-
-    .seat:hover {
-        transform: scale(1.1);
-    }
-
-    /* LEGEND */
-    .legend {
-        display: flex;
-        justify-content: center;
-        gap: 25px;
-        margin-top: 20px;
-    }
-
-    .legend-item {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    .box {
-        width: 22px;
-        height: 22px;
-        border-radius: 6px;
-    }
-
-    .box.booked {
-        background: red;
-    }
-
-    .box.selected {
-        background: #3b82f6;
-    }
-
-    .box.normal {
-        background: #374151;
-    }
-
-    .box.vip {
-        background: #f97316;
-    }
-
-    .box.couple {
-        background: #ff4d4f;
-    }
-
-    .box.maintenance {
-        background: #6f0e10;
-    }
-
-    .seat {
+        display: flex; justify-content: center; align-items: center;
+        font-size: 12px; cursor: pointer;
+        transition: 0.2s; user-select: none;
         position: relative;
     }
 
+    .seat.normal { background: #374151; }
+    .seat.vip { background: #f97316; }
+    .seat.couple { background: #ff4d4f; }
+    .seat.maintenance { background: #6F0E10; }
+    .seat.booked { background: red; pointer-events: none; }
+    .seat.empty { background: #111; border: 1px dashed #555; }
+    .seat.selected { outline: 3px solid #3b82f6; }
+    .seat:hover { transform: scale(1.1); }
+
     .delete-btn {
         position: absolute;
-        top: -6px;
-        right: -6px;
-        background: red;
-        color: white;
+        top: -6px; right: -6px;
+        background: red; color: white;
         font-size: 10px;
-        width: 16px;
-        height: 16px;
+        width: 16px; height: 16px;
         border-radius: 50%;
         display: none;
-        justify-content: center;
-        align-items: center;
+        justify-content: center; align-items: center;
         cursor: pointer;
     }
+    .seat:hover .delete-btn { display: flex; }
 
-    .seat:hover .delete-btn {
-        display: flex;
-    }
+    .legend { display: flex; justify-content: center; gap: 25px; margin-top: 20px; }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .box { width: 22px; height: 22px; border-radius: 6px; }
+    .box.normal { background: #374151; }
+    .box.vip { background: #f97316; }
+    .box.couple { background: #ff4d4f; }
+    .box.maintenance { background: #6f0e10; }
 </style>
 
 <div class="container">
@@ -157,30 +64,27 @@
     <!-- chọn phòng -->
     <form method="GET" class="mb-4">
         <select name="roomID" onchange="this.form.submit()" class="form-select w-25">
-            @foreach($rooms as $room)
-            <option value="{{ $room->roomID }}"
-                {{ $roomID == $room->roomID ? 'selected' : '' }}>
-                Phòng {{ $room->roomName }}
-            </option>
+            @foreach($rooms as $roomItem)
+                <option value="{{ $roomItem->roomID }}"
+                    {{ $roomID == $roomItem->roomID ? 'selected' : '' }}>
+                    Phòng {{ $roomItem->roomName }}
+                </option>
             @endforeach
         </select>
         <button type="button" onclick="goEditPage()" class="btn btn-primary">Cập nhật</button>
     </form>
 
-    <!-- màn hình -->
     <div class="text-center mb-3">
         <div class="screen-bar"></div>
         <p class="text-warning mt-2">MÀN HÌNH</p>
     </div>
 
-    <!-- GRID -->
     <div id="seatGrid" class="seat-grid"></div>
+
     <form id="editForm" method="GET" action="{{ route('seat.editMultiple') }}">
         <input type="hidden" name="seatIDs" id="seatIDsInput">
     </form>
 
-
-    <!-- LEGEND -->
     <div class="legend">
         <div class="legend-item"><span class="box normal"></span> Ghế thường</div>
         <div class="legend-item"><span class="box vip"></span> Ghế VIP</div>
@@ -188,229 +92,247 @@
         <div class="legend-item"><span class="box maintenance"></span> Ghế bảo trì</div>
     </div>
 </div>
-<div id="errorBox" class="alert alert-danger d-none"></div>
+
+<!-- toast wrapper -->
+<div class="modern-toast-wrapper position-fixed top-0 end-0 p-3"></div>
 
 <script>
-    const currentRoom = "{{ $roomID }}";
-    const rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
-    const cols = 14;
 
-    let seatsData = [];
-    let isMouseDown = false;
-    let selectedSeats = [];
+/* ================== DEBUG HELPER ================== */
+function logError(msg, data = null) {
+    console.error(" ERROR:", msg, data || "");
+}
 
-    document.addEventListener('mousedown', () => isMouseDown = true);
-    document.addEventListener('mouseup', () => isMouseDown = false);
+function logWarn(msg, data = null) {
+    console.warn(" WARN:", msg, data || "");
+}
 
-    function loadSeats() {
-        fetch(`/admins/seat/ajax/${currentRoom}`)
-            .then(res => res.json())
-            .then(data => {
-                seatsData = data; // 
-                renderGrid();
-            });
+function logInfo(msg, data = null) {
+    console.log(" INFO:", msg, data || "");
+}
+/* ================================================= */
+
+
+/* ================== FIX QUAN TRỌNG ================== */
+const currentRoom = "{{ $roomID ?? 0 }}";
+const rowsCount = "{{ $room ? $room->rows : 0 }}";
+const cols = "{{ $room ? $room->cols : 0 }}";
+
+logInfo("ROOM ID", currentRoom);
+logInfo("ROWS", rowsCount);
+logInfo("COLS", cols);
+
+/* CHECK DATA NGAY */
+if (!currentRoom || currentRoom == "0") {
+    logError("currentRoom bị null hoặc = 0");
+}
+
+if (rowsCount == "0" || cols == "0") {
+    logError("rows hoặc cols = 0 → KHÔNG render được grid");
+}
+/* =================================================== */
+
+
+/* ================= INIT ROW ================= */
+let rows = [];
+
+try {
+    rows = Array.from({ length: Number(rowsCount) }, (_, i) =>
+        String.fromCharCode(65 + i)
+    );
+    logInfo("ROWS ARRAY", rows);
+} catch (e) {
+    logError("Lỗi tạo rows", e);
+}
+/* ============================================ */
+
+
+let seatsData = [];
+let isMouseDown = false;
+let selectedSeats = [];
+
+document.addEventListener('mousedown', () => isMouseDown = true);
+document.addEventListener('mouseup', () => isMouseDown = false);
+
+
+/* ================= LOAD ================= */
+function loadSeats() {
+
+    logInfo("CALL API", `/admins/seat/ajax/${currentRoom}`);
+
+    if (!currentRoom) {
+        logError("Không có roomID → không gọi API");
+        return;
     }
 
-    function renderGrid() {
-        let html = '';
+    fetch(`/admins/seat/ajax/${currentRoom}`)
+        .then(res => {
 
-        rows.forEach(row => {
-            html += `<div class="seat-row">`;
-            html += `<span class="row-label">${row}</span>`;
+            logInfo("API STATUS", res.status);
 
-            for (let i = 1; i <= cols; i++) {
-
-                let seat = seatsData.find(s =>
-                    s.rowSeat === row && Number(s.colSeat) === i
-                );
-
-                if (seat) {
-                    let seatClass = '';
-
-                    if (seat.seatTypeID == 2) seatClass = 'normal';
-                    else if (seat.seatTypeID == 1) seatClass = 'vip';
-                    else if (seat.seatTypeID == 3) seatClass = 'couple';
-                    else if (seat.seatTypeID == 4) seatClass = 'maintenance';
-
-                    html += `
-                    <div class="seat ${seatClass}"
-                        data-id="${seat.seatID}"
-                        data-type="${seat.seatTypeID}"
-                        onmouseover="handleHover(this)">
-
-                        ${row}${i}
-
-                        <div class="delete-btn"
-                            onclick="deleteSeat(${seat.seatID}, event)">
-                            ×
-                        </div>
-
-                    </div>
-                `;
-                } else {
-                    html += `
-                    <div class="seat empty"
-                        onclick="createSeat('${row}', ${i})">
-                        +
-                    </div>
-                `;
-                }
+            if (!res.ok) {
+                logError("API lỗi", res.status);
+                throw new Error("API lỗi");
             }
 
-            html += `</div>`;
+            return res.json();
+        })
+        .then(data => {
+
+            if (!Array.isArray(data)) {
+                logError("API không trả array", data);
+                return;
+            }
+
+            if (data.length === 0) {
+                logWarn("Không có ghế trong DB");
+            }
+
+            logInfo("SEATS DATA", data);
+
+            seatsData = data;
+            renderGrid();
+        })
+        .catch(err => {
+            logError("Fetch lỗi", err);
+            renderGrid(); // vẫn render ghế trống
         });
+}
 
-        document.getElementById('seatGrid').innerHTML = html;
+
+/* ================= RENDER ================= */
+function renderGrid() {
+
+    logInfo("RENDER GRID FROM SEATS");
+
+    if (!seatsData || seatsData.length === 0) {
+        document.getElementById('seatGrid').innerHTML =
+            "<p style='color:orange'>Chưa có ghế → hãy bấm + để tạo</p>";
+        return;
     }
+    let rows = [...new Set(seatsData.map(s => s.rowSeat))].sort();
 
-    function handleHover(el) {
-        if (!isMouseDown) return;
+    let maxCol = Math.max(...seatsData.map(s => Number(s.colSeat)));
 
-        let id = el.dataset.id;
+    logInfo("ROWS DETECTED", rows);
+    logInfo("MAX COL", maxCol);
 
-        if (!selectedSeats.includes(id)) {
-            selectedSeats.push(id);
-            el.classList.add('selected');
+    let html = '';
+
+    rows.forEach(row => {
+
+        html += `<div class="seat-row">`;
+        html += `<span class="row-label">${row}</span>`;
+
+        for (let i = 1; i <= maxCol; i++) {
+
+            let seat = seatsData.find(s =>
+                s.rowSeat === row && Number(s.colSeat) === i
+            );
+
+            if (seat) {
+
+                let seatClass = 'normal';
+                if (seat.seatTypeID == 1) seatClass = 'vip';
+                if (seat.seatTypeID == 3) seatClass = 'couple';
+                if (seat.seatTypeID == 4) seatClass = 'maintenance';
+
+                html += `
+                <div class="seat ${seatClass}"
+                    data-id="${seat.seatID}"
+                    data-type="${seat.seatTypeID}"
+                    onmouseover="handleHover(this)">
+
+                    ${row}${i}
+
+                    <div class="delete-btn"
+                        onclick="deleteSeat(${seat.seatID}, event)">
+                        ×
+                    </div>
+
+                </div>`;
+            } else {
+                // 👉 ghế chưa tồn tại
+                html += `
+                <div class="seat empty"
+                    onclick="createSeat('${row}', ${i})">
+                    +
+                </div>`;
+            }
         }
+
+        html += `</div>`;
+    });
+
+    document.getElementById('seatGrid').innerHTML = html;
+
+    logInfo("RENDER DONE");
+}
+
+
+/* ================= EVENTS ================= */
+function handleHover(el) {
+    if (!isMouseDown) return;
+
+    let id = el.dataset.id;
+
+    if (!selectedSeats.includes(id)) {
+        selectedSeats.push(id);
+        el.classList.add('selected');
     }
+}
 
-    function createSeat(row, col) {
 
-        seatsData.push({
-            seatID: 'temp_' + Date.now(),
+/* ================= CREATE ================= */
+function createSeat(row, col) {
+
+    logInfo("CREATE SEAT", { row, col });
+
+    fetch(`/admins/seat/ajax-store`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
             rowSeat: row,
             colSeat: col,
+            roomID: currentRoom,
             seatTypeID: 1
-        });
+        })
+    })
+    .then(res => res.json())
+    .then(res => {
+        logInfo("CREATE RESPONSE", res);
+        loadSeats();
+    })
+    .catch(err => logError("Create lỗi", err));
+}
 
-        renderGrid();
 
-        fetch(`/admins/seat/ajax-store`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
-                body: JSON.stringify({
-                    rowSeat: row,
-                    colSeat: col,
-                    roomID: currentRoom,
-                    seatTypeID: 1
-                })
-            })
-            .then(res => res.json())
-            .then(res => {
-                if (res.error) {
-                    showError(res.error);
-                    loadSeats();
-                } else {
-                    loadSeats();
-                }
-            });
-    }
+/* ================= DELETE ================= */
+function deleteSeat(id, e) {
+    if (e) e.stopPropagation();
 
-    function deleteSeat(id, e) {
-        if (e) e.stopPropagation();
+    logWarn("DELETE SEAT", id);
 
-        fetch(`/admins/seat/ajax-delete/${id}`, {
-                method: 'DELETE',
-                headers: {
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                }
-            })
-            .then(res => res.json())
-            .then(res => {
-                if (res.error) {
-                    showError(res.error);
-                }
-                loadSeats();
-            });
-    }
+    fetch(`/admins/seat/ajax-delete/${id}`, {
+        method: 'DELETE',
+        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+    })
+    .then(res => res.json())
+    .then(res => {
+        logInfo("DELETE RESPONSE", res);
+        loadSeats();
+    })
+    .catch(err => logError("Delete lỗi", err));
+}
 
-    function changeType(type) {
-        if (selectedSeats.length === 0) {
-            alert('Chưa chọn ghế');
-            return;
-        }
 
-        fetch(`/admins/seat/ajax-update-type`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
-                body: JSON.stringify({
-                    seatIDs: selectedSeats,
-                    seatTypeID: type
-                })
-            })
-            .then(() => {
-                selectedSeats = [];
-                loadSeats();
-            });
-    }
+/* ================= INIT ================= */
+logInfo("INIT PAGE");
+loadSeats();
 
-    function cycleSeatType(seatID, currentType) {
-        let nextType = 1;
-
-        if (currentType == 1) nextType = 2;
-        else if (currentType == 2) nextType = 3;
-        else if (currentType == 3) nextType = 4;
-
-        fetch(`/admins/seat/ajax-update-type`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-            },
-            body: JSON.stringify({
-                seatIDs: [seatID],
-                seatTypeID: nextType
-            })
-        }).then(() => loadSeats());
-    }   
-
-    function showError(message) {
-        const wrapper = document.querySelector('.modern-toast-wrapper');
-
-        const toast = document.createElement('div');
-        toast.className = 'modern-toast toast-error';
-
-        toast.innerHTML = `
-        <div class="toast-icon">
-            <i class="bi bi-exclamation-triangle-fill"></i>
-        </div>
-        <div class="toast-content">
-            <div class="toast-title">Lỗi</div>
-            <div class="toast-text">${message}</div>
-        </div>
-        <button class="toast-close" onclick="this.parentElement.remove()">
-            <i class="bi bi-x-lg"></i>
-        </button>
-    `;
-
-        wrapper.appendChild(toast);
-
-        // auto ẩn giống layout
-        setTimeout(() => {
-            toast.style.transition = '.4s';
-            toast.style.opacity = '0';
-            toast.style.transform = 'translateX(40px)';
-            setTimeout(() => toast.remove(), 400);
-        }, 4000);
-    }
-
-    function goEditPage() {
-        if (selectedSeats.length === 0) {
-            showError('Chưa chọn ghế');
-            return;
-        }
-
-        document.getElementById('seatIDsInput').value = selectedSeats.join(',');
-        document.getElementById('editForm').submit();
-    }
-
-    loadSeats();
 </script>
 
 @endsection

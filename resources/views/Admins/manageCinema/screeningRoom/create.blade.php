@@ -1,4 +1,3 @@
-<!--Đang sửa để tự động tạo vé-->
 @extends('layouts.appAdmin')
 
 @section('content')
@@ -19,22 +18,32 @@
                 <input type="text" 
                        name="roomName" 
                        class="form-control @error('roomName') is-invalid @enderror"
-                       placeholder="Nhập tên phòng..."
                        value="{{ old('roomName') }}">
                 @error('roomName')
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
             </div>
 
-            <!-- Capacity -->
+            <!-- ROWS -->
             <div class="mb-3">
-                <label class="form-label text-muted">Sức chứa</label>
-                <input type="text" 
-                       name="capacity" 
-                       class="form-control @error('capacity') is-invalid @enderror"
-                       placeholder="Ví dụ: 100"
-                       value="{{ old('capacity') }}">
-                @error('capacity')
+                <label class="form-label text-muted">Số hàng</label>
+                <input type="number" 
+                       name="rows" 
+                       class="form-control @error('rows') is-invalid @enderror"
+                       value="{{ old('rows') }}">
+                @error('rows')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+            </div>
+
+            <!-- COLS -->
+            <div class="mb-3">
+                <label class="form-label text-muted">Số cột</label>
+                <input type="number" 
+                       name="cols" 
+                       class="form-control @error('cols') is-invalid @enderror"
+                       value="{{ old('cols') }}">
+                @error('cols')
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
             </div>

@@ -158,13 +158,8 @@
 
     <!-- TOP -->
     <div class="top-bar">
-        <div>
-            Giờ chiếu: <b>{{ $showtime->startTime }}</b>
-        </div>
-
-        <div class="timer">
-            Thời gian chọn ghế: <span id="timer"></span>
-        </div>
+        <div>Giờ chiếu: <b>{{ $showtime->startTime }}</b></div>
+        <div class="timer">Thời gian chọn ghế: <span id="timer"></span></div>
     </div>
 
     <!-- SCREEN -->
@@ -181,18 +176,13 @@
 
     @foreach($seats as $seat)
 
-    @if($currentRow !== $seat->rowSeat)
+        @if($currentRow !== $seat->rowSeat)
+            @if($currentRow !== null) </div> @endif
+            <div class="seat-row">
+            @php $currentRow = $seat->rowSeat; @endphp
+        @endif
 
-    @if($currentRow !== null)
-</div>
-@endif
-
-<div class="seat-row">
-    @php $currentRow = $seat->rowSeat; @endphp
-
-    @endif
-
-    <div class="seat
+        <div class="seat
             @if(in_array($seat->seatID,$bookedSeats))
                 booked
             @elseif($seat->seatTypeID==2)
@@ -204,105 +194,76 @@
             @else
                 maintenance
             @endif
-        ">
-        {{ $seat->rowSeat }}{{ $seat->colSeat }}
-    </div>
+        "
+        data-price="{{ $seat->seatType->price ?? 0 }}">
+
+            {{ $seat->rowSeat }}{{ $seat->colSeat }}
+        </div>
 
     @endforeach
 
-</div> {{-- đóng row cuối --}}
+    </div>
 
-<!-- LEGEND -->
-<div class="legend">
-    <div class="legend-item">
-        <div class="box booked"></div> Đã đặt
+    <!-- LEGEND -->
+    <div class="legend">
+        <div><span class="box booked"></span> Đã đặt</div>
+        <div><span class="box selected"></span> Đang chọn</div>
+        <div><span class="box normal"></span> Thường</div>
+        <div><span class="box vip"></span> VIP</div>
+        <div><span class="box couple"></span> Đôi</div>
     </div>
-    <div class="legend-item">
-        <div class="box selected"></div> Ghế bạn chọn
-    </div>
-    <div class="legend-item">
-        <div class="box normal"></div> Ghế thường
-    </div>
-    <div class="legend-item">
-        <div class="box vip"></div> Ghế VIP
-    </div>
-    <div class="legend-item">
-        <div class="box couple"></div> Ghế đôi
-    </div>
-</div>
 
-
-
-<!-- BOTTOM -->
-<div class="bottom">
-    <div>
-        <div style="margin-top:20px; text-align:center;">
-            Ghế đã chọn: <span id="selectedSeats" style="font-weight:bold; color:#3b82f6;"></span>
+    <!-- BOTTOM -->
+    <div class="bottom">
+        <div>
+            <p>Ghế: <span id="selectedSeats"></span></p>
+            <p style="color:yellow; font-weight:bold;">
+                Tổng tiền: <span id="totalPrice">0 đ</span>
+            </p>
         </div>
-        Tổng tiền: 0đ
-    </div>
 
-    <form action="{{ route('payment') }}" method="POST">
-        @csrf
-        <input type="hidden" name="showtime_id" value="{{ $showtime->id }}">
-        <input type="hidden" name="seats" id="seatInput">
+        <form action="{{ route('payment') }}" method="POST">
+            @csrf
+            <input type="hidden" name="showtime_id" value="{{ $showtime->id }}">
+            <input type="hidden" name="seats" id="seatInput">
 
-        <div class="bottom">
             <button type="button" class="btn-back" onclick="history.back()">Quay lại</button>
             <button type="submit" class="btn-pay">Thanh toán</button>
-        </div>
-    </form>
+        </form>
+    </div>
 
 </div>
-</div>
 
-<!-- JS -->
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        const seats = document.querySelectorAll(".seat");
-        const selectedSeats = [];
+let selectedSeats = [];
+let totalPrice = 0;
 
-        seats.forEach(seat => {
-            seat.addEventListener("click", function() {
-                if (seat.classList.contains("booked")) return;
+document.querySelectorAll(".seat").forEach(seat => {
+    seat.addEventListener("click", function () {
 
-                const seatCode = seat.textContent.trim();
+        if (seat.classList.contains("booked")) return;
 
-                if (seat.classList.contains("selected")) {
-                    seat.classList.remove("selected");
-                    const index = selectedSeats.indexOf(seatCode);
-                    if (index > -1) selectedSeats.splice(index, 1);
-                } else {
-                    seat.classList.add("selected");
-                    selectedSeats.push(seatCode);
-                }
+        const code = seat.textContent.trim();
+        const price = parseInt(seat.dataset.price || 0);
 
-                // Hiển thị danh sách ghế đã chọn
-                document.getElementById("selectedSeats").innerText = selectedSeats.join(", ");
-                // Cập nhật hidden input để gửi sang backend
-                document.getElementById("seatInput").value = selectedSeats.join(",");
-            });
-        });
+        if (seat.classList.contains("selected")) {
+            seat.classList.remove("selected");
+            selectedSeats = selectedSeats.filter(s => s !== code);
+            totalPrice -= price;
+        } else {
+            seat.classList.add("selected");
+            selectedSeats.push(code);
+            totalPrice += price;
+        }
 
-        // TIMER
-        let time = 300;
+        document.getElementById("selectedSeats").innerText =
+            selectedSeats.join(", ");
 
-        let timer = setInterval(() => {
-            let m = Math.floor(time / 60);
-            let s = time % 60;
+        document.getElementById("seatInput").value =
+            selectedSeats.join(",");
 
-            if (s < 10) s = "0" + s;
-
-            document.getElementById("timer").innerText = m + ":" + s;
-
-            if (time <= 0) {
-                clearInterval(timer);
-                window.location.href = "{{ route('home') }}";
-                return;
-            }
-
-            time--;
-        }, 1000);
-
+        document.getElementById("totalPrice").innerText =
+            totalPrice.toLocaleString() + " đ";
     });
+});
 </script>

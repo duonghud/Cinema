@@ -143,67 +143,146 @@
 </div>
 
 @include('layouts.trailer')
+@endsection
 
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        // Tabs
-        const tabs = document.querySelectorAll('.date-tab');
-        tabs.forEach(tab => {
-            tab.addEventListener('click', function() {
-                let date = this.getAttribute('data-date');
-                tabs.forEach(t => {
-                    t.setAttribute('aria-selected', 'false');
-                    t.querySelector('div').classList.remove('bg-red-600');
-                    t.querySelector('div').classList.add('bg-transparent');
-                });
-                this.setAttribute('aria-selected', 'true');
-                this.querySelector('div').classList.remove('bg-transparent');
-                this.querySelector('div').classList.add('bg-red-600');
-                document.querySelectorAll('.showtime-row').forEach(row => row.classList.add('hidden'));
-                document.getElementById('date-' + date).classList.remove('hidden');
-            });
-        });
+document.addEventListener("DOMContentLoaded", function () {
 
-        // Suất chiếu
-        document.querySelectorAll('.showtime-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                let url = this.getAttribute('data-url');
-                fetch(url)
-                    .then(response => response.text())
-                    .then(html => {
-                        document.getElementById('seat-container').innerHTML = html;
-                        attachSeatEvents(); // Gắn lại sự kiện cho ghế sau khi load
-                    })
-                    .catch(err => console.error(err));
+    // ===== TAB NGÀY =====
+    const tabs = document.querySelectorAll('.date-tab');
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function () {
+
+            const date = this.dataset.date;
+
+            tabs.forEach(t => {
+                t.setAttribute('aria-selected', 'false');
+                const div = t.querySelector('div');
+                if (div) {
+                    div.classList.remove('bg-red-600');
+                    div.classList.add('bg-transparent');
+                }
             });
+
+            this.setAttribute('aria-selected', 'true');
+            const div = this.querySelector('div');
+            if (div) {
+                div.classList.remove('bg-transparent');
+                div.classList.add('bg-red-600');
+            }
+
+            document.querySelectorAll('.showtime-row')
+                .forEach(row => row.classList.add('hidden'));
+
+            const active = document.getElementById('date-' + date);
+            if (active) active.classList.remove('hidden');
         });
     });
 
-    // Hàm gắn sự kiện cho ghế
-    function attachSeatEvents() {
-        const seats = document.querySelectorAll("#seat-container .seat");
-        const selectedSeats = [];
+    // ===== CLICK SUẤT CHIẾU =====
+    const showBtns = document.querySelectorAll('.showtime-btn');
 
-        seats.forEach(seat => {
-            seat.addEventListener("click", function() {
-                if (seat.classList.contains("booked")) return;
+    showBtns.forEach(btn => {
+        btn.addEventListener('click', function () {
 
-                const seatCode = seat.textContent.trim();
+            const url = this.dataset.url;
 
-                if (seat.classList.contains("selected")) {
-                    seat.classList.remove("selected");
-                    const index = selectedSeats.indexOf(seatCode);
-                    if (index > -1) selectedSeats.splice(index, 1);
-                } else {
-                    seat.classList.add("selected");
-                    selectedSeats.push(seatCode);
-                }
+            document.getElementById('seat-container').innerHTML = `
+                <div style="text-align:center; padding:30px;">
+                    Đang tải ghế...
+                </div>
+            `;
 
-                document.getElementById("selectedSeats").innerText = selectedSeats.join(", ");
-                document.getElementById("seatInput").value = selectedSeats.join(",");
-            });
+            fetch(url)
+                .then(res => res.text())
+                .then(html => {
+
+                    document.getElementById('seat-container').innerHTML = html;
+
+                    attachSeatEvents(); // 👈 luôn gọi
+                    startSeatTimer();
+
+                })
+                .catch(err => {
+                    console.error(err);
+                    document.getElementById('seat-container').innerHTML =
+                        "<p>Lỗi tải ghế</p>";
+                });
         });
-    }
-</script>
+    });
 
-@endsection
+});
+
+// ===== GLOBAL =====
+let selectedSeats = [];
+let totalPrice = 0;
+let seatTimer = null;
+
+// ===== CHỌN GHẾ + TÍNH TIỀN =====
+function attachSeatEvents() {
+
+    selectedSeats = [];
+    totalPrice = 0;
+
+    const seats = document.querySelectorAll(".seat");
+
+    seats.forEach(seat => {
+        seat.addEventListener("click", function () {
+
+            if (seat.classList.contains("booked")) return;
+
+            const code = seat.textContent.trim();
+            const price = parseInt(seat.dataset.price || 0);
+
+            if (seat.classList.contains("selected")) {
+                seat.classList.remove("selected");
+                selectedSeats = selectedSeats.filter(s => s !== code);
+                totalPrice -= price;
+            } else {
+                seat.classList.add("selected");
+                selectedSeats.push(code);
+                totalPrice += price;
+            }
+
+            // UI
+            document.getElementById("selectedSeats").innerText =
+                selectedSeats.join(", ");
+
+            document.getElementById("seatInput").value =
+                selectedSeats.join(", ");
+
+            document.getElementById("totalPrice").innerText =
+                totalPrice.toLocaleString() + " đ";
+        });
+    });
+}
+
+// ===== TIMER =====
+function startSeatTimer() {
+
+    if (seatTimer) clearInterval(seatTimer);
+
+    let time = 300;
+
+    seatTimer = setInterval(() => {
+
+        let m = Math.floor(time / 60);
+        let s = time % 60;
+
+        if (s < 10) s = "0" + s;
+
+        const timerEl = document.getElementById("timer");
+        if (timerEl) timerEl.innerText = m + ":" + s;
+
+        if (time <= 0) {
+            clearInterval(seatTimer);
+            alert("Hết thời gian giữ ghế!");
+            window.location.href = "/";
+        }
+
+        time--;
+
+    }, 1000);
+}
+</script>

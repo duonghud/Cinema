@@ -15,39 +15,49 @@ class SeatController extends Controller
 {
 
     // ================= LIST =================
-    public function index(Request $request)
-    {
-        $rooms = ScreeningRoom::all();
-        $seatTypes = SeatType::all();
-        $search = trim((string) $request->input('search'));
+        public function index(Request $request)
+        {
+            $rooms = ScreeningRoom::all();
 
-        $roomID = $request->roomID ?? optional($rooms->first())->roomID;
+            $roomID = $request->roomID ?? optional($rooms->first())->roomID;
 
-        $seats = Seat::with(['seatType', 'screeningRoom'])
-            ->where('roomID', $roomID)
-            ->when($search, function ($query) use ($search) {
-                $query->where(function ($seatQuery) use ($search) {
-                    $seatQuery->where('seatID', 'like', "%{$search}%")
-                        ->orWhere('rowSeat', 'like', "%{$search}%")
-                        ->orWhere('colSeat', 'like', "%{$search}%")
-                        ->orWhereRaw("CONCAT(rowSeat, colSeat) LIKE ?", ["%{$search}%"])
-                        ->orWhereHas('seatType', function ($seatTypeQuery) use ($search) {
-                            $seatTypeQuery->where('seatTypeName', 'like', "%{$search}%");
-                        });
-                });
-            })
-            ->orderBy('rowSeat')
-            ->orderBy('colSeat')
-            ->paginate(5)
-            ->withQueryString();
+            $room = ScreeningRoom::where('roomID', $roomID)->first();
 
-        return view('admins.manageCinema.seat.index', compact(
-            'seats',
-            'rooms',
-            'seatTypes',
-            'roomID'
-        ));
-    }
+            if (!$room) {
+                // fallback nếu lỗi
+                $room = $rooms->first();
+                $roomID = $room?->roomID;
+            }
+
+            $seatTypes = SeatType::all();
+            $search = trim((string) $request->input('search'));
+
+            $seats = Seat::with(['seatType', 'screeningRoom'])
+                ->where('roomID', $roomID)
+                ->when($search, function ($query) use ($search) {
+                    $query->where(function ($seatQuery) use ($search) {
+                        $seatQuery->where('seatID', 'like', "%{$search}%")
+                            ->orWhere('rowSeat', 'like', "%{$search}%")
+                            ->orWhere('colSeat', 'like', "%{$search}%")
+                            ->orWhereRaw("CONCAT(rowSeat, colSeat) LIKE ?", ["%{$search}%"])
+                            ->orWhereHas('seatType', function ($seatTypeQuery) use ($search) {
+                                $seatTypeQuery->where('seatTypeName', 'like', "%{$search}%");
+                            });
+                    });
+                })
+                ->orderBy('rowSeat')
+                ->orderBy('colSeat')
+                ->paginate(5)
+                ->withQueryString();
+
+            return view('admins.manageCinema.seat.index', compact(
+                'seats',
+                'room',
+                'rooms',
+                'seatTypes',
+                'roomID'
+            ));
+        }
 
     // ================= CREATE =================
     public function create()
