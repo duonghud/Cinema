@@ -35,7 +35,7 @@
                     <input type="email"
                            name="email"
                            class="form-control @error('email') is-invalid @enderror"
-                           value="{{ old('email', $admins->email) }}">
+                           value="{{ old('email', $admins->email) }} " readonly>
                     @error('email')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -50,17 +50,6 @@
                         <option value="food_staff" {{ old('role', $admins->role) == 'food_staff' ? 'selected' : '' }}>Nhân viên bán đồ ăn</option>
                     </select>
                     @error('role')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <!-- Password -->
-                <div class="mb-3">
-                    <label class="form-label">Mật khẩu mới (bỏ trống nếu không đổi)</label>
-                    <input type="password"
-                           name="password"
-                           class="form-control @error('password') is-invalid @enderror">
-                    @error('password')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
