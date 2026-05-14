@@ -260,4 +260,3 @@ function startSeatTimer() {
     }, 1000);
 }
 </script>
-@endsection

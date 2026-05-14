@@ -169,7 +169,7 @@
 
 <section class="profile-page py-5 px-3 px-md-4 px-xl-0 text-white min-vh-100">
     <div class="container profile-shell">
-        <div class="hero-banner p-4 p-md-5 mb-4">
+       {{-- <div class="hero-banner p-4 p-md-5 mb-4">
             <div class="row g-4 align-items-center position-relative" style="z-index: 1;">
                 <div class="col-lg-8">
                     <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center gap-4">
@@ -211,9 +211,9 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </div>--}}
 
-        <div class="row g-4 mb-4">
+        {{--<div class="row g-4 mb-4">
             <div class="col-md-6 col-xl-3">
                 <div class="glass-panel metric-card">
                     <div class="d-flex align-items-center justify-content-between mb-4">
@@ -265,7 +265,7 @@
                     <div class="metric-value fs-4">{{ $address !== 'Chưa cập nhật' ? 'Đã có' : 'Thiếu' }}</div>
                 </div>
             </div>
-        </div>
+        </div>--}}
 
         <div class="row g-4">
             <div class="col-xl-8">
