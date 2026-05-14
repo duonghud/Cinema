@@ -37,7 +37,7 @@
                         <label class="form-label fw-medium">Giờ kết thúc</label>
                         <input type="time" name="endTime" id="endTime"
                                class="form-control @error('endTime') is-invalid @enderror"
-                               value="{{ old('endTime') }}">
+                               value="{{ old('endTime') }} " readonly>
                         @error('endTime')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror

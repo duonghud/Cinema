@@ -91,7 +91,7 @@
     }
 
     .booked {
-        background: #1f2937;
+        background: #e89416;
         cursor: not-allowed;
     }
 
@@ -152,6 +152,26 @@
         font-weight: bold;
         text-decoration: none;
     }
+
+    .box.booked {
+        background: #e89416;
+    }
+
+    .box.selected {
+        background: #3b82f6;
+    }
+
+    .box.normal {
+        background: #1f2937;
+    }
+
+    .box.vip {
+        background: #fb923c;
+    }
+
+    .box.couple {
+        background: #ef4444;
+    }
 </style>
 
 <div class="container">
@@ -159,11 +179,13 @@
     <!-- TOP -->
     <div class="top-bar">
         <div>
-            Giờ chiếu: <b>{{ $showtime->startTime }}</b>
+            Giờ chiếu:
+            <b>{{ substr($showtime->startTime,0,5) }}</b>
         </div>
 
         <div class="timer">
-            Thời gian chọn ghế: <span id="timer"></span>
+            Thời gian chọn ghế:
+            <span id="timer">05:00</span>
         </div>
     </div>
 
@@ -172,137 +194,154 @@
         <div class="screen"></div>
     </div>
 
-    <h2 class="text-center mb-4">
-        Phòng chiếu số {{ $showtime->room->roomName }}
+    <h2 class="text-center mb-5">
+        Phòng chiếu {{ $showtime->room->roomName }}
     </h2>
 
-    <!-- SEATS -->
-    @php $currentRow = null; @endphp
+    @php
+    $groupedSeats = $seats->groupBy('rowSeat');
+    @endphp
 
-    @foreach($seats as $seat)
+    @foreach($groupedSeats as $row => $rowSeats)
+    <div class="seat-row">
 
-    @if($currentRow !== $seat->rowSeat)
-
-    @if($currentRow !== null)
-</div>
-@endif
-
-<div class="seat-row">
-    @php $currentRow = $seat->rowSeat; @endphp
-
-    @endif
-
-    <div class="seat
-            @if(in_array($seat->seatID,$bookedSeats))
+        @foreach($rowSeats->sortBy('colSeat') as $seat)
+        <div class="seat
+            @if(in_array($seat->seatID, $bookedSeats))
                 booked
-            @elseif($seat->seatTypeID==2)
+            @elseif($seat->seatTypeID == 2)
                 normal
-            @elseif($seat->seatTypeID==1)
+            @elseif($seat->seatTypeID == 1)
                 vip
-            @elseif($seat->seatTypeID==3)
+            @elseif($seat->seatTypeID == 3)
                 couple
             @else
                 maintenance
             @endif
-        ">
-        {{ $seat->rowSeat }}{{ $seat->colSeat }}
-    </div>
+        "
+            data-price="{{ $seat->seatType->price ?? 0 }}"
+            data-seat="{{ $seat->rowSeat }}{{ $seat->colSeat }}"
+            data-seat-id="{{ $seat->seatID }}">
 
+            {{ $seat->rowSeat }}{{ $seat->colSeat }}
+        </div>
+        @endforeach
+
+    </div>
     @endforeach
 
-</div> {{-- đóng row cuối --}}
+    <!-- LEGEND -->
+    <div class="legend">
 
-<!-- LEGEND -->
-<div class="legend">
-    <div class="legend-item">
-        <div class="box booked"></div> Đã đặt
-    </div>
-    <div class="legend-item">
-        <div class="box selected"></div> Ghế bạn chọn
-    </div>
-    <div class="legend-item">
-        <div class="box normal"></div> Ghế thường
-    </div>
-    <div class="legend-item">
-        <div class="box vip"></div> Ghế VIP
-    </div>
-    <div class="legend-item">
-        <div class="box couple"></div> Ghế đôi
-    </div>
-</div>
-
-
-
-<!-- BOTTOM -->
-<div class="bottom">
-    <div>
-        <div style="margin-top:20px; text-align:center;">
-            Ghế đã chọn: <span id="selectedSeats" style="font-weight:bold; color:#3b82f6;"></span>
+        <div class="legend-item">
+            <span class="box booked"></span>
+            Đã đặt
         </div>
-        Tổng tiền: 0đ
+
+        <div class="legend-item">
+            <span class="box selected"></span>
+            Đang chọn
+        </div>
+
+        <div class="legend-item">
+            <span class="box normal"></span>
+            Thường
+        </div>
+
+        <div class="legend-item">
+            <span class="box vip"></span>
+            VIP
+        </div>
+
+        <div class="legend-item">
+            <span class="box couple"></span>
+            Đôi
+        </div>
+
     </div>
 
-    <form action="{{ route('payment') }}" method="POST">
-        @csrf
-        <input type="hidden" name="showtime_id" value="{{ $showtime->id }}">
-        <input type="hidden" name="seats" id="seatInput">
+    <!-- BOTTOM -->
+    <div class="bottom">
 
-        <div class="bottom">
-            <button type="button" class="btn-back" onclick="history.back()">Quay lại</button>
-            <button type="submit" class="btn-pay">Thanh toán</button>
+        <div>
+            <p>
+                Ghế:
+                <span id="selectedSeats">Chưa chọn</span>
+            </p>
+
+            <p>
+                Tổng tiền:
+                <span id="totalPrice">0 đ</span>
+            </p>
         </div>
-    </form>
+
+        <form action="{{ route('invoice.confirm') }}" method="POST">
+
+            @csrf
+
+            <input
+                type="hidden"
+                name="showtime_id"
+                value="{{ $showtime->showTimeID }}">
+
+            <input
+                type="hidden"
+                name="seats"
+                id="seatInput">
+
+            <div class="flex gap-3">
+
+                <button
+                    type="button"
+                    class="btn-back"
+                    onclick="history.back()">
+                    Quay lại
+                </button>
+
+                <button
+                    type="submit"
+                    class="btn-pay">
+                    Thanh toán
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
 
 </div>
-</div>
 
-<!-- JS -->
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        const seats = document.querySelectorAll(".seat");
-        const selectedSeats = [];
+    let selectedSeats = [];
+    let totalPrice = 0;
 
-        seats.forEach(seat => {
-            seat.addEventListener("click", function() {
-                if (seat.classList.contains("booked")) return;
+    document.querySelectorAll(".seat").forEach(seat => {
+        seat.addEventListener("click", function() {
 
-                const seatCode = seat.textContent.trim();
+            if (seat.classList.contains("booked")) return;
 
-                if (seat.classList.contains("selected")) {
-                    seat.classList.remove("selected");
-                    const index = selectedSeats.indexOf(seatCode);
-                    if (index > -1) selectedSeats.splice(index, 1);
-                } else {
-                    seat.classList.add("selected");
-                    selectedSeats.push(seatCode);
-                }
+            const code = seat.textContent.trim();
+            const price = parseInt(seat.dataset.price || 0);
 
-                // Hiển thị danh sách ghế đã chọn
-                document.getElementById("selectedSeats").innerText = selectedSeats.join(", ");
-                // Cập nhật hidden input để gửi sang backend
-                document.getElementById("seatInput").value = selectedSeats.join(",");
-            });
-        });
-
-        // TIMER
-        let time = 300;
-
-        let timer = setInterval(() => {
-            let m = Math.floor(time / 60);
-            let s = time % 60;
-
-            if (s < 10) s = "0" + s;
-
-            document.getElementById("timer").innerText = m + ":" + s;
-
-            if (time <= 0) {
-                clearInterval(timer);
-                window.location.href = "{{ route('home') }}";
-                return;
+            if (seat.classList.contains("selected")) {
+                seat.classList.remove("selected");
+                selectedSeats = selectedSeats.filter(s => s !== code);
+                totalPrice -= price;
+            } else {
+                seat.classList.add("selected");
+                selectedSeats.push(code);
+                totalPrice += price;
             }
 
-            time--;
-        }, 1000);
+            document.getElementById("selectedSeats").innerText =
+                selectedSeats.join(", ");
 
+            document.getElementById("seatInput").value =
+                selectedSeats.join(",");
+
+            document.getElementById("totalPrice").innerText =
+                totalPrice.toLocaleString() + " đ";
+        });
     });
 </script>

@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-
+use Illuminate\Support\Facades\DB;
 use App\Models\Admin\Seat;
 use App\Models\Admin\ScreeningRoom;
 use App\Models\Admin\SeatType;
@@ -18,10 +18,19 @@ class SeatController extends Controller
     public function index(Request $request)
     {
         $rooms = ScreeningRoom::all();
-        $seatTypes = SeatType::all();
-        $search = trim((string) $request->input('search'));
 
         $roomID = $request->roomID ?? optional($rooms->first())->roomID;
+
+        $room = ScreeningRoom::where('roomID', $roomID)->first();
+
+        if (!$room) {
+            // fallback nếu lỗi
+            $room = $rooms->first();
+            $roomID = $room?->roomID;
+        }
+
+        $seatTypes = SeatType::all();
+        $search = trim((string) $request->input('search'));
 
         $seats = Seat::with(['seatType', 'screeningRoom'])
             ->where('roomID', $roomID)
@@ -43,6 +52,7 @@ class SeatController extends Controller
 
         return view('admins.manageCinema.seat.index', compact(
             'seats',
+            'room',
             'rooms',
             'seatTypes',
             'roomID'
@@ -208,22 +218,167 @@ class SeatController extends Controller
     public function updateMultiple(Request $request)
     {
         $request->validate([
-            'seatIDs' => 'required|array|min:1',
+            'seatIDs'    => 'required|array|min:1',
             'seatTypeID' => 'required|exists:seat_types,seatTypeID'
         ]);
 
-        $firstSeat = Seat::whereIn('seatID', $request->seatIDs)->first();
+        // Lấy ghế đầu tiên để xác định phòng
+        $firstSeat = Seat::whereIn('seatID', $request->seatIDs)->firstOrFail();
+        $roomID = $firstSeat->roomID;
 
-        if (ShowTime::where('roomID', $firstSeat->roomID)->exists()) {
-            return back()->with('error', 'Phòng đang có suất chiếu');
+        // Không cho sửa nếu phòng đã có suất chiếu
+        if (ShowTime::where('roomID', $roomID)->exists()) {
+            return redirect()
+                ->route('seat.index', ['roomID' => $roomID])
+                ->with('error', 'Phòng đang có suất chiếu');
         }
 
-        Seat::whereIn('seatID', $request->seatIDs)
-            ->update(['seatTypeID' => $request->seatTypeID]);
+        $newSeatTypeID = (int) $request->seatTypeID;
+        $selectedSeatIDs = $request->seatIDs;
 
-        return redirect()->route('seat.index')
+        $vipTypeID = seatType::where('seatTypeName', 'VIP')
+            ->value('seatTypeID');
+
+        $normalTypeID = seatType::where('seatTypeName', 'Thường')
+            ->value('seatTypeID');
+
+        $doubleTypeID = seatType::where('seatTypeName', 'Đôi')
+            ->value('seatTypeID');
+
+        $limits = [];
+
+        if ($vipTypeID) {
+            $limits[$vipTypeID] = Seat::where('roomID', $roomID)
+                ->where('seatTypeID', $vipTypeID)
+                ->count();
+        }
+
+        if ($normalTypeID) {
+            $limits[$normalTypeID] = Seat::where('roomID', $roomID)
+                ->where('seatTypeID', $normalTypeID)
+                ->count();
+        }
+
+        if ($doubleTypeID) {
+            $limits[$doubleTypeID] = Seat::where('roomID', $roomID)
+                ->where('seatTypeID', $doubleTypeID)
+                ->count();
+        }
+
+        if (isset($limits[$newSeatTypeID])) {
+
+            $maxAllowed = $limits[$newSeatTypeID];
+
+            // Tổng số ghế hiện tại của loại này trong phòng
+            $currentCount = Seat::where('roomID', $roomID)
+                ->where('seatTypeID', $newSeatTypeID)
+                ->count();
+
+            // Số ghế được chọn mà đã thuộc loại này
+            $alreadySameTypeCount = Seat::whereIn('seatID', $selectedSeatIDs)
+                ->where('seatTypeID', $newSeatTypeID)
+                ->count();
+
+            $increaseCount = count($selectedSeatIDs) - $alreadySameTypeCount;
+
+            $finalCount = $currentCount + $increaseCount;
+
+            if ($finalCount > $maxAllowed) {
+
+                $seatTypeName = seatType::find($newSeatTypeID)?->seatTypeName
+                    ?? 'loại ghế này';
+
+                return redirect()
+                    ->route('seat.index', ['roomID' => $roomID])
+                    ->with(
+                        'error',
+                        "Số lượng ghế {$seatTypeName} vượt quá giới hạn cho phép ({$maxAllowed} ghế)."
+                    );
+            }
+        }
+
+        // Cập nhật loại ghế
+        Seat::whereIn('seatID', $selectedSeatIDs)
+            ->update([
+                'seatTypeID' => $newSeatTypeID
+            ]);
+
+        return redirect()
+            ->route('seat.index', ['roomID' => $roomID])
             ->with('success', 'Cập nhật thành công');
     }
+
+
+
+    public function ajaxUpdateType(Request $request, int $id)
+    {
+        $request->validate([
+            'seatTypeID' => 'required|integer|in:1,2,3,4',
+        ]);
+
+        $seat = Seat::findOrFail($id);
+
+        // Chỉ cho phép đổi ghế thường (2) → VIP (1)
+        // Ghế đôi (3) và bảo trì (4) không được đổi
+        if (in_array($seat->seatTypeID, [3, 4])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ghế đôi hoặc bảo trì không thể thay đổi loại.',
+            ], 422);
+        }
+
+        $seat->seatTypeID = $request->seatTypeID;
+        $seat->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cập nhật loại ghế thành công.',
+            'seat'    => $seat,
+        ]);
+    }
+
+    public function ajaxSwapCol(Request $request)
+    {
+        $request->validate([
+            'seatID_a'  => 'required|integer|exists:seats,seatID',
+            'colSeat_a' => 'required|integer|min:1',
+            'seatID_b'  => 'required|integer|exists:seats,seatID',
+            'colSeat_b' => 'required|integer|min:1',
+        ]);
+
+        $seatA = Seat::findOrFail($request->seatID_a);
+        $seatB = Seat::findOrFail($request->seatID_b);
+
+        // Đảm bảo 2 ghế cùng hàng (cùng rowSeat)
+        if ($seatA->rowSeat !== $seatB->rowSeat) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hai ghế phải cùng hàng mới có thể đổi vị trí.',
+            ], 422);
+        }
+
+        // Dùng transaction để tránh trùng colSeat tạm thời
+        DB::transaction(function () use ($seatA, $seatB, $request) {
+            // Dùng colSeat = 0 làm giá trị tạm (tránh unique constraint nếu có)
+            $seatA->colSeat = 0;
+            $seatA->save();
+
+            $seatB->colSeat = $request->colSeat_a; // B lấy vị trí của A
+            $seatB->save();
+
+            $seatA->colSeat = $request->colSeat_b; // A lấy vị trí của B
+            $seatA->save();
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Hoán đổi vị trí ghế thành công.',
+            'seatA'   => $seatA->fresh(),
+            'seatB'   => $seatB->fresh(),
+        ]);
+    }
+
+
 
     public function editMultiple(Request $request)
     {
