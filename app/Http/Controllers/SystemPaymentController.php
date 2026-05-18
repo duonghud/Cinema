@@ -2,17 +2,21 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Admin\payment_method;
-use App\Models\Admin\showTime;
 use App\Models\Admin\Seat;
+use App\Models\Admin\showTime;
+use App\Services\BookingService;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
+use RuntimeException;
 
 class SystemPaymentController extends Controller
 {
-    /**
-     * Xác nhận hóa đơn trước khi sang trang thanh toán
-     */
+    public function __construct(
+        protected BookingService $bookingService
+    ) {
+    }
+
     public function confirm(Request $request)
     {
         if (!$request->seats) {
@@ -21,71 +25,62 @@ class SystemPaymentController extends Controller
 
         $request->validate([
             'showtime_id' => 'required|exists:show_times,showTimeID',
-            'seats'       => 'required|string',
+            'seats' => 'required|string',
         ]);
 
-        // Danh sách ghế đã chọn
-        $seatCodes = array_filter(explode(',', $request->seats));
+        $seatCodes = array_values(array_filter(explode(',', $request->seats)));
 
-        // Lấy thông tin suất chiếu
         $showtime = showTime::with(['movie', 'room'])
             ->findOrFail($request->showtime_id);
 
-        // Lấy ghế thuộc đúng phòng
         $seats = Seat::with('seatType')
             ->where('roomID', $showtime->roomID)
             ->get()
             ->filter(function ($seat) use ($seatCodes) {
-                return in_array($seat->rowSeat . $seat->colSeat, $seatCodes);
-            });
+                return in_array($seat->rowSeat . $seat->colSeat, $seatCodes, true);
+            })
+            ->values();
 
-        // Tính tổng tiền
+        if ($seats->count() !== count($seatCodes)) {
+            return back()->with('error', 'Một hoặc nhiều ghế không hợp lệ.');
+        }
+
         $total = $seats->sum(function ($seat) {
             return $seat->seatType->price ?? 0;
         });
 
-        // Tạo dữ liệu hóa đơn
-        $invoice = [
-            'movie'       => $showtime->movie->movieTitle ?? 'N/A',
-            'seats'       => $seatCodes,
-            'time'        => substr($showtime->startTime, 0, 5),
-            'date'        => Carbon::parse($showtime->showDate)->format('d/m/Y'),
-            'room'        => $showtime->room->roomName ?? 'N/A',
-            'format'      => $showtime->format ?? '2D',
-            'total'       => $total,
-            'showtime_id' => $showtime->showTimeID,
-        ];
-
-        // Lưu hóa đơn vào session
-        session(['invoice' => $invoice]);
+        session([
+            'invoice' => [
+                'movie' => $showtime->movie->movieTitle ?? 'N/A',
+                'seats' => $seatCodes,
+                'seat_ids' => $seats->pluck('seatID')->values()->all(),
+                'time' => substr($showtime->startTime, 0, 5),
+                'date' => Carbon::parse($showtime->showDate)->format('d/m/Y'),
+                'room' => $showtime->room->roomName ?? 'N/A',
+                'room_id' => $showtime->roomID,
+                'format' => $showtime->format ?? '2D',
+                'total' => $total,
+                'showtime_id' => $showtime->showTimeID,
+            ],
+        ]);
 
         return redirect()->route('payment');
     }
 
-    /**
-     * Hiển thị trang thanh toán
-     */
     public function index()
     {
         $invoice = session('invoice');
 
         if (!$invoice) {
-            return redirect()->route('booking')
+            return redirect()->route('show')
                 ->with('error', 'Không có dữ liệu hóa đơn!');
         }
 
-        // Lấy tất cả phương thức thanh toán từ admin
         $paymentMethods = payment_method::all();
 
-        return view('system.payment', compact(
-            'invoice',
-            'paymentMethods'
-        ));
+        return view('system.payment', compact('invoice', 'paymentMethods'));
     }
 
-    /**
-     * Xử lý khi người dùng nhấn nút "Thanh toán"
-     */
     public function store(Request $request)
     {
         $request->validate([
@@ -93,60 +88,60 @@ class SystemPaymentController extends Controller
         ]);
 
         $invoice = session('invoice');
+        $customer = session('customer');
 
-        if (!$invoice) {
-            return redirect()->route('booking')
+        if (!$invoice || !$customer) {
+            return redirect()->route('show')
                 ->with('error', 'Hết phiên thanh toán!');
         }
 
-        // Lấy phương thức thanh toán được chọn
-        $paymentMethod = payment_method::findOrFail(
-            $request->payment_method
-        );
+        $paymentMethod = payment_method::findOrFail($request->payment_method);
 
-        // Lưu lại phương thức đã chọn để giữ trạng thái radio
         session([
-            'selected_payment_method' => $paymentMethod->paymentID
+            'selected_payment_method' => $paymentMethod->paymentID,
         ]);
 
-        /**
-         * Nếu chọn VNPAY
-         * -> chuyển sang trang giả lập fake-vnpay.blade.php
-         */
         if (stripos($paymentMethod->name, 'VNPAY') !== false) {
-            $vnpayController = new VnpayController();
-            return $vnpayController->createPayment($invoice['total']);
+            return app(VnpayController::class)->createPayment($invoice['total']);
         }
 
-        // Xóa session
+        try {
+            $savedInvoice = $this->bookingService->finalizeFromSession(
+                $invoice,
+                (int) $paymentMethod->paymentID,
+                (int) $customer->customerID
+            );
+        } catch (RuntimeException $e) {
+            return redirect()->route('payment')
+                ->with('error', $e->getMessage());
+        }
+
         session()->forget([
             'invoice',
-            'selected_payment_method'
+            'selected_payment_method',
         ]);
-
-        return redirect()->route('booking')
-            ->with('success', 'Thanh toán thành công 🎉');
+        return redirect()->route('system.success', [
+            'transaction_code' => 'INV-' . $savedInvoice->invoiceID,
+        ])->with('success', 'Thanh toán thành công');
     }
+
     public function vnpaySuccess()
     {
         $invoice = session('invoice');
 
         if (!$invoice) {
-            return redirect()->route('booking')
+            return redirect()->route('show')
                 ->with('error', 'Không tìm thấy hóa đơn!');
         }
         session()->forget([
             'invoice',
-            'selected_payment_method'
+            'selected_payment_method',
         ]);
 
-        return redirect()->route('booking')
-            ->with('success', 'Thanh toán VNPay thành công 🎉');
+        return redirect()->route('show')
+            ->with('success', 'Thanh toán VNPay thành công');
     }
 
-    /**
-     * Callback khi thanh toán VNPAY thất bại
-     */
     public function vnpayFail()
     {
         return redirect()->route('payment')

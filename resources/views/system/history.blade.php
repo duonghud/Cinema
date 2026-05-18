@@ -95,6 +95,22 @@
             @if($invoices->count() > 0)
                 <div class="row g-4">
                     @foreach($invoices as $invoice)
+                        @php
+                            $status = strtolower($invoice->status ?? 'paid');
+                            $firstTicket = $invoice->tickets->first();
+                            $movieTitle = optional(optional($firstTicket)->showTime)->movie->movieTitle ?? 'Chưa có thông tin phim';
+                            $showDateTime = $firstTicket && $firstTicket->showTime
+                                ? \Carbon\Carbon::parse($firstTicket->showTime->showDate . ' ' . $firstTicket->showTime->startTime)->format('d/m/Y H:i')
+                                : 'N/A';
+                            $seatLabels = $invoice->tickets
+                                ->map(function ($ticket) {
+                                    $seat = $ticket->seat;
+                                    return $seat ? $seat->rowSeat . $seat->colSeat : null;
+                                })
+                                ->filter()
+                                ->implode(', ');
+                        @endphp
+
                         <div class="col-12">
                             <div class="history-card p-4">
                                 <div class="row g-4 align-items-center">
@@ -108,7 +124,7 @@
                                     <div class="col-lg-3">
                                         <div class="info-label mb-2">Ngày đặt</div>
                                         <div class="fw-semibold">
-                                            {{ \Carbon\Carbon::parse($invoice->created_at)->format('d/m/Y H:i') }}
+                                            {{ \Carbon\Carbon::parse($invoice->createDate)->format('d/m/Y H:i') }}
                                         </div>
                                     </div>
 
@@ -121,18 +137,10 @@
 
                                     <div class="col-lg-3">
                                         <div class="info-label mb-2">Trạng thái</div>
-                                        @php
-                                            $status = strtolower($invoice->status ?? 'paid');
-                                        @endphp
-
                                         @if($status === 'paid')
-                                            <span class="badge bg-success px-3 py-2">
-                                                Đã thanh toán
-                                            </span>
+                                            <span class="badge bg-success px-3 py-2">Đã thanh toán</span>
                                         @elseif($status === 'pending')
-                                            <span class="badge bg-warning text-dark px-3 py-2">
-                                                Chờ thanh toán
-                                            </span>
+                                            <span class="badge bg-warning text-dark px-3 py-2">Chờ thanh toán</span>
                                         @else
                                             <span class="badge bg-secondary px-3 py-2">
                                                 {{ $invoice->status }}
@@ -143,12 +151,24 @@
 
                                 <hr class="border-secondary my-4">
 
-                                <div class="d-flex flex-wrap gap-3">
-                                    <a href="{{ route('invoice') }}?id={{ $invoice->invoiceID }}"
-                                       class="btn btn-outline-light rounded-pill px-4">
-                                        <i class="bi bi-receipt me-2"></i>Xem hóa đơn
-                                    </a>
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-4">
+                                        <div class="info-label mb-2">Phim</div>
+                                        <div class="fw-semibold">{{ $movieTitle }}</div>
+                                    </div>
 
+                                    <div class="col-md-4">
+                                        <div class="info-label mb-2">Suất chiếu</div>
+                                        <div class="fw-semibold">{{ $showDateTime }}</div>
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <div class="info-label mb-2">Ghế</div>
+                                        <div class="fw-semibold">{{ $seatLabels ?: 'N/A' }}</div>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex flex-wrap gap-3">
                                     <a href="{{ route('home') }}"
                                        class="btn btn-danger rounded-pill px-4">
                                         <i class="bi bi-ticket-perforated me-2"></i>Đặt vé lại
