@@ -120,7 +120,6 @@ class SystemPaymentController extends Controller
             'invoice',
             'selected_payment_method',
         ]);
-
         return redirect()->route('system.success', [
             'transaction_code' => 'INV-' . $savedInvoice->invoiceID,
         ])->with('success', 'Thanh toán thành công');
@@ -134,7 +133,6 @@ class SystemPaymentController extends Controller
             return redirect()->route('show')
                 ->with('error', 'Không tìm thấy hóa đơn!');
         }
-
         session()->forget([
             'invoice',
             'selected_payment_method',
@@ -152,6 +150,7 @@ class SystemPaymentController extends Controller
 
     public function success(Request $request)
     {
+        // Lấy mã giao dịch từ URL, ví dụ: /payment/success?transaction_code=TXN123456
         $transactionCode = $request->get('transaction_code', 'N/A');
 
         return view('system.success', compact('transactionCode'));
