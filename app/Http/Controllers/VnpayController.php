@@ -2,62 +2,43 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\BookingService;
 use Illuminate\Http\Request;
-use App\Models\Admin\Seat;
-use App\Models\Admin\ticket;
+use RuntimeException;
 
 class VnpayController extends Controller
 {
+    public function __construct(
+        protected BookingService $bookingService
+    ) {
+    }
+
     public function createPayment($amount)
     {
-        // URL thanh toán của VNPAY
         $vnp_Url = trim(env('VNP_URL'));
         $vnp_ReturnUrl = route('vnpay.return');
 
-        // Thông tin cấu hình
         $vnp_TmnCode = trim(env('VNP_TMN_CODE'));
         $vnp_HashSecret = trim(env('VNP_HASH_SECRET'));
-
-        // Mã giao dịch duy nhất
         $vnp_TxnRef = date('YmdHis') . rand(1000, 9999);
 
-        // Thiết lập múi giờ
         date_default_timezone_set('Asia/Ho_Chi_Minh');
 
-        // Thông tin đơn hàng
-        $vnp_OrderInfo = 'Thanh toan ve xem phim';
-        $vnp_OrderType = 'billpayment';
-        $vnp_Amount = (int) $amount * 100; // VNPAY yêu cầu nhân 100
-        $vnp_Locale = 'vn';
-        $vnp_BankCode = '';
-
-        // Địa chỉ IP người dùng
-        $vnp_IpAddr = request()->ip();
-
-        // Thời gian tạo và hết hạn
-        $createDate = date('YmdHis');
-        $expireDate = date('YmdHis', strtotime('+15 minutes'));
-
-        // Dữ liệu gửi sang VNPAY
         $inputData = [
-            'vnp_Version'    => '2.1.0',
-            'vnp_TmnCode'    => $vnp_TmnCode,
-            'vnp_Amount'     => $vnp_Amount,
-            'vnp_Command'    => 'pay',
-            'vnp_CreateDate' => $createDate,
-            'vnp_CurrCode'   => 'VND',
-            'vnp_IpAddr'     => $vnp_IpAddr,
-            'vnp_Locale'     => $vnp_Locale,
-            'vnp_OrderInfo'  => $vnp_OrderInfo,
-            'vnp_OrderType'  => $vnp_OrderType,
-            'vnp_ReturnUrl'  => $vnp_ReturnUrl,
-            'vnp_TxnRef'     => $vnp_TxnRef,
-            'vnp_ExpireDate' => $expireDate,
+            'vnp_Version' => '2.1.0',
+            'vnp_TmnCode' => $vnp_TmnCode,
+            'vnp_Amount' => (int) $amount * 100,
+            'vnp_Command' => 'pay',
+            'vnp_CreateDate' => date('YmdHis'),
+            'vnp_CurrCode' => 'VND',
+            'vnp_IpAddr' => request()->ip(),
+            'vnp_Locale' => 'vn',
+            'vnp_OrderInfo' => 'Thanh toan ve xem phim',
+            'vnp_OrderType' => 'billpayment',
+            'vnp_ReturnUrl' => $vnp_ReturnUrl,
+            'vnp_TxnRef' => $vnp_TxnRef,
+            'vnp_ExpireDate' => date('YmdHis', strtotime('+15 minutes')),
         ];
-
-        if (!empty($vnp_BankCode)) {
-            $inputData['vnp_BankCode'] = $vnp_BankCode;
-        }
 
         ksort($inputData);
 
@@ -66,7 +47,7 @@ class VnpayController extends Controller
         $i = 0;
 
         foreach ($inputData as $key => $value) {
-            if ($i == 1) {
+            if ($i === 1) {
                 $hashData .= '&' . urlencode($key) . '=' . urlencode($value);
             } else {
                 $hashData .= urlencode($key) . '=' . urlencode($value);
@@ -76,32 +57,23 @@ class VnpayController extends Controller
             $query .= urlencode($key) . '=' . urlencode($value) . '&';
         }
 
-        $vnp_SecureHash = hash_hmac(
-            'sha512',
-            $hashData,
-            $vnp_HashSecret
-        );
-
         $paymentUrl = $vnp_Url
             . '?'
             . $query
             . 'vnp_SecureHash='
-            . $vnp_SecureHash;
-        session([
-            'vnp_TxnRef' => $vnp_TxnRef,
-        ]);
+            . hash_hmac('sha512', $hashData, $vnp_HashSecret);
+
+        session(['vnp_TxnRef' => $vnp_TxnRef]);
 
         return redirect()->away($paymentUrl);
     }
 
-
     public function vnpayReturn(Request $request)
     {
         $vnp_HashSecret = trim(env('VNP_HASH_SECRET'));
-
         $inputData = $request->except([
             'vnp_SecureHash',
-            'vnp_SecureHashType'
+            'vnp_SecureHashType',
         ]);
 
         ksort($inputData);
@@ -110,7 +82,7 @@ class VnpayController extends Controller
         $i = 0;
 
         foreach ($inputData as $key => $value) {
-            if ($i == 1) {
+            if ($i === 1) {
                 $hashData .= '&' . urlencode($key) . '=' . urlencode($value);
             } else {
                 $hashData .= urlencode($key) . '=' . urlencode($value);
@@ -118,65 +90,53 @@ class VnpayController extends Controller
             }
         }
 
-        $secureHash = hash_hmac(
-            'sha512',
-            $hashData,
-            $vnp_HashSecret
-        );
+        $secureHash = hash_hmac('sha512', $hashData, $vnp_HashSecret);
 
         if ($secureHash !== $request->vnp_SecureHash) {
             return redirect()->route('payment')
                 ->with('error', 'Sai chữ ký VNPAY!');
         }
 
-        if (
-            session('vnp_TxnRef') &&
-            session('vnp_TxnRef') != $request->vnp_TxnRef
-        ) {
+        if (session('vnp_TxnRef') && session('vnp_TxnRef') != $request->vnp_TxnRef) {
             return redirect()->route('payment')
                 ->with('error', 'Mã giao dịch không hợp lệ!');
         }
 
-        if ($request->vnp_ResponseCode === '00') {
-
-            // Lấy invoice từ session
-            $invoice = session('invoice');
-
-            // Nếu có dữ liệu invoice thì cập nhật trạng thái vé đã đặt
-            if ($invoice && !empty($invoice['seats']) && !empty($invoice['showTimeID'])) {
-
-                // Lấy danh sách seatID theo tên ghế (A1, A2...)
-                $seatIds = Seat::query()
-                    ->where('screeningRoomID', $invoice['roomID'] ?? null) // nếu có roomID
-                    ->get()
-                    ->filter(function ($seat) use ($invoice) {
-                        $seatCode = $seat->rowSeat . $seat->colSeat;
-                        return in_array($seatCode, $invoice['seats']);
-                    })
-                    ->pluck('seatID');
-
-                // Cập nhật trạng thái ticket thành booked
-                ticket::where('showTimeID', $invoice['showTimeID'])
-                    ->whereIn('seatID', $seatIds)
-                    ->update([
-                        'status' => 'booked'
-                    ]);
-            }
-
-            // Lấy mã giao dịch
-            $transactionCode = $request->vnp_TransactionNo ?? $request->vnp_TxnRef;
-
-            // Xóa session sau khi đã cập nhật ticket
-            session()->forget([
-                'invoice',
-                'selected_payment_method',
-                'vnp_TxnRef'
-            ]);
-
-            // Chuyển đến trang thành công
-            return redirect()->route('system.success', [
-                'transaction_code' => $transactionCode
-            ]);
+        if ($request->vnp_ResponseCode !== '00') {
+            return redirect()->route('payment')
+                ->with('error', 'Thanh toán VNPay thất bại!');
         }
+
+        $invoice = session('invoice');
+        $paymentId = session('selected_payment_method');
+        $customer = session('customer');
+
+        if (!$invoice || !$paymentId || !$customer) {
+            return redirect()->route('payment')
+                ->with('error', 'Không tìm thấy dữ liệu thanh toán.');
+        }
+
+        try {
+            $this->bookingService->finalizeFromSession(
+                $invoice,
+                (int) $paymentId,
+                (int) $customer->customerID
+            );
+        } catch (RuntimeException $e) {
+            return redirect()->route('payment')
+                ->with('error', $e->getMessage());
+        }
+
+        $transactionCode = $request->vnp_TransactionNo ?? $request->vnp_TxnRef;
+
+        session()->forget([
+            'invoice',
+            'selected_payment_method',
+            'vnp_TxnRef',
+        ]);
+
+        return redirect()->route('system.success', [
+            'transaction_code' => $transactionCode,
+        ]);
     }
 }

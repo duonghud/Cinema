@@ -230,7 +230,7 @@
         color: #22d3ee;
     }
 
-    .logo-viettel {
+    .logo-visa {
         color: #d1d5db;
     }
 
@@ -450,8 +450,8 @@
                                         logo-momo
                                     @elseif(stripos($method->name, 'VietQR') !== false)
                                         logo-vietqr
-                                    @elseif(stripos($method->name, 'Viettel') !== false)
-                                        logo-viettel
+                                    @elseif(stripos($method->name, 'Visa') !== false)
+                                        logo-visa
                                     @endif
                                 ">
                                     @if(stripos($method->name, 'VNPAY') !== false)
@@ -482,11 +482,6 @@
                     <div class="cost-row">
                         <span>Thanh toán</span>
                         <span>{{ number_format($invoice['total']) }}đ</span>
-                    </div>
-
-                    <div class="cost-row">
-                        <span>Phí</span>
-                        <span>0đ</span>
                     </div>
 
                     <div class="cost-total">
