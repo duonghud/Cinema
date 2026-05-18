@@ -1,5 +1,42 @@
 @extends('layouts.app')
 @section('content')
+<style>
+    .alert-error {
+        width: 60%;
+        margin: 15px auto;
+        padding: 12px 18px;
+        border-radius: 10px;
+        background: rgba(239, 68, 68, 0.15);
+        border: 1px solid #ef4444;
+        color: #fca5a5;
+        font-weight: 500;
+        text-align: center;
+    }
+
+    .alert-success {
+        width: 60%;
+        margin: 15px auto;
+        padding: 12px 18px;
+        border-radius: 10px;
+        background: rgba(34, 197, 94, 0.15);
+        border: 1px solid #22c55e;
+        color: #86efac;
+        font-weight: 500;
+        text-align: center;
+    }
+</style>
+
+@if(session('error'))
+<div class="alert-error">
+    {{ session('error') }}
+</div>
+@endif
+
+@if(session('success'))
+<div class="alert-success">
+    {{ session('success') }}
+</div>
+@endif
 
 <div class="text-white">
     <div class="relative z-10 px-10 py-4 flex justify-between items-center">
@@ -66,7 +103,7 @@
         </div>
     </div>
 
-    @php
+    <!-- @php
     use Carbon\Carbon;
     $dates = $movie->showTimes
     ->groupBy('showDate')
@@ -76,20 +113,16 @@
     $show->showDate . ' ' . $show->startTime
     );
 
-    // Chỉ hiển thị khi chưa đến giờ chiếu
     return now()->lt($showDateTime);
     });
     })
     ->filter(function ($shows) {
-    // Chỉ giữ lại những ngày còn ít nhất 1 suất chiếu hợp lệ
     return $shows->count() > 0;
     });
 
-    // Lấy ngày đầu tiên còn suất chiếu
     $firstDate = $dates->keys()->first();
-    @endphp
+    @endphp -->
 
-    {{-- Nếu không còn suất chiếu nào --}}
     @if($dates->isEmpty())
     <div class="text-center py-16">
         <p class="text-gray-400 text-lg">
@@ -364,7 +397,7 @@
             }
 
             time--;
-
         }, 1000);
     }
 </script>
+

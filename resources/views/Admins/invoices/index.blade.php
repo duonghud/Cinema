@@ -14,7 +14,7 @@
     </div>
 
     @include('admins.partials.page-search', [
-        'placeholder' => 'Tìm theo khách hàng, admin, thanh toán hoặc ngày tạo'
+    'placeholder' => 'Tìm theo khách hàng, admin, thanh toán hoặc ngày tạo'
     ])
 
     <div class="card border-0 shadow-sm rounded-3">
@@ -34,38 +34,71 @@
 
                 <tbody>
                     @forelse($invoices as $inv)
-                        <tr>
-                            <td class="text-muted">#{{ $inv->invoiceID }}</td>
-                            <td class="fw-medium">{{ $inv->customer->fullName }}</td>
-                            <td>
-                                <span class="badge bg-dark">{{ $inv->admin->fullName }}</span>
-                            </td>
-                            <td>
-                                <span class="badge bg-success">{{ $inv->payment->name }}</span>
-                            </td>
-                            <td class="fw-bold text-danger">{{ number_format($inv->totalAmount, 0, ',', '.') }}đ</td>
-                            <td class="text-muted">{{ \Carbon\Carbon::parse($inv->createDate)->format('d/m/Y') }}</td>
-                            <td class="text-end">
-                                <a href="{{ route('invoices.edit', $inv->invoiceID) }}" class="btn btn-sm btn-outline-dark me-2">
-                                    Sửa
-                                </a>
+                    <tr>
+                        <td class="text-muted">#{{ $inv->invoiceID }}</td>
 
-                                <form action="{{ route('invoices.destroy', $inv->invoiceID) }}" method="POST" class="d-inline">
-                                    @csrf
-                                    @method('DELETE')
+                        {{-- Khách hàng --}}
+                        <td class="fw-medium">
+                            {{ $inv->customer->fullName ?? 'Khách vãng lai' }}
+                        </td>
 
-                                    <button class="btn btn-sm btn-outline-danger" onclick="return confirm('Xóa hóa đơn này?')">
-                                        Xóa
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
+                        {{-- Admin --}}
+                        <td>
+                            <span class="badge bg-dark">
+                                {{ $inv->admin->fullName ?? '---' }}
+                            </span>
+                        </td>
+
+                        {{-- Phương thức thanh toán --}}
+                        <td>
+                            <span class="badge bg-success">
+                                {{ $inv->paymentMethod->name ?? '---' }}
+                            </span>
+                        </td>
+
+                        {{-- Tổng tiền --}}
+                        <td class="fw-bold text-danger">
+                            {{ number_format($inv->totalAmount, 0, ',', '.') }}đ
+                        </td>
+
+                        {{-- Ngày tạo --}}
+                        <td class="text-muted">
+                            {{ \Carbon\Carbon::parse($inv->createDate)->format('d/m/Y') }}
+                        </td>
+
+                        {{-- Hành động --}}
+                        <td class="text-end">
+
+                            <a href="{{ route('invoices.show', $inv->invoiceID) }}"
+                                class="btn btn-sm btn-outline-info me-2">
+                                Chi tiết
+                            </a>
+                            
+                            <a href="{{ route('invoices.edit', $inv->invoiceID) }}"
+                                class="btn btn-sm btn-outline-dark me-2">
+                                Sửa
+                            </a>
+
+                            <form action="{{ route('invoices.destroy', $inv->invoiceID) }}"
+                                method="POST"
+                                class="d-inline">
+                                @csrf
+                                @method('DELETE')
+
+                                <button type="submit"
+                                    class="btn btn-sm btn-outline-danger"
+                                    onclick="return confirm('Xóa hóa đơn này?')">
+                                    Xóa
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
                     @empty
-                        <tr>
-                            <td colspan="7" class="text-center text-muted py-4">
-                                Không có hóa đơn nào
-                            </td>
-                        </tr>
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">
+                            Không có hóa đơn nào
+                        </td>
+                    </tr>
                     @endforelse
                 </tbody>
             </table>

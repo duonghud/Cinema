@@ -8,6 +8,7 @@
     use App\Http\Controllers\Auth\CustomerAuthController;
     use App\Http\Controllers\Auth\AdminAuthController;
     use App\Http\Controllers\SystemPaymentController;
+    use App\Http\Controllers\BookingHistoryController;
 
     // Admin
     use App\Http\Controllers\Admin\AdminController;
@@ -42,7 +43,7 @@
     })->name('customer.profile');
 
 
-    Route::get('/vnpay-return', [VnpayController::class, 'vnpayReturn'])
+    Route::get('/vnpay/return', [VnpayController::class, 'vnpayReturn'])
         ->name('vnpay.return');
 
     // ================== AUTH CUSTOMER ==================
@@ -110,6 +111,9 @@
         Route::post('seat/ajax-store', [SeatController::class, 'storeAjax'])
             ->name('seat.ajax.store');
 
+        Route::post('/seat/ajax-add', [SeatController::class, 'ajaxAdd'])
+            ->name('seat.ajaxAdd');
+
         Route::delete('seat/ajax-delete/{id}', [SeatController::class, 'deleteAjax'])
             ->name('seat.ajax.delete');
 
@@ -171,4 +175,7 @@
 
         Route::get('/payment/success', [SystemPaymentController::class, 'success'])
             ->name('system.success');
+
+        Route::get('/booking-history', [BookingHistoryController::class, 'index'])
+            ->name('booking.history');
     });
