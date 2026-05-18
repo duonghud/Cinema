@@ -125,7 +125,7 @@ class SystemPaymentController extends Controller
         ]);
 
         return redirect()->route('booking')
-            ->with('success', 'Thanh toán thành công 🎉');
+            ->with('success', 'Thanh toán thành công ');
     }
     public function vnpaySuccess()
     {
@@ -135,13 +135,14 @@ class SystemPaymentController extends Controller
             return redirect()->route('booking')
                 ->with('error', 'Không tìm thấy hóa đơn!');
         }
+
         session()->forget([
             'invoice',
             'selected_payment_method'
         ]);
 
         return redirect()->route('booking')
-            ->with('success', 'Thanh toán VNPay thành công 🎉');
+            ->with('success', 'Thanh toán VNPay thành công');
     }
 
     /**
@@ -155,7 +156,6 @@ class SystemPaymentController extends Controller
 
     public function success(Request $request)
     {
-        // Lấy mã giao dịch từ URL, ví dụ: /payment/success?transaction_code=TXN123456
         $transactionCode = $request->get('transaction_code', 'N/A');
 
         return view('system.success', compact('transactionCode'));
