@@ -4,16 +4,16 @@
 
 @section('content')
 @php
-$customer = $customer ?? session('customer');
-$fullName = $customer->fullName ?? 'Khách xem phim';
-$email = $customer->email ?? 'you@example.com';
-$phone = $customer->phoneNumber ?? 'Chưa cập nhật';
-$address = $customer->address ?? 'Chưa cập nhật';
-$initials = collect(explode(' ', trim($fullName)))
-->filter()
-->take(2)
-->map(fn ($part) => mb_strtoupper(mb_substr($part, 0, 1)))
-->implode('');
+    $customer = $customer ?? session('customer');
+    $fullName = $customer->fullName ?? 'Khách xem phim';
+    $email = $customer->email ?? 'you@example.com';
+    $phone = $customer->phoneNumber ?? 'Chưa cập nhật';
+    $address = $customer->address ?? 'Chưa cập nhật';
+    $initials = collect(explode(' ', trim($fullName)))
+        ->filter()
+        ->take(2)
+        ->map(fn ($part) => mb_strtoupper(mb_substr($part, 0, 1)))
+        ->implode('');
 @endphp
 
 <style>
@@ -135,7 +135,7 @@ $initials = collect(explode(' ', trim($fullName)))
         color: #6b7280;
     }
 
-    .sidebar-list li+li {
+    .sidebar-list li + li {
         border-top: 1px solid rgba(255, 255, 255, 0.08);
     }
 
@@ -340,19 +340,6 @@ $initials = collect(explode(' ', trim($fullName)))
                         <a href="{{ route('ticket.price') }}" class="btn btn-outline-light rounded-pill py-3 fw-semibold">
                             <i class="bi bi-tags me-2"></i>Xem bảng giá vé
                         </a>
-                    </div>
-                    <div class="glass-panel sidebar-card p-4 mt-4">
-                        <p class="text-uppercase small text-white-50 mb-3">Lịch sử đặt vé</p>
-                        <p class="text-white-50 mb-4">
-                            Xem lại toàn bộ các vé bạn đã đặt, thông tin suất chiếu, ghế ngồi và trạng thái thanh toán.
-                        </p>
-
-                        <div class="d-grid">
-                            <a href="{{ route('booking.history') }}"
-                                class="btn btn-danger rounded-pill py-3 fw-semibold">
-                                <i class="bi bi-clock-history me-2"></i>Xem lịch sử đặt vé
-                            </a>
-                        </div>
                     </div>
                 </div>
             </div>
