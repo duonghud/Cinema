@@ -12,6 +12,6 @@ class showController extends Controller
     {
         $movies = Movie::all();
         $showTimes = showTime::all();
-        return view('Customer.showTime', compact('movies', 'showTimes'));
+        return view('system.show', compact('movies', 'showTimes'));
     }
 }
