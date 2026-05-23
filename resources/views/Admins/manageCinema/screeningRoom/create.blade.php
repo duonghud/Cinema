@@ -24,19 +24,6 @@
             </div>
 
             <div class="row mb-4">
-               <!--  <div class="col-md-6">
-                    <label class="form-label">Số hàng ghế</label>
-                    <input type="number"
-                           name="rows"
-                           min="1"
-                           max="26"
-                           class="form-control @error('rows') is-invalid @enderror"
-                           value="{{ old('rows', 8) }}">
-
-                    @error('rows')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div> -->
 
                 <div class="col-md-6">
                     <label class="form-label">Số cột ghế</label>
@@ -44,8 +31,7 @@
                            name="cols"
                            min="1"
                            max="50"
-                           class="form-control @error('cols') is-invalid @enderror"
-                           value="{{ old('cols', 12) }}">
+                           class="form-control @error('cols') is-invalid @enderror">
 
                     @error('cols')
                         <div class="invalid-feedback">{{ $message }}</div>
@@ -77,8 +63,7 @@
                             <input type="number"
                                    name="vipSeats"
                                    min="0"
-                                   class="form-control @error('vipSeats') is-invalid @enderror"
-                                   value="{{ old('vipSeats', 20) }}">
+                                   class="form-control @error('vipSeats') is-invalid @enderror">
                             @error('vipSeats')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -110,8 +95,7 @@
                             <input type="number"
                                    name="normalSeats"
                                    min="0"
-                                   class="form-control @error('normalSeats') is-invalid @enderror"
-                                   value="{{ old('normalSeats', 60) }}">
+                                   class="form-control @error('normalSeats') is-invalid @enderror">
                             @error('normalSeats')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -143,8 +127,7 @@
                             <input type="number"
                                    name="doubleSeats"
                                    min="0"
-                                   class="form-control @error('doubleSeats') is-invalid @enderror"
-                                   value="{{ old('doubleSeats', 16) }}">
+                                   class="form-control @error('doubleSeats') is-invalid @enderror">
                             @error('doubleSeats')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror

@@ -11,8 +11,11 @@ use Illuminate\Http\Request;
 
 class ShowTimeController extends Controller
 {
+
+
     public function index(Request $request)
     {
+        
         $search = trim((string) $request->input('search'));
 
         $showTimes = ShowTime::with(['movie', 'room'])
@@ -44,6 +47,7 @@ class ShowTimeController extends Controller
 
     public function store(Request $request)
     {
+        
         $request->validate([
             'showDate' => 'required|date',
             'startTime' => 'required',
