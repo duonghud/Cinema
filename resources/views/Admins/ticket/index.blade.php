@@ -50,7 +50,7 @@
                                 @if($t->status == 'available')
                                     <span class="badge bg-success">Còn trống</span>
                                 @else
-                                    <span class="badge bg-danger">Đã đặt</span>
+                                    <span class="badge bg-success">Đã thanh toán</span>
                                 @endif
                             </td>
                             <td>

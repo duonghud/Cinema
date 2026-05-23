@@ -73,13 +73,13 @@
                                 class="btn btn-sm btn-outline-info me-2">
                                 Chi tiết
                             </a>
-                            
-                            <a href="{{ route('invoices.edit', $inv->invoiceID) }}"
+
+                            {{--<a href="{{ route('invoices.edit', $inv->invoiceID) }}"
                                 class="btn btn-sm btn-outline-dark me-2">
                                 Sửa
-                            </a>
+                            </a>--}}
 
-                            <form action="{{ route('invoices.destroy', $inv->invoiceID) }}"
+                            {{--<form action="{{ route('invoices.destroy', $inv->invoiceID) }}"
                                 method="POST"
                                 class="d-inline">
                                 @csrf
@@ -90,7 +90,7 @@
                                     onclick="return confirm('Xóa hóa đơn này?')">
                                     Xóa
                                 </button>
-                            </form>
+                            </form>--}}
                         </td>
                     </tr>
                     @empty
