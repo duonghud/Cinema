@@ -24,7 +24,6 @@
                     <tr>
                         <th>#ID</th>
                         <th>Khách hàng</th>
-                        <th>Admin</th>
                         <th>Thanh toán</th>
                         <th>Tổng tiền</th>
                         <th>Ngày</th>
@@ -42,12 +41,12 @@
                             {{ $inv->customer->fullName ?? 'Khách vãng lai' }}
                         </td>
 
-                        {{-- Admin --}}
+                        <!-- {{-- Admin --}}
                         <td>
                             <span class="badge bg-dark">
                                 {{ $inv->admin->fullName ?? '---' }}
                             </span>
-                        </td>
+                        </td> -->
 
                         {{-- Phương thức thanh toán --}}
                         <td>
@@ -70,12 +69,12 @@
                         <td class="text-end">
 
                             <a href="{{ route('invoices.show', $inv->invoiceID) }}"
-                                class="btn btn-sm btn-outline-info me-2">
+                                class="btn btn-sm btn-outline-info me-3">
                                 Chi tiết
                             </a>
-                            
+
                             <a href="{{ route('invoices.edit', $inv->invoiceID) }}"
-                                class="btn btn-sm btn-outline-dark me-2">
+                                class="btn btn-sm btn-outline-dark me-3">
                                 Sửa
                             </a>
 

@@ -1,149 +1,71 @@
-{{-- resources/views/admins/invoices/show.blade.php --}}
 @extends('layouts.appAdmin')
 
 @section('content')
-<div class="container-fluid mt-4">
-    {{-- Tiêu đề --}}
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h4 class="fw-bold mb-1">
-                Chi tiết hóa đơn #{{ $invoice->invoiceID }}
-            </h4>
-            <small class="text-muted">
-                Thông tin chi tiết của hóa đơn
-            </small>
-        </div>
+<div class="container mt-4">
 
-        <a href="{{ route('invoices.index') }}"
-           class="btn btn-outline-secondary">
-            ← Quay lại
-        </a>
+    <h4>Chi tiết hóa đơn #{{ $invoice->invoiceID }}</h4>
+
+    <div class="card p-3 mb-3">
+        <p><b>Khách hàng:</b> {{ $invoice->customer->fullName ?? '' }}</p>
+        <p><b>Nhân viên:</b> {{ $invoice->admin->fullName ?? '' }}</p>
+        <p><b>Ngày tạo:</b> {{ $invoice->createDate }}</p>
+        <p><b>Tổng tiền:</b> {{ number_format($invoice->totalAmount) }} đ</p>
+        <p><b>Thanh toán:</b> {{ $invoice->paymentMethod->name ?? '' }}</p>
     </div>
 
-    <div class="row">
-        {{-- Thông tin hóa đơn --}}
-        <div class="col-lg-4">
-            <div class="card border-0 shadow-sm rounded-3 mb-4">
-                <div class="card-header bg-dark text-white">
-                    Thông tin hóa đơn
-                </div>
+    <h5>Danh sách vé / ghế</h5>
 
-                <div class="card-body">
-                    <table class="table table-borderless mb-0">
-                        <tr>
-                            <th width="40%">Mã hóa đơn:</th>
-                            <td>#{{ $invoice->invoiceID }}</td>
-                        </tr>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Mã vé</th>
+                <th>Phim</th>
+                <th>Suất chiếu</th>
+                <th>Ghế</th>
+                <th>Giá</th>
+                <th>Trạng thái</th>
+            </tr>
+        </thead>
 
-                        <tr>
-                            <th>Khách hàng:</th>
-                            <td>
-                                {{ $invoice->customer->fullName ?? 'Khách vãng lai' }}
-                            </td>
-                        </tr>
+        <tbody>
+            @forelse($invoice->tickets as $ticket)
+                <tr>
+                    <td>{{ $ticket->ticketID }}</td>
 
-                        <tr>
-                            <th>Admin:</th>
-                            <td>
-                                {{ $invoice->admin->fullName ?? '---' }}
-                            </td>
-                        </tr>
+                    <td>
+                        {{ $ticket->showTime->movie->movieTitle ?? '' }}
+                    </td>
 
-                        <tr>
-                            <th>Thanh toán:</th>
-                            <td>
-                                <span class="badge bg-success">
-                                    {{ $invoice->paymentMethod->name ?? '---' }}
-                                </span>
-                            </td>
-                        </tr>
+                    <td>
+                        {{ $ticket->showTime->showDate ?? '' }}
+                        {{ $ticket->showTime->startTime ?? '' }}
+                    </td>
 
-                        <tr>
-                            <th>Ngày tạo:</th>
-                            <td>
-                                {{ \Carbon\Carbon::parse($invoice->createDate)->format('d/m/Y H:i') }}
-                            </td>
-                        </tr>
+                    <td>
+                        {{ $ticket->seat->rowSeat ?? '' }}{{ $ticket->seat->colSeat ?? '' }}
+                    </td>
 
-                        <tr>
-                            <th>Tổng tiền:</th>
-                            <td class="fw-bold text-danger fs-5">
-                                {{ number_format($invoice->totalAmount, 0, ',', '.') }}đ
-                            </td>
-                        </tr>
-                    </table>
-                </div>
-            </div>
-        </div>
+                    <td>
+                        {{ number_format($ticket->price ?? 0) }} đ
+                    </td>
 
-        {{-- Danh sách chi tiết hóa đơn --}}
-        <div class="col-lg-8">
-            <div class="card border-0 shadow-sm rounded-3">
-                <div class="card-header bg-primary text-white">
-                    Danh sách sản phẩm / vé
-                </div>
-
-                <div class="card-body p-0">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>#</th>
-                                <th>Tên sản phẩm</th>
-                                <th class="text-center">Số lượng</th>
-                                <th class="text-end">Đơn giá</th>
-                                <th class="text-end">Thành tiền</th>
-                            </tr>
-                        </thead>
-
-                        <tbody>
-                            @forelse($invoice->invoiceDetails as $index => $detail)
-                                <tr>
-                                    <td>{{ $index + 1 }}</td>
-
-                                    <td>
-                                        {{ $detail->product->name
-                                            ?? $detail->ticket->movie->movieName
-                                            ?? '---' }}
-                                    </td>
-
-                                    <td class="text-center">
-                                        {{ $detail->quantity }}
-                                    </td>
-
-                                    <td class="text-end">
-                                        {{ number_format($detail->unitPrice, 0, ',', '.') }}đ
-                                    </td>
-
-                                    <td class="text-end fw-bold text-danger">
-                                        {{ number_format($detail->quantity * $detail->unitPrice, 0, ',', '.') }}đ
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="5"
-                                        class="text-center text-muted py-4">
-                                        Không có chi tiết hóa đơn
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-
-                        @if($invoice->invoiceDetails->count() > 0)
-                            <tfoot class="table-light">
-                                <tr>
-                                    <th colspan="4" class="text-end">
-                                        Tổng cộng:
-                                    </th>
-                                    <th class="text-end text-danger fs-6">
-                                        {{ number_format($invoice->totalAmount, 0, ',', '.') }}đ
-                                    </th>
-                                </tr>
-                            </tfoot>
+                    <td>
+                        @if($ticket->status == 'booked')
+                            <span class="badge bg-success">Đã đặt</span>
+                        @else
+                            <span class="badge bg-secondary">Trống</span>
                         @endif
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
+                    </td>
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="6" class="text-center text-muted">
+                        Không có vé nào trong hóa đơn
+                    </td>
+                </tr>
+            @endforelse
+        </tbody>
+    </table>
+
 </div>
 @endsection
