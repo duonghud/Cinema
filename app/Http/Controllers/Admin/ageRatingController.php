@@ -14,6 +14,7 @@ class ageRatingController extends Controller
     public function index(Request $request)
     {
         $search = trim((string) $request->input('search'));
+        $code = trim((string) $request->input('code'));
 
         $ageRatings = ageRating::query()
             ->when($search, function ($query) use ($search) {
@@ -21,10 +22,26 @@ class ageRatingController extends Controller
                     ->orWhere('code', 'like', "%{$search}%")
                     ->orWhere('description', 'like', "%{$search}%");
             })
+            ->when($code, function ($query) use ($code) {
+                $query->where('code', $code);
+            })
             ->paginate(5)
             ->withQueryString();
 
-        return view('admins.manageMovies.ageRating.index', compact('ageRatings'));
+        $codes = ageRating::query()
+            ->select('code')
+            ->distinct()
+            ->orderBy('code')
+            ->pluck('code', 'code');
+
+        return view('admins.manageMovies.ageRating.index', [
+            'ageRatings' => $ageRatings,
+            'filters' => [[
+                'name' => 'code',
+                'all_label' => 'Tất cả độ tuổi',
+                'options' => $codes->toArray(),
+            ]],
+        ]);
     }
 
     /**

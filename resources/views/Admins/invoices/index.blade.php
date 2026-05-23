@@ -73,10 +73,10 @@
                                 Chi tiết
                             </a>
 
-                            <a href="{{ route('invoices.edit', $inv->invoiceID) }}"
+                            {{--<a href="{{ route('invoices.edit', $inv->invoiceID) }}"
                                 class="btn btn-sm btn-outline-dark me-3">
                                 Sửa
-                            </a>
+                            </a>--}}
 
                             <form action="{{ route('invoices.destroy', $inv->invoiceID) }}"
                                 method="POST"

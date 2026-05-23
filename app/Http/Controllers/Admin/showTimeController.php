@@ -15,8 +15,10 @@ class ShowTimeController extends Controller
 
     public function index(Request $request)
     {
-        
         $search = trim((string) $request->input('search'));
+        $movieId = trim((string) $request->input('movie_id'));
+        $roomId = trim((string) $request->input('room_id'));
+        $showDate = trim((string) $request->input('show_date'));
 
         $showTimes = ShowTime::with(['movie', 'room'])
             ->when($search, function ($query) use ($search) {
@@ -31,10 +33,50 @@ class ShowTimeController extends Controller
                         $roomQuery->where('roomName', 'like', "%{$search}%");
                     });
             })
+            ->when($movieId, function ($query) use ($movieId) {
+                $query->where('movieID', $movieId);
+            })
+            ->when($roomId, function ($query) use ($roomId) {
+                $query->where('roomID', $roomId);
+            })
+            ->when($showDate, function ($query) use ($showDate) {
+                $query->whereDate('showDate', $showDate);
+            })
+            ->orderByDesc('showTimeID')
             ->paginate(5)
             ->withQueryString();
 
-        return view('admins.showtime.index', compact('showTimes'));
+        $movies = Movie::query()->orderBy('movieTitle')->pluck('movieTitle', 'movieID');
+        $rooms = ScreeningRoom::query()->orderBy('roomName')->pluck('roomName', 'roomID');
+        $dates = ShowTime::query()
+            ->select('showDate')
+            ->distinct()
+            ->orderBy('showDate')
+            ->pluck('showDate', 'showDate')
+            ->mapWithKeys(function ($date) {
+                return [$date => Carbon::parse($date)->format('d/m/Y')];
+            });
+
+        return view('admins.showtime.index', [
+            'showTimes' => $showTimes,
+            'filters' => [
+                [
+                    'name' => 'movie_id',
+                    'all_label' => 'Tất cả phim',
+                    'options' => $movies->toArray(),
+                ],
+                [
+                    'name' => 'room_id',
+                    'all_label' => 'Tất cả phòng',
+                    'options' => $rooms->toArray(),
+                ],
+                [
+                    'name' => 'show_date',
+                    'all_label' => 'Tất cả ngày',
+                    'options' => $dates->toArray(),
+                ],
+            ],
+        ]);
     }
 
     public function create()

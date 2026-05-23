@@ -14,16 +14,33 @@ class paymentMethodController extends Controller
     public function index(Request $request)
     {
         $search = trim((string) $request->input('search'));
+        $paymentName = trim((string) $request->input('payment_name'));
 
         $paymentMethods = payment_method::query()
             ->when($search, function ($query) use ($search) {
                 $query->where('paymentID', 'like', "%{$search}%")
                     ->orWhere('name', 'like', "%{$search}%");
             })
+            ->when($paymentName, function ($query) use ($paymentName) {
+                $query->where('name', $paymentName);
+            })
             ->paginate(5)
             ->withQueryString();
 
-        return view('admins.paymentMethod.index', ['paymentMethods' => $paymentMethods]);
+        $paymentNames = payment_method::query()
+            ->select('name')
+            ->distinct()
+            ->orderBy('name')
+            ->pluck('name', 'name');
+
+        return view('admins.paymentMethod.index', [
+            'paymentMethods' => $paymentMethods,
+            'filters' => [[
+                'name' => 'payment_name',
+                'all_label' => 'Tất cả phương thức',
+                'options' => $paymentNames->toArray(),
+            ]],
+        ]);
     }
 
     /**

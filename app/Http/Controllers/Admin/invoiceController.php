@@ -15,35 +15,86 @@ class InvoiceController extends Controller
     public function index(Request $request)
     {
         $search = trim((string) $request->input('search'));
+        $customerId = trim((string) $request->input('customer_id'));
+        $paymentId = trim((string) $request->input('payment_id'));
+        $adminId = trim((string) $request->input('admin_id'));
+        $createDate = trim((string) $request->input('create_date'));
 
         $invoices = Invoice::with([
             'customer',
             'admin',
             'paymentMethod'
         ])
-        ->when($search, function ($query) use ($search) {
-            $query->where('invoiceID', 'like', "%{$search}%")
-                ->orWhere('totalAmount', 'like', "%{$search}%")
-                ->orWhere('createDate', 'like', "%{$search}%")
+            ->when($search, function ($query) use ($search) {
+                $query->where('invoiceID', 'like', "%{$search}%")
+                    ->orWhere('totalAmount', 'like', "%{$search}%")
+                    ->orWhere('createDate', 'like', "%{$search}%")
+                    ->orWhereHas('customer', function ($q) use ($search) {
+                        $q->where('fullName', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('admin', function ($q) use ($search) {
+                        $q->where('fullName', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('paymentMethod', function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%");
+                    });
+            })
+            ->when($customerId, function ($query) use ($customerId) {
+                $query->where('customerID', $customerId);
+            })
+            ->when($paymentId, function ($query) use ($paymentId) {
+                $query->where('paymentID', $paymentId);
+            })
+            ->when($adminId, function ($query) use ($adminId) {
+                $query->where('adminID', $adminId);
+            })
+            ->when($createDate, function ($query) use ($createDate) {
+                $query->whereDate('createDate', $createDate);
+            })
+            ->orderByDesc('createDate')
+            ->orderByDesc('invoiceID')
+            ->paginate(5)
+            ->withQueryString();
 
-                ->orWhereHas('customer', function ($q) use ($search) {
-                    $q->where('fullName', 'like', "%{$search}%")
-                      ->orWhere('email', 'like', "%{$search}%");
-                })
+        $customers = Customer::query()->orderBy('fullName')->pluck('fullName', 'customerID');
+        $payments = payment_method::query()->orderBy('name')->pluck('name', 'paymentID');
+        $admins = Admin::query()->orderBy('fullName')->pluck('fullName', 'adminID');
+        $dates = Invoice::query()
+            ->select('createDate')
+            ->distinct()
+            ->orderByDesc('createDate')
+            ->pluck('createDate', 'createDate')
+            ->mapWithKeys(function ($date) {
+                return [$date => \Carbon\Carbon::parse($date)->format('d/m/Y')];
+            });
 
-                ->orWhereHas('admin', function ($q) use ($search) {
-                    $q->where('fullName', 'like', "%{$search}%")
-                      ->orWhere('email', 'like', "%{$search}%");
-                })
-
-                ->orWhereHas('paymentMethod', function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%");
-                });
-        })
-        ->paginate(5)
-        ->withQueryString();
-
-        return view('admins.invoices.index', compact('invoices'));
+        return view('admins.invoices.index', [
+            'invoices' => $invoices,
+            'filters' => [
+                [
+                    'name' => 'customer_id',
+                    'all_label' => 'Tất cả khách hàng',
+                    'options' => $customers->toArray(),
+                ],
+                [
+                    'name' => 'payment_id',
+                    'all_label' => 'Tất cả thanh toán',
+                    'options' => $payments->toArray(),
+                ],
+                [
+                    'name' => 'admin_id',
+                    'all_label' => 'Tất cả admin',
+                    'options' => $admins->toArray(),
+                ],
+                [
+                    'name' => 'create_date',
+                    'all_label' => 'Tất cả ngày tạo',
+                    'options' => $dates->toArray(),
+                ],
+            ],
+        ]);
     }
 
     public function create()
