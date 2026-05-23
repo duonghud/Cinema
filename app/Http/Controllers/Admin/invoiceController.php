@@ -4,10 +4,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\Admin\invoice;
+use App\Models\Admin\Invoice;
 use App\Models\Admin\Customer;
 use App\Models\Admin\Admin;
 use App\Models\Admin\payment_method;
+use App\Models\Admin\Ticket;
 
 class InvoiceController extends Controller
 {
@@ -20,42 +21,38 @@ class InvoiceController extends Controller
             'admin',
             'paymentMethod'
         ])
-            ->when($search, function ($query) use ($search) {
-                $query->where('invoiceID', 'like', "%{$search}%")
-                    ->orWhere('totalAmount', 'like', "%{$search}%")
-                    ->orWhere('createDate', 'like', "%{$search}%")
+        ->when($search, function ($query) use ($search) {
+            $query->where('invoiceID', 'like', "%{$search}%")
+                ->orWhere('totalAmount', 'like', "%{$search}%")
+                ->orWhere('createDate', 'like', "%{$search}%")
 
-                    ->orWhereHas('customer', function ($customerQuery) use ($search) {
-                        $customerQuery->where('fullName', 'like', "%{$search}%")
-                            ->orWhere('email', 'like', "%{$search}%");
-                    })
+                ->orWhereHas('customer', function ($q) use ($search) {
+                    $q->where('fullName', 'like', "%{$search}%")
+                      ->orWhere('email', 'like', "%{$search}%");
+                })
 
-                    ->orWhereHas('admin', function ($adminQuery) use ($search) {
-                        $adminQuery->where('fullName', 'like', "%{$search}%")
-                            ->orWhere('email', 'like', "%{$search}%");
-                    })
+                ->orWhereHas('admin', function ($q) use ($search) {
+                    $q->where('fullName', 'like', "%{$search}%")
+                      ->orWhere('email', 'like', "%{$search}%");
+                })
 
-                    ->orWhereHas('paymentMethod', function ($paymentQuery) use ($search) {
-                        $paymentQuery->where('name', 'like', "%{$search}%");
-                    });
-            })
-            ->paginate(5)
-            ->withQueryString();
+                ->orWhereHas('paymentMethod', function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%");
+                });
+        })
+        ->paginate(5)
+        ->withQueryString();
 
         return view('admins.invoices.index', compact('invoices'));
     }
 
     public function create()
     {
-        $customers = Customer::all();
-        $admins = Admin::all();
-        $payments = payment_method::all();
-
-        return view('admins.invoices.create', compact(
-            'customers',
-            'admins',
-            'payments'
-        ));
+        return view('admins.invoices.create', [
+            'customers' => Customer::all(),
+            'admins'    => Admin::all(),
+            'payments'  => payment_method::all(),
+        ]);
     }
 
     public function store(Request $request)
@@ -82,17 +79,12 @@ class InvoiceController extends Controller
 
     public function edit($id)
     {
-        $invoice = Invoice::findOrFail($id);
-        $customers = Customer::all();
-        $admins = Admin::all();
-        $payments = payment_method::all();
-
-        return view('admins.invoices.edit', compact(
-            'invoice',
-            'customers',
-            'admins',
-            'payments'
-        ));
+        return view('admins.invoices.edit', [
+            'invoice'   => Invoice::findOrFail($id),
+            'customers' => Customer::all(),
+            'admins'    => Admin::all(),
+            'payments'  => payment_method::all(),
+        ]);
     }
 
     public function update(Request $request, $id)
@@ -120,12 +112,12 @@ class InvoiceController extends Controller
 
     public function show($id)
     {
-        $invoice = invoice::with([
+        $invoice = Invoice::with([
             'customer',
             'admin',
             'paymentMethod',
-            'invoiceDetails.product',
-            'invoiceDetails.ticket.movie'
+            'tickets.seat',
+            'tickets.showTime.movie'
         ])->findOrFail($id);
 
         return view('admins.invoices.show', compact('invoice'));

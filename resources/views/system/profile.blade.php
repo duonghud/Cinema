@@ -4,16 +4,16 @@
 
 @section('content')
 @php
-    $customer = $customer ?? session('customer');
-    $fullName = $customer->fullName ?? 'Khách xem phim';
-    $email = $customer->email ?? 'you@example.com';
-    $phone = $customer->phoneNumber ?? 'Chưa cập nhật';
-    $address = $customer->address ?? 'Chưa cập nhật';
-    $initials = collect(explode(' ', trim($fullName)))
-        ->filter()
-        ->take(2)
-        ->map(fn ($part) => mb_strtoupper(mb_substr($part, 0, 1)))
-        ->implode('');
+$customer = $customer ?? session('customer');
+$fullName = $customer->fullName ?? 'Khách xem phim';
+$email = $customer->email ?? 'you@example.com';
+$phone = $customer->phoneNumber ?? 'Chưa cập nhật';
+$address = $customer->address ?? 'Chưa cập nhật';
+$initials = collect(explode(' ', trim($fullName)))
+->filter()
+->take(2)
+->map(fn ($part) => mb_strtoupper(mb_substr($part, 0, 1)))
+->implode('');
 @endphp
 
 <style>
@@ -135,7 +135,7 @@
         color: #6b7280;
     }
 
-    .sidebar-list li + li {
+    .sidebar-list li+li {
         border-top: 1px solid rgba(255, 255, 255, 0.08);
     }
 
@@ -169,51 +169,51 @@
 
 <section class="profile-page py-5 px-3 px-md-4 px-xl-0 text-white min-vh-100">
     <div class="container profile-shell">
-       {{-- <div class="hero-banner p-4 p-md-5 mb-4">
+        {{-- <div class="hero-banner p-4 p-md-5 mb-4">
             <div class="row g-4 align-items-center position-relative" style="z-index: 1;">
                 <div class="col-lg-8">
                     <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center gap-4">
                         <div class="avatar-orb">
                             {{ $initials ?: 'CG' }}
-                        </div>
+    </div>
 
-                        <div>
-                            <span class="badge rounded-pill profile-chip px-3 py-2 mb-3">
-                                <i class="bi bi-stars me-2"></i>Customer Profile
-                            </span>
-                            <h1 class="display-6 fw-bold mb-2">{{ $fullName }}</h1>
-                            <p class="mb-3 text-white-50 fs-5">
-                                Không gian quản lý thông tin cá nhân và trạng thái tài khoản tại VAI Cinema.
-                            </p>
+    <div>
+        <span class="badge rounded-pill profile-chip px-3 py-2 mb-3">
+            <i class="bi bi-stars me-2"></i>Customer Profile
+        </span>
+        <h1 class="display-6 fw-bold mb-2">{{ $fullName }}</h1>
+        <p class="mb-3 text-white-50 fs-5">
+            Không gian quản lý thông tin cá nhân và trạng thái tài khoản tại VAI Cinema.
+        </p>
 
-                            <div class="d-flex flex-wrap gap-2">
-                                <span class="badge rounded-pill bg-light text-dark px-3 py-2">
-                                    <i class="bi bi-envelope-fill me-2"></i>{{ $email }}
-                                </span>
-                                <span class="badge rounded-pill profile-chip px-3 py-2">
-                                    <i class="bi bi-telephone-fill me-2"></i>{{ $phone }}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        <div class="d-flex flex-wrap gap-2">
+            <span class="badge rounded-pill bg-light text-dark px-3 py-2">
+                <i class="bi bi-envelope-fill me-2"></i>{{ $email }}
+            </span>
+            <span class="badge rounded-pill profile-chip px-3 py-2">
+                <i class="bi bi-telephone-fill me-2"></i>{{ $phone }}
+            </span>
+        </div>
+    </div>
+    </div>
+    </div>
 
-                <div class="col-lg-4">
-                    <div class="glass-panel rounded-4 p-4">
-                        <p class="text-uppercase small text-white-50 mb-2">Trạng thái thành viên</p>
-                        <div class="d-flex align-items-center gap-3 mb-3">
-                            <span class="soft-dot"></span>
-                            <strong class="fs-5">Đang hoạt động</strong>
-                        </div>
-                        <p class="mb-0 text-white-50">
-                            Hồ sơ này đang đồng bộ theo phiên đăng nhập hiện tại. Bạn có thể dùng khu vực này để theo dõi dữ liệu cá nhân và lịch sử giao dịch ở các bước tiếp theo.
-                        </p>
-                    </div>
-                </div>
+    <div class="col-lg-4">
+        <div class="glass-panel rounded-4 p-4">
+            <p class="text-uppercase small text-white-50 mb-2">Trạng thái thành viên</p>
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <span class="soft-dot"></span>
+                <strong class="fs-5">Đang hoạt động</strong>
             </div>
-        </div>--}}
+            <p class="mb-0 text-white-50">
+                Hồ sơ này đang đồng bộ theo phiên đăng nhập hiện tại. Bạn có thể dùng khu vực này để theo dõi dữ liệu cá nhân và lịch sử giao dịch ở các bước tiếp theo.
+            </p>
+        </div>
+    </div>
+    </div>
+    </div>--}}
 
-        {{--<div class="row g-4 mb-4">
+    {{--<div class="row g-4 mb-4">
             <div class="col-md-6 col-xl-3">
                 <div class="glass-panel metric-card">
                     <div class="d-flex align-items-center justify-content-between mb-4">
@@ -224,126 +224,139 @@
                     </div>
                     <div class="metric-label small mb-2">Mã khách hàng</div>
                     <div class="metric-value">{{ $customer->customerID ?? 'N/A' }}</div>
+    </div>
+    </div>
+
+    <div class="col-md-6 col-xl-3">
+        <div class="glass-panel metric-card">
+            <div class="d-flex align-items-center justify-content-between mb-4">
+                <div class="metric-icon" style="background: rgba(96, 165, 250, 0.16); color: #93c5fd;">
+                    <i class="bi bi-shield-check"></i>
                 </div>
+                <span class="badge rounded-pill text-bg-primary">Secure</span>
             </div>
+            <div class="metric-label small mb-2">Bảo mật tài khoản</div>
+            <div class="metric-value">Ổn định</div>
+        </div>
+    </div>
 
-            <div class="col-md-6 col-xl-3">
-                <div class="glass-panel metric-card">
-                    <div class="d-flex align-items-center justify-content-between mb-4">
-                        <div class="metric-icon" style="background: rgba(96, 165, 250, 0.16); color: #93c5fd;">
-                            <i class="bi bi-shield-check"></i>
-                        </div>
-                        <span class="badge rounded-pill text-bg-primary">Secure</span>
-                    </div>
-                    <div class="metric-label small mb-2">Bảo mật tài khoản</div>
-                    <div class="metric-value">Ổn định</div>
+    <div class="col-md-6 col-xl-3">
+        <div class="glass-panel metric-card">
+            <div class="d-flex align-items-center justify-content-between mb-4">
+                <div class="metric-icon" style="background: rgba(52, 211, 153, 0.16); color: #6ee7b7;">
+                    <i class="bi bi-ticket-perforated"></i>
                 </div>
+                <span class="badge rounded-pill text-bg-success">Ready</span>
             </div>
+            <div class="metric-label small mb-2">Kênh đặt vé</div>
+            <div class="metric-value">Online</div>
+        </div>
+    </div>
 
-            <div class="col-md-6 col-xl-3">
-                <div class="glass-panel metric-card">
-                    <div class="d-flex align-items-center justify-content-between mb-4">
-                        <div class="metric-icon" style="background: rgba(52, 211, 153, 0.16); color: #6ee7b7;">
-                            <i class="bi bi-ticket-perforated"></i>
-                        </div>
-                        <span class="badge rounded-pill text-bg-success">Ready</span>
-                    </div>
-                    <div class="metric-label small mb-2">Kênh đặt vé</div>
-                    <div class="metric-value">Online</div>
+    <div class="col-md-6 col-xl-3">
+        <div class="glass-panel metric-card">
+            <div class="d-flex align-items-center justify-content-between mb-4">
+                <div class="metric-icon" style="background: rgba(251, 191, 36, 0.16); color: #fcd34d;">
+                    <i class="bi bi-geo-alt"></i>
                 </div>
+                <span class="badge rounded-pill text-bg-warning">Info</span>
             </div>
+            <div class="metric-label small mb-2">Địa chỉ liên hệ</div>
+            <div class="metric-value fs-4">{{ $address !== 'Chưa cập nhật' ? 'Đã có' : 'Thiếu' }}</div>
+        </div>
+    </div>
+    </div>--}}
 
-            <div class="col-md-6 col-xl-3">
-                <div class="glass-panel metric-card">
-                    <div class="d-flex align-items-center justify-content-between mb-4">
-                        <div class="metric-icon" style="background: rgba(251, 191, 36, 0.16); color: #fcd34d;">
-                            <i class="bi bi-geo-alt"></i>
-                        </div>
-                        <span class="badge rounded-pill text-bg-warning">Info</span>
-                    </div>
-                    <div class="metric-label small mb-2">Địa chỉ liên hệ</div>
-                    <div class="metric-value fs-4">{{ $address !== 'Chưa cập nhật' ? 'Đã có' : 'Thiếu' }}</div>
-                </div>
-            </div>
-        </div>--}}
-
-        <div class="row g-4">
-            <div class="col-xl-8">
-                <div class="glass-panel form-card p-4 p-md-5">
-                    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
-                        <div>
-                            <p class="text-uppercase small text-white-50 mb-2">Thông tin cá nhân</p>
-                            <h2 class="h3 fw-bold mb-0">Customer Profile Overview</h2>
-                        </div>
-
-                        <span class="badge rounded-pill profile-chip px-3 py-2">
-                            <i class="bi bi-lock-fill me-2"></i>Đang ở chế độ xem
-                        </span>
+    <div class="row g-4">
+        <div class="col-xl-8">
+            <div class="glass-panel form-card p-4 p-md-5">
+                <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
+                    <div>
+                        <p class="text-uppercase small text-white-50 mb-2">Thông tin cá nhân</p>
+                        <h2 class="h3 fw-bold mb-0">Customer Profile Overview</h2>
                     </div>
 
-                    <form>
-                        <div class="row g-4">
-                            <div class="col-md-6">
-                                <label class="form-label text-white-50">Họ và tên</label>
-                                <input type="text" class="form-control profile-input" value="{{ $fullName }}" readonly>
-                            </div>
-
-                            <div class="col-md-6">
-                                <label class="form-label text-white-50">Email</label>
-                                <input type="email" class="form-control profile-input" value="{{ $email }}" readonly>
-                            </div>
-
-                            <div class="col-md-6">
-                                <label class="form-label text-white-50">Số điện thoại</label>
-                                <input type="text" class="form-control profile-input" value="{{ $phone }}" readonly>
-                            </div>
-
-                            <div class="col-md-6">
-                                <label class="form-label text-white-50">Loại tài khoản</label>
-                                <input type="text" class="form-control profile-input" value="Khách hàng rạp phim" readonly>
-                            </div>
-
-                            <div class="col-12">
-                                <label class="form-label text-white-50">Địa chỉ</label>
-                                <textarea class="form-control profile-input" rows="4" readonly>{{ $address }}</textarea>
-                            </div>
-                        </div>
-                    </form>
+                    <span class="badge rounded-pill profile-chip px-3 py-2">
+                        <i class="bi bi-lock-fill me-2"></i>Đang ở chế độ xem
+                    </span>
                 </div>
+
+                <form>
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label class="form-label text-white-50">Họ và tên</label>
+                            <input type="text" class="form-control profile-input" value="{{ $fullName }}" readonly>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label text-white-50">Email</label>
+                            <input type="email" class="form-control profile-input" value="{{ $email }}" readonly>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label text-white-50">Số điện thoại</label>
+                            <input type="text" class="form-control profile-input" value="{{ $phone }}" readonly>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label text-white-50">Loại tài khoản</label>
+                            <input type="text" class="form-control profile-input" value="Khách hàng rạp phim" readonly>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label text-white-50">Địa chỉ</label>
+                            <textarea class="form-control profile-input" rows="4" readonly>{{ $address }}</textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="col-xl-4">
+            <div class="glass-panel sidebar-card p-4 mb-4">
+                <p class="text-uppercase small text-white-50 mb-3">Tài khoản</p>
+                <ul class="list-unstyled mb-0 sidebar-list">
+                    <li class="py-3 d-flex justify-content-between gap-3">
+                        <span class="text-white-50">Phiên đăng nhập</span>
+                        <strong class="text-white">Đã xác thực</strong>
+                    </li>
+                    <li class="py-3 d-flex justify-content-between gap-3">
+                        <span class="text-white-50">Email liên kết</span>
+                        <strong class="text-white text-end">{{ $email }}</strong>
+                    </li>
+                    <li class="py-3 d-flex justify-content-between gap-3">
+                        <span class="text-white-50">SĐT liên hệ</span>
+                        <strong class="text-white">{{ $phone }}</strong>
+                    </li>
+                </ul>
             </div>
 
-            <div class="col-xl-4">
-                <div class="glass-panel sidebar-card p-4 mb-4">
-                    <p class="text-uppercase small text-white-50 mb-3">Tài khoản</p>
-                    <ul class="list-unstyled mb-0 sidebar-list">
-                        <li class="py-3 d-flex justify-content-between gap-3">
-                            <span class="text-white-50">Phiên đăng nhập</span>
-                            <strong class="text-white">Đã xác thực</strong>
-                        </li>
-                        <li class="py-3 d-flex justify-content-between gap-3">
-                            <span class="text-white-50">Email liên kết</span>
-                            <strong class="text-white text-end">{{ $email }}</strong>
-                        </li>
-                        <li class="py-3 d-flex justify-content-between gap-3">
-                            <span class="text-white-50">SĐT liên hệ</span>
-                            <strong class="text-white">{{ $phone }}</strong>
-                        </li>
-                    </ul>
+            <div class="glass-panel sidebar-card p-4">
+                <p class="text-uppercase small text-white-50 mb-3">Gợi ý tiếp theo</p>
+                <div class="d-grid gap-3">
+                    <a href="{{ route('home') }}" class="btn btn-light rounded-pill py-3 fw-semibold">
+                        <i class="bi bi-film me-2"></i>Khám phá phim đang chiếu
+                    </a>
+                    <a href="{{ route('ticket.price') }}" class="btn btn-outline-light rounded-pill py-3 fw-semibold">
+                        <i class="bi bi-tags me-2"></i>Xem bảng giá vé
+                    </a>
                 </div>
+            </div>
+            <div class="glass-panel sidebar-card p-4 mt-4">
+                <p class="text-uppercase small text-white-50 mb-3">Lịch sử đặt vé</p>
+                <p class="text-white-50 mb-4">
+                    Xem lại toàn bộ các vé bạn đã đặt, thông tin suất chiếu, ghế ngồi và trạng thái thanh toán.
+                </p>
 
-                <div class="glass-panel sidebar-card p-4">
-                    <p class="text-uppercase small text-white-50 mb-3">Gợi ý tiếp theo</p>
-                    <div class="d-grid gap-3">
-                        <a href="{{ route('home') }}" class="btn btn-light rounded-pill py-3 fw-semibold">
-                            <i class="bi bi-film me-2"></i>Khám phá phim đang chiếu
-                        </a>
-                        <a href="{{ route('ticket.price') }}" class="btn btn-outline-light rounded-pill py-3 fw-semibold">
-                            <i class="bi bi-tags me-2"></i>Xem bảng giá vé
-                        </a>
-                    </div>
+                <div class="d-grid">
+                    <a href="{{ route('booking.history') }}"
+                        class="btn btn-danger rounded-pill py-3 fw-semibold">
+                        <i class="bi bi-clock-history me-2"></i>Xem lịch sử đặt vé
+                    </a>
                 </div>
             </div>
         </div>
+    </div>
     </div>
 </section>
 @endsection

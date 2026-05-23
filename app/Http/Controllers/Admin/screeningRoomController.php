@@ -67,107 +67,65 @@ class screeningRoomController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-
-            'roomName' => 'required|string|max:100',
-
-            'vipSeats' => 'required|integer|min:0',
-            'normalSeats' => 'required|integer|min:0',
-            'doubleSeats' => 'required|integer|min:0',
-
-            'vipSeatTypeID' => 'required|exists:seat_types,seatTypeID',
-            'normalSeatTypeID' => 'required|exists:seat_types,seatTypeID',
-            'doubleSeatTypeID' => 'required|exists:seat_types,seatTypeID',
-
-            'screenTypeID' => 'required|exists:screen_types,screenTypeID',
+            'roomName'          => 'required|string|max:100',
+            'cols'              => 'required|integer|min:1|max:50',
+            'vipSeats'          => 'required|integer|min:0',
+            'normalSeats'       => 'required|integer|min:0',
+            'doubleSeats'       => 'required|integer|min:0',
+            'vipSeatTypeID'     => 'required|exists:seat_types,seatTypeID',
+            'normalSeatTypeID'  => 'required|exists:seat_types,seatTypeID',
+            'doubleSeatTypeID'  => 'required|exists:seat_types,seatTypeID',
+            'screenTypeID'      => 'required|exists:screen_types,screenTypeID',
         ]);
 
-
-
-        $capacity =
-            $request->vipSeats +
-            $request->normalSeats +
-            $request->doubleSeats;
-
-
+        $capacity = $validated['vipSeats']
+            + $validated['normalSeats']
+            + $validated['doubleSeats'];
 
         $room = screeningRoom::create([
-
-            'roomName' => $request->roomName,
-
-            'capacity' => $capacity,
-
-            'screenTypeID' => $request->screenTypeID,
+            'roomName'     => $validated['roomName'],
+            'capacity'     => $capacity,
+            'screenTypeID' => $validated['screenTypeID'],
         ]);
 
-
-        $maxCols = 14;
-
-        $rows = range('A', 'Z');
-
+        $maxCols  = $validated['cols']; // ← dùng giá trị từ form
+        $rows     = range('A', 'Z');
         $rowIndex = 0;
-
         $currentCol = 1;
 
-        $createSeats = function (
-            $totalSeats,
-            $seatTypeID
-        ) use (
-            &$rowIndex,
-            &$currentCol,
-            $rows,
-            $maxCols,
-            $room
-        ) {
+        $createSeats = function (int $totalSeats, int $seatTypeID)
+        use (&$rowIndex, &$currentCol, $rows, $maxCols, $room) {
+            $seatsToInsert = [];
 
             for ($i = 0; $i < $totalSeats; $i++) {
+                if ($rowIndex >= count($rows)) break; // tránh tràn A-Z
 
-                Seat::create([
-
-                    'roomID' => $room->roomID,
-
-                    'rowSeat' => $rows[$rowIndex],
-
-                    'colSeat' => $currentCol,
-
+                $seatsToInsert[] = [
+                    'roomID'     => $room->roomID,
+                    'rowSeat'    => $rows[$rowIndex],
+                    'colSeat'    => $currentCol,
                     'seatTypeID' => $seatTypeID,
-                ]);
+                ];
 
                 $currentCol++;
 
                 if ($currentCol > $maxCols) {
-
                     $currentCol = 1;
-
                     $rowIndex++;
                 }
             }
+
+            // Insert bulk thay vì từng record → nhanh hơn nhiều
+            Seat::insert($seatsToInsert);
         };
 
+        $createSeats($validated['vipSeats'],    $validated['vipSeatTypeID']);
+        $createSeats($validated['normalSeats'], $validated['normalSeatTypeID']);
+        $createSeats($validated['doubleSeats'], $validated['doubleSeatTypeID']);
 
-        $createSeats(
-            $request->vipSeats,
-            $request->vipSeatTypeID
-        );
-
-        $createSeats(
-            $request->normalSeats,
-            $request->normalSeatTypeID
-        );
-
-
-        $createSeats(
-            $request->doubleSeats,
-            $request->doubleSeatTypeID
-        );
-
-        return redirect()->route('seat.index', [
-
-            'roomID' => $room->roomID
-
-        ])->with(
-            'success',
-            'Tạo phòng + ghế thành công'
-        );
+        return redirect()
+            ->route('seat.index', ['roomID' => $room->roomID])
+            ->with('success', 'Tạo phòng + ghế thành công');
     }
 
 

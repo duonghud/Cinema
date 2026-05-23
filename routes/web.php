@@ -94,55 +94,46 @@
 
     Route::prefix('admins')->middleware('admin.auth')->group(function () {
 
+        Route::resource('dashboard',          DashBoardController::class);
+        Route::resource('admin',              AdminController::class);
+        Route::resource('customer',           CustomerController::class);
+        Route::resource('paymentMethod',      PaymentMethodController::class);
+        Route::resource('food',               FoodController::class);
+        Route::resource('foodInvoice',        FoodInvoiceController::class);
+        Route::resource('foodInvoiceDetail',  FoodInvoiceDetailController::class);
+        Route::resource('genre',              GenreController::class);
+        Route::resource('studio',             StudioController::class);
+        Route::resource('ageRating',          AgeRatingController::class);
+        Route::resource('movies',             MovieController::class)->names('admin.movies');
+        Route::resource('screeningRoom',      ScreeningRoomController::class);
+        Route::resource('screenType',         ScreeningTypeController::class);
+        Route::resource('seatType',           SeatTypeController::class);
+        Route::resource('ticket',             TicketController::class);
+        Route::resource('showTime',           ShowTimeController::class);
+        Route::resource('invoices',           InvoiceController::class);
 
-        Route::resource('dashboard', DashBoardController::class);
-        Route::resource('admin', AdminController::class);
-        Route::resource('customer', CustomerController::class);
-        Route::resource('paymentMethod', PaymentMethodController::class);
-        Route::resource('food', FoodController::class);
-        Route::resource('foodInvoice', FoodInvoiceController::class);
-        Route::resource('foodInvoiceDetail', FoodInvoiceDetailController::class);
-        Route::resource('genre', GenreController::class);
-
-        // ================= SEAT AJAX =================
-        Route::get('seat/ajax/{roomID}', [SeatController::class, 'getSeatsByRoom'])
+        Route::get('seat/ajax/{roomID}',         [SeatController::class, 'getSeatsByRoom'])
             ->name('seat.ajax.list');
 
-        Route::post('seat/ajax-store', [SeatController::class, 'storeAjax'])
-            ->name('seat.ajax.store');
+        Route::post('seat/ajax-add',             [SeatController::class, 'storeAjax'])
+            ->name('seat.ajax.add');
 
-        Route::post('/seat/ajax-add', [SeatController::class, 'ajaxAdd'])
-            ->name('seat.ajaxAdd');
+        Route::post('seat/ajax-update-type',     [SeatController::class, 'ajaxUpdateType'])
+            ->name('seat.ajax.updateType');
 
-        Route::delete('seat/ajax-delete/{id}', [SeatController::class, 'deleteAjax'])
+        Route::delete('seat/ajax-delete/{id}',   [SeatController::class, 'deleteAjax'])
             ->name('seat.ajax.delete');
 
-        Route::get('seat/edit-multiple', [SeatController::class, 'editMultiple'])
-            ->name('seat.editMultiple');
-
-        Route::post('seat/update-multiple', [SeatController::class, 'updateMultiple'])
+        Route::post('seat/update-multiple',      [SeatController::class, 'updateMultiple'])
             ->name('seat.updateMultiple');
 
-        Route::put('ajax-update-type/{id}', [SeatController::class, 'ajaxUpdateType'])
-            ->name('admins.seat.ajaxUpdateType');
+        Route::get('seat/edit-multiple',         [SeatController::class, 'editMultiple'])
+            ->name('seat.editMultiple');
 
-        Route::put('ajax-swap-col', [SeatController::class, 'ajaxSwapCol'])
-            ->name('admins.seat.ajaxSwapCol');
+        Route::post('seat/ajax-swap-type', [SeatController::class, 'ajaxSwapType'])
+            ->name('seat.ajax.swapType');
 
-        Route::post('seat/generate', [SeatController::class, 'generate'])
-            ->name('seat.generate');
-
-        Route::resource('studio', StudioController::class);
-        Route::resource('ageRating', AgeRatingController::class);
-        Route::resource('movies', MovieController::class)
-            ->names('admin.movies');
-        Route::resource('screeningRoom', ScreeningRoomController::class);
-        Route::resource('screenType', ScreeningTypeController::class);
         Route::resource('seat', SeatController::class);
-        Route::resource('seatType', SeatTypeController::class);
-        Route::resource('ticket', TicketController::class);
-        Route::resource('showTime', ShowTimeController::class);
-        Route::resource('invoices', InvoiceController::class);
     });
 
 
