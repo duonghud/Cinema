@@ -17,6 +17,8 @@ class FoodInvoiceController extends Controller
     public function index(Request $request)
     {
         $search = trim((string) $request->input('search'));
+        $customerId = trim((string) $request->input('customer_id'));
+        $paymentId = trim((string) $request->input('payment_id'));
 
         $invoices = FoodInvoice::with([
             'customer',
@@ -38,12 +40,42 @@ class FoodInvoiceController extends Controller
                         $foodQuery->where('foodName', 'like', "%{$search}%");
                     });
             })
+            ->when($customerId, function ($query) use ($customerId) {
+                $query->where('customerID', $customerId);
+            })
+            ->when($paymentId, function ($query) use ($paymentId) {
+                $query->where('paymentID', $paymentId);
+            })
+            ->orderByRaw('COALESCE(created_at, orderDate) DESC')
+            ->orderByDesc('foodInvoiceID')
             ->paginate(5)
             ->withQueryString();
 
+        $customers = Customer::query()
+            ->orderBy('fullName')
+            ->pluck('fullName', 'customerID');
+
+        $payments = payment_method::query()
+            ->orderBy('name')
+            ->pluck('name', 'paymentID');
+
         return view(
             'admins.manageFoods.foodInvoice.index',
-            compact('invoices')
+            [
+                'invoices' => $invoices,
+                'filters' => [
+                    [
+                        'name' => 'customer_id',
+                        'all_label' => 'Tất cả khách hàng',
+                        'options' => $customers->toArray(),
+                    ],
+                    [
+                        'name' => 'payment_id',
+                        'all_label' => 'Tất cả thanh toán',
+                        'options' => $payments->toArray(),
+                    ],
+                ],
+            ]
         );
     }
 

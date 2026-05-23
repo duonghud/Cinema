@@ -1,5 +1,27 @@
 @extends('layouts.app')
 @section('content')
+@php
+    use Carbon\Carbon;
+
+    $dates = $movie->showTimes
+        ->groupBy('showDate')
+        ->map(function ($shows) {
+            return $shows->filter(function ($show) {
+                $showDateTime = Carbon::parse($show->showDate . ' ' . $show->startTime);
+                return now()->lt($showDateTime);
+            })->values();
+        })
+        ->filter(function ($shows) {
+            return $shows->count() > 0;
+        });
+
+    $firstDate = $selectedShowTime && $dates->has($selectedShowTime->showDate)
+        ? $selectedShowTime->showDate
+        : $dates->keys()->first();
+
+    $selectedShowTimeId = $selectedShowTime?->showTimeID;
+@endphp
+
 <style>
     .alert-error {
         width: 60%;
@@ -24,6 +46,12 @@
         font-weight: 500;
         text-align: center;
     }
+
+    .showtime-btn.is-active {
+        border-color: #ef4444;
+        color: #fca5a5;
+        background: rgba(239, 68, 68, 0.12);
+    }
 </style>
 
 @if(session('error'))
@@ -46,8 +74,6 @@
 
             <div class="absolute inset-0 bg-gradient-to-r from-black via-black/90 to-black/70"></div>
         </div>
-
-
 
         <div class="relative z-10 px-10 py-4">
             <div class="w-full pt-10 pb-20">
@@ -103,26 +129,6 @@
         </div>
     </div>
 
-    <!-- @php
-    use Carbon\Carbon;
-    $dates = $movie->showTimes
-    ->groupBy('showDate')
-    ->map(function ($shows) {
-    return $shows->filter(function ($show) {
-    $showDateTime = Carbon::parse(
-    $show->showDate . ' ' . $show->startTime
-    );
-
-    return now()->lt($showDateTime);
-    });
-    })
-    ->filter(function ($shows) {
-    return $shows->count() > 0;
-    });
-
-    $firstDate = $dates->keys()->first();
-    @endphp -->
-
     @if($dates->isEmpty())
     <div class="text-center py-16">
         <p class="text-gray-400 text-lg">
@@ -168,7 +174,6 @@
         @endforeach
     </div>
 
-    {{-- ======================= DANH SÁCH SUẤT CHIẾU ======================= --}}
     <div class="mt-8 pb-20">
         @foreach($dates as $date => $shows)
         <div
@@ -178,12 +183,14 @@
             <div class="flex gap-6 flex-wrap">
                 @foreach($shows as $show)
                 <button
-                    class="px-12 py-3 border border-gray-600 rounded-full
-                                   hover:border-red-500 hover:text-red-400 transition
-                                   showtime-btn"
+                    class="px-12 py-3 border border-gray-600 rounded-full hover:border-red-500 hover:text-red-400 transition showtime-btn {{ $selectedShowTimeId === $show->showTimeID ? 'is-active' : '' }}"
+                    data-showtime-id="{{ $show->showTimeID }}"
                     data-url="{{ route('seat.select', $show->showTimeID) }}">
 
                     {{ substr($show->startTime, 0, 5) }}
+                    {{--@if($show->room)
+                    <span class="ml-2 text-xs text-gray-400">{{ $show->room->roomName }}</span>
+                    @endif--}}
                 </button>
                 @endforeach
             </div>
@@ -199,16 +206,12 @@
 @include('layouts.trailer')
 @endsection
 
-
-
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-
         const tabs = document.querySelectorAll('.date-tab');
 
         tabs.forEach(tab => {
             tab.addEventListener('click', function() {
-
                 const date = this.dataset.date;
 
                 tabs.forEach(t => {
@@ -235,13 +238,15 @@
             });
         });
 
-        // ===== CLICK SUẤT CHIẾU =====
         const showBtns = document.querySelectorAll('.showtime-btn');
 
         showBtns.forEach(btn => {
             btn.addEventListener('click', function() {
-
                 const url = this.dataset.url;
+                const showtimeId = this.dataset.showtimeId;
+
+                showBtns.forEach(item => item.classList.remove('is-active'));
+                this.classList.add('is-active');
 
                 document.getElementById('seat-container').innerHTML = `
                 <div style="text-align:center; padding:30px;">
@@ -252,12 +257,13 @@
                 fetch(url)
                     .then(res => res.text())
                     .then(html => {
-
                         document.getElementById('seat-container').innerHTML = html;
-
                         attachSeatEvents();
                         startSeatTimer();
 
+                        const nextUrl = new URL(window.location.href);
+                        nextUrl.searchParams.set('showtime', showtimeId);
+                        window.history.replaceState({}, '', nextUrl.toString());
                     })
                     .catch(err => {
                         console.error(err);
@@ -267,15 +273,20 @@
             });
         });
 
+        const selectedShowtimeId = @json($selectedShowTimeId);
+        if (selectedShowtimeId) {
+            const selectedBtn = document.querySelector(`.showtime-btn[data-showtime-id="${selectedShowtimeId}"]`);
+            if (selectedBtn) {
+                selectedBtn.click();
+            }
+        }
     });
 
-    // ===== GLOBAL =====
     let selectedSeats = [];
     let totalPrice = 0;
     let seatTimer = null;
 
     function attachSeatEvents() {
-
         selectedSeats = [];
         totalPrice = 0;
 
@@ -283,44 +294,29 @@
 
         seats.forEach(seat => {
             seat.addEventListener("click", function() {
-
                 if (seat.classList.contains("booked")) return;
 
                 if (seat.classList.contains("couple")) {
-
-                    const seatCode = seat.dataset.seat; // ví dụ A10
+                    const seatCode = seat.dataset.seat;
                     const match = seatCode.match(/^([A-Z]+)(\d+)$/);
 
                     if (!match) return;
 
                     const row = match[1];
                     const col = parseInt(match[2]);
-
                     const firstCol = (col % 2 === 0) ? col : col - 1;
 
-                    const firstSeat = document.querySelector(
-                        `.seat[data-seat="${row}${firstCol}"]`
-                    );
-
-                    const secondSeat = document.querySelector(
-                        `.seat[data-seat="${row}${firstCol + 1}"]`
-                    );
+                    const firstSeat = document.querySelector(`.seat[data-seat="${row}${firstCol}"]`);
+                    const secondSeat = document.querySelector(`.seat[data-seat="${row}${firstCol + 1}"]`);
 
                     if (!firstSeat || !secondSeat) return;
 
-                    if (
-                        firstSeat.classList.contains("booked") ||
-                        secondSeat.classList.contains("booked")
-                    ) {
+                    if (firstSeat.classList.contains("booked") || secondSeat.classList.contains("booked")) {
                         return;
                     }
 
                     const pairSeats = [firstSeat, secondSeat];
-
-                    // Nếu đã chọn rồi -> bỏ chọn cả 2
-                    const isSelected = pairSeats.every(s =>
-                        s.classList.contains("selected")
-                    );
+                    const isSelected = pairSeats.every(s => s.classList.contains("selected"));
 
                     if (isSelected) {
                         pairSeats.forEach(s => {
@@ -344,7 +340,6 @@
                         });
                     }
                 } else {
-                    // Ghế thường / VIP
                     const code = seat.dataset.seat;
                     const price = parseInt(seat.dataset.price || 0);
 
@@ -359,30 +354,21 @@
                     }
                 }
 
-                // Cập nhật UI
                 document.getElementById("selectedSeats").innerText =
-                    selectedSeats.length ?
-                    selectedSeats.join(", ") :
-                    "Chưa chọn";
+                    selectedSeats.length ? selectedSeats.join(", ") : "Chưa chọn";
 
-                document.getElementById("seatInput").value =
-                    selectedSeats.join(",");
-
-                document.getElementById("totalPrice").innerText =
-                    totalPrice.toLocaleString() + " đ";
+                document.getElementById("seatInput").value = selectedSeats.join(",");
+                document.getElementById("totalPrice").innerText = totalPrice.toLocaleString() + " đ";
             });
         });
     }
 
-    // ===== TIMER =====
     function startSeatTimer() {
-
         if (seatTimer) clearInterval(seatTimer);
 
         let time = 300;
 
         seatTimer = setInterval(() => {
-
             let m = Math.floor(time / 60);
             let s = time % 60;
 
@@ -400,4 +386,3 @@
         }, 1000);
     }
 </script>
-
