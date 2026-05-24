@@ -10,7 +10,6 @@
         backdrop-filter: blur(14px) saturate(180%);
         box-shadow: 0 4px 20px rgba(0, 0, 0, .35);
         padding: 10px 0;
-
     }
 
     .navbar-brand {
@@ -18,6 +17,7 @@
         font-size: 1.5rem;
         letter-spacing: 1px;
         color: #fff !important;
+        font-family: 'Julee', cursive;
     }
 
     .navbar-nav .nav-link {
@@ -60,7 +60,6 @@
         transition: all .3s ease;
     }
 
-    /* ===== Đăng ký ===== */
     .btn-register {
         background: linear-gradient(180deg,
                 rgba(255, 255, 255, 0.07),
@@ -71,7 +70,6 @@
             0 4px 12px rgba(0, 0, 0, 0.4);
     }
 
-    /* shine effect */
     .btn-register::before {
         content: "";
         position: absolute;
@@ -91,7 +89,6 @@
     .btn-register:hover {
         background: rgba(255, 255, 255, 0.06);
         color: #fff;
-
         border-color: rgba(255, 255, 255, 0.2);
         box-shadow:
             inset 0 1px 0 rgba(255, 255, 255, 0.14),
@@ -103,8 +100,6 @@
         left: 120%;
     }
 
-
-    /* ===== Đăng nhập ===== */
     .btn-login {
         background: linear-gradient(135deg, #FF5055, #FF5B6E, #FF7265);
         color: #fff;
@@ -112,7 +107,6 @@
         box-shadow: 0 6px 18px rgba(255, 80, 85, 0.5);
     }
 
-    /* shine nhẹ */
     .btn-login::before {
         content: "";
         position: absolute;
@@ -148,10 +142,6 @@
 
     .navbar-toggler-icon {
         filter: invert(1);
-    }
-
-    .navbar-brand {
-        font-family: 'Julee', cursive;
     }
 
     .dropdown-menu {
@@ -197,7 +187,6 @@
 
 <nav class="navbar navbar-expand-lg sticky-top">
     <div class="container">
-
         <a href="{{ route('home') }}" class="navbar-brand">VAI cinema</a>
 
         <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#menu">
@@ -205,8 +194,8 @@
         </button>
 
         <ul class="navbar-nav mx-auto">
-            <li class="nav-item"><a href="{{ route('home') }}" class="nav-link ">Trang chủ</a></li>
-            <li class="nav-item"><a href="#" class="nav-link">Lịch chiếu</a></li>
+            <li class="nav-item"><a href="{{ route('home') }}" class="nav-link">Trang chủ</a></li>
+            <li class="nav-item"><a href="{{ route('show') }}" class="nav-link">Lịch chiếu</a></li>
             <li class="nav-item"><a href="{{ route('ticket.price') }}" class="nav-link">Giá vé</a></li>
             <li class="nav-item"><a href="#" class="nav-link">Tin tức</a></li>
             <li class="nav-item"><a href="{{ route('contact') }}" class="nav-link">Liên hệ</a></li>
@@ -214,66 +203,47 @@
         </ul>
 
         <div class="d-flex gap-2">
-
             @if(session('customer'))
+                <div class="dropdown">
+                    <a class="btn nav-btn dropdown-toggle customer-dropdown d-flex align-items-center gap-2"
+                        data-bs-toggle="dropdown">
+                        <div class="customer-avatar">
+                            {{ strtoupper(substr(session('customer')->fullName, 0, 2)) }}
+                        </div>
 
-            <div class="dropdown">
+                        <span class="fw-semibold customer-name">
+                            {{ session('customer')->fullName }}
+                        </span>
+                    </a>
 
-                <a class="btn nav-btn dropdown-toggle customer-dropdown d-flex align-items-center gap-2"
-                    data-bs-toggle="dropdown">
-
-                    <div class="customer-avatar">
-                        {{ strtoupper(substr(session('customer')->fullName, 0, 2)) }}
-                    </div>
-
-                    <span class="fw-semibold customer-name">
-                        {{ session('customer')->fullName }}
-                    </span>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                            <a class="dropdown-item" href="{{ route('customer.profile') }}">
+                                Thông tin cá nhân
+                            </a>
+                        </li>
+                        <li>
+                            <form action="{{ route('customer.logout') }}" method="POST">
+                                @csrf
+                                <button type="submit" class="dropdown-item text-danger">
+                                    Đăng xuất
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+            @else
+                <a href="{{ route('customer.register.form') }}" class="btn nav-btn btn-register">
+                    Đăng ký
                 </a>
 
-
-                <ul class="dropdown-menu dropdown-menu-end">
-
-                    <li>
-                        <a class="dropdown-item"
-                            href="{{ route('customer.profile') }}">
-                            Thông tin cá nhân
-                        </a>
-                    </li>
-
-                    <li>
-                        <form action="{{ route('customer.logout') }}" method="POST">
-                            @csrf
-                            <button type="submit" class="dropdown-item text-danger">
-                                Đăng xuất
-                            </button>
-                        </form>
-
-                    </li>
-
-                </ul>
-
-            </div>
-
-            @else
-
-            <a href="{{ route('customer.register.form') }}"
-                class="btn nav-btn btn-register">
-                Đăng ký
-            </a>
-
-            <a href="{{ route('auth.customerLogin') }}"
-                class="btn nav-btn btn-login">
-                Đăng nhập
-            </a>
-
+                <a href="{{ route('auth.customerLogin') }}" class="btn nav-btn btn-login">
+                    Đăng nhập
+                </a>
             @endif
         </div>
     </div>
 </nav>
-
-
-
 
 <script>
     window.addEventListener("scroll", () => {

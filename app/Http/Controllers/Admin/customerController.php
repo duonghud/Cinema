@@ -13,6 +13,7 @@ class customerController extends Controller
     public function index(Request $request)
     {
         $search = trim((string) $request->input('search'));
+        $address = trim((string) $request->input('address'));
 
         $customers = customer::query()
             ->when($search, function ($query) use ($search) {
@@ -22,10 +23,28 @@ class customerController extends Controller
                     ->orWhere('phoneNumber', 'like', "%{$search}%")
                     ->orWhere('address', 'like', "%{$search}%");
             })
+            ->when($address, function ($query) use ($address) {
+                $query->where('address', $address);
+            })
             ->paginate(5)
             ->withQueryString();
 
-        return view('admins.manageUser.customer.index', ['customers' => $customers]);
+        $addresses = customer::query()
+            ->select('address')
+            ->whereNotNull('address')
+            ->where('address', '!=', '')
+            ->distinct()
+            ->orderBy('address')
+            ->pluck('address', 'address');
+
+        return view('admins.manageUser.customer.index', [
+            'customers' => $customers,
+            'filters' => [[
+                'name' => 'address',
+                'all_label' => 'Tất cả địa chỉ',
+                'options' => $addresses->toArray(),
+            ]],
+        ]);
     }
 
     public function create()

@@ -15,6 +15,8 @@ class foodController extends Controller
     public function index(Request $request)
     {
         $search = trim((string) $request->input('search'));
+        $foodType = trim((string) $request->input('food_type'));
+        $size = trim((string) $request->input('size'));
 
         $foods = Food::query()
             ->when($search, function ($query) use ($search) {
@@ -24,10 +26,46 @@ class foodController extends Controller
                     ->orWhere('size', 'like', "%{$search}%")
                     ->orWhere('price', 'like', "%{$search}%");
             })
+            ->when($foodType, function ($query) use ($foodType) {
+                $query->where('foodType', $foodType);
+            })
+            ->when($size, function ($query) use ($size) {
+                $query->where('size', $size);
+            })
             ->paginate(5)
             ->withQueryString();
 
-        return view('admins.manageFoods.food.index', ['foods' => $foods]);
+        $foodTypes = Food::query()
+            ->select('foodType')
+            ->whereNotNull('foodType')
+            ->where('foodType', '!=', '')
+            ->distinct()
+            ->orderBy('foodType')
+            ->pluck('foodType', 'foodType');
+
+        $sizes = Food::query()
+            ->select('size')
+            ->whereNotNull('size')
+            ->where('size', '!=', '')
+            ->distinct()
+            ->orderBy('size')
+            ->pluck('size', 'size');
+
+        return view('admins.manageFoods.food.index', [
+            'foods' => $foods,
+            'filters' => [
+                [
+                    'name' => 'food_type',
+                    'all_label' => 'Tất cả loại',
+                    'options' => $foodTypes->toArray(),
+                ],
+                [
+                    'name' => 'size',
+                    'all_label' => 'Tất cả size',
+                    'options' => $sizes->toArray(),
+                ],
+            ],
+        ]);
     }
 
     /**

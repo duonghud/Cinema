@@ -16,6 +16,7 @@ class adminController extends Controller
     public function index(Request $request)
     {
         $search = trim((string) $request->input('search'));
+        $role = trim((string) $request->input('role'));
 
         $admins = admin::query()
             ->when($search, function ($query) use ($search) {
@@ -24,10 +25,34 @@ class adminController extends Controller
                     ->orWhere('email', 'like', "%{$search}%")
                     ->orWhere('role', 'like', "%{$search}%");
             })
+            ->when($role, function ($query) use ($role) {
+                $query->where('role', $role);
+            })
             ->paginate(5)
             ->withQueryString();
 
-        return view('admins.manageUser.admin.index', ['admins' => $admins]);
+        $roles = admin::query()
+            ->select('role')
+            ->distinct()
+            ->orderBy('role')
+            ->pluck('role')
+            ->mapWithKeys(function ($item) {
+                return [$item => match ($item) {
+                    'admin' => 'Quản trị',
+                    'ticket_staff' => 'Bán vé',
+                    'food_staff' => 'Đồ ăn',
+                    default => $item,
+                }];
+            });
+
+        return view('admins.manageUser.admin.index', [
+            'admins' => $admins,
+            'filters' => [[
+                'name' => 'role',
+                'all_label' => 'Tất cả chức vụ',
+                'options' => $roles->toArray(),
+            ]],
+        ]);
     }
 
     /**
