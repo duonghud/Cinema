@@ -133,6 +133,11 @@
         Route::post('seat/ajax-swap-type', [SeatController::class, 'ajaxSwapType'])
             ->name('seat.ajax.swapType');
 
+        Route::post('seat/ajax-swap-type',      [SeatController::class, 'ajaxSwapType'])
+            ->name('seat.ajax.swapType');
+
+        Route::post('seat/ajax-convert-couple', [SeatController::class, 'ajaxConvertCouple'])
+            ->name('seat.ajax.convertCouple');
         Route::resource('seat', SeatController::class);
     });
 

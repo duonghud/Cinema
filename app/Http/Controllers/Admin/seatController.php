@@ -19,12 +19,10 @@ class SeatController extends Controller
     {
         $rooms = ScreeningRoom::all();
 
-        // Ép kiểu int ngay từ đầu
         $roomID = (int) ($request->input('roomID') ?? optional($rooms->first())->roomID);
 
         $room = ScreeningRoom::find($roomID);
 
-        // Fallback an toàn
         if (!$room && $rooms->isNotEmpty()) {
             $room   = $rooms->first();
             $roomID = (int) $room->roomID;
@@ -85,13 +83,12 @@ class SeatController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'rowSeat' => 'required|string|max:2',
-            'colSeat' => 'required|integer|min:1|max:30',
-            'roomID' => 'required|exists:screening_rooms,roomID',
+            'rowSeat'    => 'required|string|max:2',
+            'colSeat'    => 'required|integer|min:1|max:30',
+            'roomID'     => 'required|exists:screening_rooms,roomID',
             'seatTypeID' => 'required|exists:seat_types,seatTypeID'
         ]);
 
-        // 
         if (ShowTime::where('roomID', $request->roomID)->exists()) {
             return back()->with('error', 'Phòng đang có suất chiếu');
         }
@@ -127,22 +124,20 @@ class SeatController extends Controller
             ], 400);
         }
 
-        $exists = Seat::where('roomID',   $validated['roomID'])
-            ->where('rowSeat',  $validated['rowSeat'])
-            ->where('colSeat',  $validated['colSeat'])
+        $exists = Seat::where('roomID',  $validated['roomID'])
+            ->where('rowSeat', $validated['rowSeat'])
+            ->where('colSeat', $validated['colSeat'])
             ->exists();
 
         if ($exists) {
             return response()->json(['error' => 'Ghế đã tồn tại'], 400);
         }
 
-        // Chỉ create đúng các field cần thiết
         $seat = Seat::create($validated);
 
         return response()->json($seat);
     }
 
-    // ================= AJAX UPDATE TYPE =================
     public function ajaxUpdateType(Request $request)
     {
         $validated = $request->validate([
@@ -152,14 +147,15 @@ class SeatController extends Controller
 
         $seat = Seat::findOrFail($validated['seatID']);
 
-        // Ghế đôi hoặc bảo trì không được đổi
-        if (in_array($seat->seatTypeID, [3, 4])) {
+        // Chỉ chặn ghế đôi — ghế đôi cần dùng endpoint riêng (ajax-convert-couple)
+        if ($seat->seatTypeID === 3) {
             return response()->json([
                 'success' => false,
-                'message' => 'Ghế đôi hoặc bảo trì không thể thay đổi loại.',
+                'message' => 'Ghế đôi không thể thay đổi loại trực tiếp. Dùng chức năng ghép/tách đôi.',
             ], 422);
         }
 
+        // Ghế bảo trì (typeID=4) được phép phục hồi → không chặn nữa
         $seat->seatTypeID = $validated['seatTypeID'];
         $seat->save();
 
@@ -188,7 +184,6 @@ class SeatController extends Controller
                 ->with('error', 'Phòng đang có suất chiếu');
         }
 
-        // Bỏ logic hardcode tên ghế — update thẳng
         Seat::whereIn('seatID', $request->seatIDs)
             ->update(['seatTypeID' => $request->seatTypeID]);
 
@@ -215,9 +210,9 @@ class SeatController extends Controller
     public function update(Request $request, string $id)
     {
         $request->validate([
-            'rowSeat' => 'required|string|max:2',
-            'colSeat' => 'required|integer|min:1|max:30',
-            'roomID' => 'required|exists:screening_rooms,roomID',
+            'rowSeat'    => 'required|string|max:2',
+            'colSeat'    => 'required|integer|min:1|max:30',
+            'roomID'     => 'required|exists:screening_rooms,roomID',
             'seatTypeID' => 'required|exists:seat_types,seatTypeID'
         ]);
 
@@ -284,7 +279,7 @@ class SeatController extends Controller
         return response()->json($seats);
     }
 
-
+    // ================= AJAX SWAP COL =================
     public function ajaxSwapCol(Request $request)
     {
         $request->validate([
@@ -297,7 +292,6 @@ class SeatController extends Controller
         $seatA = Seat::findOrFail($request->seatID_a);
         $seatB = Seat::findOrFail($request->seatID_b);
 
-        // Đảm bảo 2 ghế cùng hàng (cùng rowSeat)
         if ($seatA->rowSeat !== $seatB->rowSeat) {
             return response()->json([
                 'success' => false,
@@ -305,16 +299,14 @@ class SeatController extends Controller
             ], 422);
         }
 
-        // Dùng transaction để tránh trùng colSeat tạm thời
         DB::transaction(function () use ($seatA, $seatB, $request) {
-            // Dùng colSeat = 0 làm giá trị tạm (tránh unique constraint nếu có)
             $seatA->colSeat = 0;
             $seatA->save();
 
-            $seatB->colSeat = $request->colSeat_a; // B lấy vị trí của A
+            $seatB->colSeat = $request->colSeat_a;
             $seatB->save();
 
-            $seatA->colSeat = $request->colSeat_b; // A lấy vị trí của B
+            $seatA->colSeat = $request->colSeat_b;
             $seatA->save();
         });
 
@@ -326,7 +318,7 @@ class SeatController extends Controller
         ]);
     }
 
-    // ── HOÁN ĐỔI LOẠI 2 GHẾ ────────────────────────────────────
+    // ================= AJAX SWAP TYPE =================
     public function ajaxSwapType(Request $request)
     {
         $v = $request->validate([
@@ -354,16 +346,97 @@ class SeatController extends Controller
         return response()->json(['success' => true]);
     }
 
+    // ================= AJAX CONVERT COUPLE =================
+    public function ajaxConvertCouple(Request $request)
+    {
+        $v = $request->validate([
+            'seatID_a' => 'required|integer|exists:seats,seatID',
+            'seatID_b' => 'required|integer|exists:seats,seatID',
+        ]);
 
+        $seatA = Seat::findOrFail($v['seatID_a']);
+        $seatB = Seat::findOrFail($v['seatID_b']);
 
+        if ($seatA->roomID !== $seatB->roomID) {
+            return response()->json(['success' => false, 'message' => 'Hai ghế phải cùng phòng'], 422);
+        }
+
+        if ($seatA->rowSeat !== $seatB->rowSeat) {
+            return response()->json(['success' => false, 'message' => 'Hai ghế phải cùng hàng (cùng row)'], 422);
+        }
+
+        if (abs($seatA->colSeat - $seatB->colSeat) !== 1) {
+            return response()->json(['success' => false, 'message' => 'Hai ghế phải liền kề nhau'], 422);
+        }
+
+        if (DB::table('tickets')->whereIn('seatID', [$seatA->seatID, $seatB->seatID])->exists()) {
+            return response()->json(['success' => false, 'message' => 'Ghế đã có vé, không thể chuyển'], 422);
+        }
+
+        $coupleTypeID = SeatType::where('seatTypeName', 'like', '%đôi%')
+            ->orWhere('seatTypeName', 'like', '%Đôi%')
+            ->orWhere('seatTypeName', 'like', '%couple%')
+            ->value('seatTypeID') ?? 3;
+
+        DB::transaction(function () use ($seatA, $seatB, $coupleTypeID) {
+            $seatA->seatTypeID = $coupleTypeID;
+            $seatA->save();
+            $seatB->seatTypeID = $coupleTypeID;
+            $seatB->save();
+        });
+
+        return response()->json(['success' => true]);
+    }
+
+    // ================= AJAX BATCH UPDATE TYPE =================
+    // FIX #3: Endpoint mới cho cập nhật nhiều ghế cùng lúc
+    public function ajaxBatchUpdateType(Request $request)
+    {
+        $validated = $request->validate([
+            'seatIDs'    => 'required|array|min:1',
+            'seatIDs.*'  => 'integer|exists:seats,seatID',
+            'seatTypeID' => 'required|integer|exists:seat_types,seatTypeID',
+        ]);
+
+        $seats = Seat::whereIn('seatID', $validated['seatIDs'])->get();
+
+        if ($seats->isEmpty()) {
+            return response()->json(['success' => false, 'message' => 'Không tìm thấy ghế'], 404);
+        }
+
+        $roomID = $seats->first()->roomID;
+
+        // Bỏ qua ghế đã có vé
+        $ticketedIDs = DB::table('tickets')
+            ->whereIn('seatID', $validated['seatIDs'])
+            ->pluck('seatID')
+            ->toArray();
+
+        $updateIDs = array_diff($validated['seatIDs'], $ticketedIDs);
+
+        if (empty($updateIDs)) {
+            return response()->json(['success' => false, 'message' => 'Tất cả ghế đã có vé, không thể cập nhật'], 422);
+        }
+
+        $updated = Seat::whereIn('seatID', $updateIDs)
+            ->update(['seatTypeID' => $validated['seatTypeID']]);
+
+        return response()->json([
+            'success' => true,
+            'updated' => $updated,
+            'skipped' => count($ticketedIDs),
+            'roomID'  => $roomID,
+            'message' => "Đã cập nhật {$updated} ghế" . (count($ticketedIDs) ? ", bỏ qua " . count($ticketedIDs) . " ghế đã có vé" : ""),
+        ]);
+    }
+
+    // ================= EDIT MULTIPLE =================
     public function editMultiple(Request $request)
     {
-        $ids = explode(',', $request->seatIDs);
-
+        $ids   = explode(',', $request->seatIDs);
         $seats = Seat::whereIn('seatID', $ids)->get();
         $seatTypes = SeatType::all();
         $rooms = ScreeningRoom::all();
-
         $roomID = $seats->first()?->roomID;
 
         return view('admins.manageCinema.seat.edit-multiple', compact(
@@ -378,8 +451,8 @@ class SeatController extends Controller
     public function updateType(Request $request)
     {
         $request->validate([
-            'seatIDs' => 'required|array|min:1',
-            'seatIDs.*' => 'exists:seats,seatID',
+            'seatIDs'    => 'required|array|min:1',
+            'seatIDs.*'  => 'exists:seats,seatID',
             'seatTypeID' => 'required|exists:seat_types,seatTypeID'
         ]);
 
@@ -389,14 +462,12 @@ class SeatController extends Controller
             return response()->json(['error' => 'Không tìm thấy ghế'], 404);
         }
 
-        // check showtime
         if (ShowTime::where('roomID', $firstSeat->roomID)->exists()) {
             return response()->json([
                 'error' => 'Phòng đang có suất chiếu không thể sửa'
             ], 400);
         }
 
-        // chỉ update ghế chưa có vé
         $validSeatIDs = Seat::whereIn('seatID', $request->seatIDs)
             ->whereNotIn('seatID', function ($q) {
                 $q->select('seatID')->from('tickets');
@@ -410,7 +481,7 @@ class SeatController extends Controller
             'success' => true,
             'updated' => $updated,
             'skipped' => count($request->seatIDs) - $updated,
-            'roomID' => $firstSeat->roomID
+            'roomID'  => $firstSeat->roomID
         ]);
     }
 
