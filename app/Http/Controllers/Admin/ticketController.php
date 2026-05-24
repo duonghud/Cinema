@@ -14,6 +14,9 @@ class TicketController extends Controller
     public function index(Request $request)
     {
         $search = trim((string) $request->input('search'));
+        $status = trim((string) $request->input('status'));
+        $showTimeId = trim((string) $request->input('show_time_id'));
+        $movieId = trim((string) $request->input('movie_id'));
 
         $tickets = Ticket::with([
             'showTime.movie',
@@ -25,8 +28,6 @@ class TicketController extends Controller
                     $q->where('ticketID', 'like', "%{$search}%")
                         ->orWhere('status', 'like', "%{$search}%")
                         ->orWhere('price', 'like', "%{$search}%")
-
-                        // Tìm theo ghế (A1, B5...)
                         ->orWhereHas('seat', function ($seatQuery) use ($search) {
                             $seatQuery->where('seatID', 'like', "%{$search}%")
                                 ->orWhere('rowSeat', 'like', "%{$search}%")
@@ -36,50 +37,83 @@ class TicketController extends Controller
                                     ["%{$search}%"]
                                 );
                         })
-
-                        // Tìm theo suất chiếu
                         ->orWhereHas('showTime', function ($showTimeQuery) use ($search) {
                             $showTimeQuery->where('showTimeID', 'like', "%{$search}%")
                                 ->orWhere('showDate', 'like', "%{$search}%")
-
-                                // Tìm theo phim
                                 ->orWhereHas('movie', function ($movieQuery) use ($search) {
-                                    $movieQuery->where(
-                                        'movieTitle',
-                                        'like',
-                                        "%{$search}%"
-                                    );
+                                    $movieQuery->where('movieTitle', 'like', "%{$search}%");
                                 })
-
-                                // Tìm theo phòng
                                 ->orWhereHas('room', function ($roomQuery) use ($search) {
-                                    $roomQuery->where(
-                                        'roomName',
-                                        'like',
-                                        "%{$search}%"
-                                    );
+                                    $roomQuery->where('roomName', 'like', "%{$search}%");
                                 });
                         });
                 });
             })
-
-            // Vé đã đặt hiển thị lên đầu
+            ->when($status, function ($query) use ($status) {
+                $query->where('status', $status);
+            })
+            ->when($showTimeId, function ($query) use ($showTimeId) {
+                $query->where('showTimeID', $showTimeId);
+            })
+            ->when($movieId, function ($query) use ($movieId) {
+                $query->whereHas('showTime', function ($showTimeQuery) use ($movieId) {
+                    $showTimeQuery->where('movieID', $movieId);
+                });
+            })
             ->orderByRaw("
             CASE
                 WHEN status = 'booked' THEN 0
                 ELSE 1
             END
         ")
-
-            // Vé mới nhất hiển thị trước
             ->orderByDesc('ticketID')
-
             ->paginate(5)
             ->withQueryString();
 
-        return view('admins.ticket.index', compact('tickets'));
+        $showTimes = ShowTime::with('movie')
+            ->orderByDesc('showDate')
+            ->orderBy('startTime')
+            ->get()
+            ->mapWithKeys(function ($showTime) {
+                $label = 'ST ' . $showTime->showTimeID;
+                if ($showTime->movie?->movieTitle) {
+                    $label .= ' - ' . $showTime->movie->movieTitle;
+                }
+
+                return [$showTime->showTimeID => $label];
+            });
+
+        $movies = ShowTime::with('movie')
+            ->get()
+            ->pluck('movie.movieTitle', 'movieID')
+            ->filter()
+            ->sort();
+
+        return view('admins.ticket.index', [
+            'tickets' => $tickets,
+            'filters' => [
+                [
+                    'name' => 'status',
+                    'all_label' => 'Tất cả trạng thái',
+                    'options' => [
+                        'available' => 'Còn trống',
+                        'booked' => 'Đã thanh toán',
+                    ],
+                ],
+                [
+                    'name' => 'show_time_id',
+                    'all_label' => 'Tất cả suất chiếu',
+                    'options' => $showTimes->toArray(),
+                ],
+                [
+                    'name' => 'movie_id',
+                    'all_label' => 'Tất cả phim',
+                    'options' => $movies->toArray(),
+                ],
+            ],
+        ]);
     }
-    // FORM CREATE
+
     public function create()
     {
         $showTimes = ShowTime::all();
@@ -88,7 +122,6 @@ class TicketController extends Controller
         return view('admins.ticket.create', compact('showTimes', 'seats'));
     }
 
-    // STORE
     public function store(Request $request)
     {
         $request->validate([
@@ -97,25 +130,17 @@ class TicketController extends Controller
             'showTimeID' => 'required|exists:show_times,showTimeID',
             'seatID' => 'required|exists:seats,seatID',
         ], [
-            // PRICE
             'price.required' => 'Vui lòng nhập giá vé',
             'price.numeric' => 'Giá vé phải là số',
             'price.min' => 'Giá vé phải lớn hơn hoặc bằng 0',
-
-            // STATUS
             'status.required' => 'Vui lòng chọn trạng thái',
             'status.in' => 'Trạng thái không hợp lệ',
-
-            // SHOWTIME
             'showTimeID.required' => 'Vui lòng chọn suất chiếu',
             'showTimeID.exists' => 'Suất chiếu không tồn tại',
-
-            // SEAT
             'seatID.required' => 'Vui lòng chọn ghế',
             'seatID.exists' => 'Ghế không tồn tại',
         ]);
 
-        // Check trùng ghế
         $exists = Ticket::where('showTimeID', $request->showTimeID)
             ->where('seatID', $request->seatID)
             ->exists();
@@ -137,7 +162,6 @@ class TicketController extends Controller
             ->with('success', 'Thêm vé thành công');
     }
 
-    // EDIT
     public function edit($id)
     {
         $ticket = Ticket::findOrFail($id);
@@ -147,7 +171,6 @@ class TicketController extends Controller
         return view('admins.ticket.edit', compact('ticket', 'showTimes', 'seats'));
     }
 
-    // UPDATE
     public function update(Request $request, $id)
     {
         $ticket = Ticket::findOrFail($id);
@@ -161,13 +184,10 @@ class TicketController extends Controller
             'price.required' => 'Vui lòng nhập giá vé',
             'price.numeric' => 'Giá vé phải là số',
             'price.min' => 'Giá vé phải lớn hơn hoặc bằng 0',
-
             'status.required' => 'Vui lòng chọn trạng thái',
             'status.in' => 'Trạng thái không hợp lệ',
-
             'showTimeID.required' => 'Vui lòng chọn suất chiếu',
             'showTimeID.exists' => 'Suất chiếu không tồn tại',
-
             'seatID.required' => 'Vui lòng chọn ghế',
             'seatID.exists' => 'Ghế không tồn tại',
         ]);
@@ -194,7 +214,6 @@ class TicketController extends Controller
             ->with('success', 'Cập nhật thành công');
     }
 
-    // DELETE
     public function destroy($id)
     {
         Ticket::destroy($id);
@@ -203,29 +222,17 @@ class TicketController extends Controller
             ->with('success', 'Xóa thành công');
     }
 
-    // Thay thế toàn bộ method generateTicketsByShowTime() bằng đoạn dưới đây.
-    // Lỗi hiện tại: bạn đang dùng $seats = Seat::all();
-    // nhưng hệ thống ghế thuộc từng phòng chiếu, nên cần lọc theo roomID của suất chiếu.
-
     public function generateTicketsByShowTime($showTimeId)
     {
-        // Lấy suất chiếu kèm phòng chiếu
         $showTime = ShowTime::with('room')->findOrFail($showTimeId);
 
-        // Kiểm tra suất chiếu có phòng hay không
         if (!$showTime->roomID) {
             return redirect()->route('ticket.index')
                 ->with('error', 'Suất chiếu chưa được gán phòng chiếu.');
         }
 
-        // Chỉ lấy ghế thuộc phòng của suất chiếu
-        // Nếu cột trong bảng seats là screeningRoomID thì dùng dòng dưới:
         $seats = Seat::where('screeningRoomID', $showTime->roomID)->get();
 
-        // Nếu model của bạn dùng cột khác (ví dụ roomID) thì đổi thành:
-        // $seats = Seat::where('roomID', $showTime->roomID)->get();
-
-        // Không có ghế nào trong phòng
         if ($seats->isEmpty()) {
             return redirect()->route('ticket.index')
                 ->with('error', 'Phòng chiếu này chưa có ghế.');
@@ -234,8 +241,6 @@ class TicketController extends Controller
         $created = 0;
 
         foreach ($seats as $seat) {
-
-            // Kiểm tra vé đã tồn tại chưa
             $exists = Ticket::where('showTimeID', $showTime->showTimeID)
                 ->where('seatID', $seat->seatID)
                 ->exists();

@@ -16,6 +16,7 @@ class movieController extends Controller
     public function index(Request $request)
     {
         $search = trim((string) $request->input('search'));
+        $genreId = trim((string) $request->input('genre_id'));
 
         $movies = movie::with(['ageRating', 'studio', 'genres'])
             ->when($search, function ($query) use ($search) {
@@ -35,6 +36,11 @@ class movieController extends Controller
                         $genreQuery->where('name', 'like', "%{$search}%");
                     });
             })
+            ->when($genreId, function ($query) use ($genreId) {
+                $query->whereHas('genres', function ($genreQuery) use ($genreId) {
+                    $genreQuery->where('genres.genreID', $genreId);
+                });
+            })
             ->paginate(5)
             ->withQueryString();
 
@@ -42,7 +48,17 @@ class movieController extends Controller
         $studios = studio::all();
         $genres = genre::all();
 
-        return view('admins.manageMovies.movies.index', compact('movies', 'ageRatings', 'studios', 'genres'));
+        return view('admins.manageMovies.movies.index', [
+            'movies' => $movies,
+            'ageRatings' => $ageRatings,
+            'studios' => $studios,
+            'genres' => $genres,
+            'filters' => [[
+                'name' => 'genre_id',
+                'all_label' => 'Tất cả thể loại',
+                'options' => $genres->pluck('name', 'genreID')->toArray(),
+            ]],
+        ]);
     }
 
     public function store(Request $request)
@@ -179,9 +195,18 @@ class movieController extends Controller
         return redirect()->route('admin.movies.index')->with('success', 'Cập nhật thành công');
     }
 
-    public function show(movie $movie)
+    public function show(Request $request, movie $movie)
     {
-        return view('system.show', compact('movie'));
+        $movie->load(['showTimes.room']);
+
+        $selectedShowTime = null;
+        $selectedShowTimeId = $request->integer('showtime');
+
+        if ($selectedShowTimeId) {
+            $selectedShowTime = $movie->showTimes->firstWhere('showTimeID', $selectedShowTimeId);
+        }
+
+        return view('system.show', compact('movie', 'selectedShowTime'));
     }
 
     public function destroy($id)

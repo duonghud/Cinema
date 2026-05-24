@@ -291,9 +291,23 @@
                     <i class="bi bi-credit-card"></i> Thanh toán
                 </a>
 
-                <a href="{{ route('ticket.index') }}" class="{{ request()->routeIs('ticket.*') ? 'active' : '' }}">
-                    <i class="bi bi-ticket-perforated"></i> Vé
+                <a data-bs-toggle="collapse" href="#revenueMenu">
+                    <i class="bi bi-bar-chart-line"></i> Thống kê doanh thu
+                    <i class="bi bi-chevron-down ms-auto"></i>
                 </a>
+
+                <div class="collapse submenu {{ request()->routeIs('reports.revenue.*') ? 'show' : '' }}" id="revenueMenu">
+                    <a href="{{ route('reports.revenue.month') }}" class="{{ request()->routeIs('reports.revenue.month') ? 'active' : '' }}">
+                        <span class="mt-2"></span><i class="bi bi-calendar3"></i> Theo tháng trong năm
+                    </a>
+                    <a href="{{ route('reports.revenue.day') }}" class="{{ request()->routeIs('reports.revenue.day') ? 'active' : '' }}">
+                        <span class="mt-2"></span><i class="bi bi-calendar-date"></i> Theo ngày trong tháng
+                    </a>
+                </div>
+
+                {{--<a href="{{ route('ticket.index') }}" class="{{ request()->routeIs('ticket.*') ? 'active' : '' }}">
+                    <i class="bi bi-ticket-perforated"></i> Vé
+                </a>--}}
 
                 <a href="{{ route('showTime.index') }}" class="{{ request()->routeIs('showTime.*') ? 'active' : '' }}">
                     <i class="bi bi-calendar-event"></i> Lịch chiếu

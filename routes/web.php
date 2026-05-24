@@ -95,6 +95,10 @@
     Route::prefix('admins')->middleware('admin.auth')->group(function () {
 
         Route::resource('dashboard',          DashBoardController::class);
+        Route::get('reports/revenue-by-month', [DashBoardController::class, 'revenueByMonth'])
+            ->name('reports.revenue.month');
+        Route::get('reports/revenue-by-day', [DashBoardController::class, 'revenueByDay'])
+            ->name('reports.revenue.day');
         Route::resource('admin',              AdminController::class);
         Route::resource('customer',           CustomerController::class);
         Route::resource('paymentMethod',      PaymentMethodController::class);

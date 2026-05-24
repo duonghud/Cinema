@@ -13,8 +13,7 @@ class FoodInvoice extends Model
 
     protected $primaryKey = 'foodInvoiceID';
 
-
-    public $timestamps = false;
+    public $timestamps = true;
 
     protected $fillable = [
         'orderDate',

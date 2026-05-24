@@ -14,16 +14,33 @@ class genreController extends Controller
     public function index(Request $request)
     {
         $search = trim((string) $request->input('search'));
+        $genreName = trim((string) $request->input('genre_name'));
 
         $genres = genre::query()
             ->when($search, function ($query) use ($search) {
                 $query->where('genreID', 'like', "%{$search}%")
                     ->orWhere('name', 'like', "%{$search}%");
             })
+            ->when($genreName, function ($query) use ($genreName) {
+                $query->where('name', $genreName);
+            })
             ->paginate(5)
             ->withQueryString();
 
-        return view('admins.manageMovies.genre.index', ['genres' => $genres]);
+        $genreNames = genre::query()
+            ->select('name')
+            ->distinct()
+            ->orderBy('name')
+            ->pluck('name', 'name');
+
+        return view('admins.manageMovies.genre.index', [
+            'genres' => $genres,
+            'filters' => [[
+                'name' => 'genre_name',
+                'all_label' => 'Tất cả thể loại',
+                'options' => $genreNames->toArray(),
+            ]],
+        ]);
     }
 
     /**
