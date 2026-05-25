@@ -14,6 +14,30 @@
     'placeholder' => 'Tìm theo tên phòng, sức chứa hoặc loại màn'
     ])
 
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+
+        {{-- Search --}}
+        <form method="GET" action="{{ route('screeningRoom.index') }}" class="d-flex gap-2">
+            {{-- Filter loại phòng --}}
+            <select name="screenType" class="form-select" style="width: 220px;">
+                <option value="">Loại phòng</option>
+
+                @foreach($screenTypes as $type)
+                <option
+                    value="{{ $type->screenTypeID }}"
+                    {{ request('screenType') == $type->screenTypeID ? 'selected' : '' }}>
+                    {{ $type->name }}
+                </option>
+                @endforeach
+            </select>
+
+            <button class="btn btn-dark">
+                Lọc
+            </button>
+        </form>
+
+    </div>
+
     <div class="bg-white border rounded-3 shadow-sm">
         <table class="table mb-0 align-middle">
             <thead class="border-bottom">
@@ -44,7 +68,7 @@
                         <a href="{{ route('seat.index', $r->roomID) }}" class="btn btn-sm btn-outline-primary">
                             Xem ghế
                         </a>
-                        
+
                         <a href="{{ route('screeningRoom.edit', $r->roomID) }}" class="btn btn-sm btn-outline-dark me-2">
                             Sửa
                         </a>
