@@ -689,7 +689,8 @@
                         if (c + 1 <= cols) {
                             const seat = document.createElement('div');
                             seat.className = 'preview-seat double';
-                            seat.innerText = `${String.fromCharCode(65+r)}${c}`;
+                            seat.innerText = `${String.fromCharCode(65+r)}${c}-${c+1}`;
+                            seat.title = `${String.fromCharCode(65+r)}${c} - ${String.fromCharCode(65+r)}${c+1}`;
                             rowEl.appendChild(seat);
                             qi++;
                             c += 2; // chiếm 2 cột

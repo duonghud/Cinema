@@ -13,6 +13,49 @@ use App\Models\Admin\ShowTime;
 
 class SeatController extends Controller
 {
+    private function findSeatTypeIdByKeywords(array $keywords): ?int
+    {
+        $query = SeatType::query();
+
+        foreach ($keywords as $index => $keyword) {
+            $method = $index === 0 ? 'where' : 'orWhere';
+            $query->{$method}('seatTypeName', 'like', '%' . $keyword . '%');
+        }
+
+        return $query->value('seatTypeID');
+    }
+
+    private function getCoupleTypeId(): int
+    {
+        return $this->findSeatTypeIdByKeywords(['đôi', 'Đôi', 'couple', 'double']) ?? 3;
+    }
+
+    private function getMaintenanceTypeId(): int
+    {
+        return $this->findSeatTypeIdByKeywords(['bảo trì', 'Bảo trì', 'maintenance']) ?? 4;
+    }
+
+    private function getNormalTypeId(): int
+    {
+        return $this->findSeatTypeIdByKeywords(['thường', 'Thường', 'normal']) ?? 2;
+    }
+
+    private function findCouplePartner(Seat $seat): ?Seat
+    {
+        $coupleTypeId = $this->getCoupleTypeId();
+
+        if ((int) $seat->seatTypeID !== $coupleTypeId) {
+            return null;
+        }
+
+        return Seat::where('roomID', $seat->roomID)
+            ->where('rowSeat', $seat->rowSeat)
+            ->where('seatTypeID', $coupleTypeId)
+            ->where('seatID', '!=', $seat->seatID)
+            ->whereIn('colSeat', [(int) $seat->colSeat - 1, (int) $seat->colSeat + 1])
+            ->orderBy('colSeat')
+            ->first();
+    }
 
     // ================= LIST =================
     public function index(Request $request)
@@ -29,12 +72,21 @@ class SeatController extends Controller
         }
 
         if (!$room) {
+            $seatTypes = SeatType::all();
+
             return view('admins.manageCinema.seat.index', [
                 'seats'     => collect(),
                 'room'      => null,
                 'rooms'     => $rooms,
-                'seatTypes' => SeatType::all(),
+                'seatTypes' => $seatTypes,
                 'roomID'    => 0,
+                'specialTypeIds' => [
+                    'vip' => $this->findSeatTypeIdByKeywords(['vip']) ?? 1,
+                    'normal' => $this->getNormalTypeId(),
+                    'couple' => $this->getCoupleTypeId(),
+                    'maintenance' => $this->getMaintenanceTypeId(),
+                ],
+                'seatTypeNames' => $seatTypes->pluck('seatTypeName', 'seatTypeID')->toArray(),
             ]);
         }
 
@@ -61,12 +113,22 @@ class SeatController extends Controller
             ->paginate(5)
             ->withQueryString();
 
+        $specialTypeIds = [
+            'vip' => $this->findSeatTypeIdByKeywords(['vip']) ?? 1,
+            'normal' => $this->getNormalTypeId(),
+            'couple' => $this->getCoupleTypeId(),
+            'maintenance' => $this->getMaintenanceTypeId(),
+        ];
+        $seatTypeNames = $seatTypes->pluck('seatTypeName', 'seatTypeID')->toArray();
+
         return view('admins.manageCinema.seat.index', compact(
             'seats',
             'room',
             'rooms',
             'seatTypes',
-            'roomID'
+            'roomID',
+            'specialTypeIds',
+            'seatTypeNames'
         ));
     }
 
@@ -320,6 +382,169 @@ class SeatController extends Controller
         return response()->json(['success' => true]);
     }
 
+    public function ajaxMoveCouple(Request $request)
+    {
+        $validated = $request->validate([
+            'seatID'    => 'required|integer|exists:seats,seatID',
+            'targetRow' => 'required|string|max:2',
+            'targetCol' => 'required|integer|min:1',
+        ]);
+
+        $seat = Seat::findOrFail($validated['seatID']);
+        $coupleTypeId = $this->getCoupleTypeId();
+
+        if ((int) $seat->seatTypeID !== $coupleTypeId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Chỉ hỗ trợ di chuyển ghế đôi.',
+            ], 422);
+        }
+
+        $partner = $this->findCouplePartner($seat);
+        if (!$partner) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy ghế ghép cặp hợp lệ.',
+            ], 422);
+        }
+
+        $pairIds = [$seat->seatID, $partner->seatID];
+        if (DB::table('tickets')->whereIn('seatID', $pairIds)->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ghế đã có vé, không thể di chuyển.',
+            ], 422);
+        }
+
+        $targetRow = strtoupper(trim($validated['targetRow']));
+        $targetCol = (int) $validated['targetCol'];
+        $targetCols = [$targetCol, $targetCol + 1];
+
+        $occupied = Seat::where('roomID', $seat->roomID)
+            ->where('rowSeat', $targetRow)
+            ->whereIn('colSeat', $targetCols)
+            ->whereNotIn('seatID', $pairIds)
+            ->exists();
+
+        if ($occupied) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Vị trí đích không còn trống cho cả cặp ghế.',
+            ], 422);
+        }
+
+        $leftSeat = (int) $seat->colSeat <= (int) $partner->colSeat ? $seat : $partner;
+        $rightSeat = $leftSeat->seatID === $seat->seatID ? $partner : $seat;
+
+        DB::transaction(function () use ($leftSeat, $rightSeat, $targetRow, $targetCol) {
+            $leftSeat->rowSeat = $targetRow;
+            $leftSeat->colSeat = $targetCol;
+            $leftSeat->save();
+
+            $rightSeat->rowSeat = $targetRow;
+            $rightSeat->colSeat = $targetCol + 1;
+            $rightSeat->save();
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Di chuyển cặp ghế thành công.',
+        ]);
+    }
+
+    public function ajaxSwapCoupleType(Request $request)
+    {
+        $validated = $request->validate([
+            'sourceSeatID' => 'required|integer|exists:seats,seatID',
+            'targetSeatID' => 'required|integer|exists:seats,seatID',
+            'targetTypeID' => 'required|integer|exists:seat_types,seatTypeID',
+        ]);
+
+        $coupleTypeId = $this->getCoupleTypeId();
+        $maintenanceTypeId = $this->getMaintenanceTypeId();
+
+        $sourceSeat = Seat::findOrFail($validated['sourceSeatID']);
+        $targetSeat = Seat::findOrFail($validated['targetSeatID']);
+
+        if ((int) $sourceSeat->seatTypeID !== $coupleTypeId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ghế nguồn phải là ghế đôi.',
+            ], 422);
+        }
+
+        if ((int) $validated['targetTypeID'] === $coupleTypeId || (int) $validated['targetTypeID'] === $maintenanceTypeId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Chỉ được đổi ghế đôi sang ghế thường hoặc VIP.',
+            ], 422);
+        }
+
+        if ($sourceSeat->roomID !== $targetSeat->roomID) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hai ghế phải cùng phòng.',
+            ], 422);
+        }
+
+        if ((int) $targetSeat->seatTypeID !== (int) $validated['targetTypeID']) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ghế đích không đúng loại đã chọn.',
+            ], 422);
+        }
+
+        $sourcePartner = $this->findCouplePartner($sourceSeat);
+        if (!$sourcePartner) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy cặp ghế nguồn hợp lệ.',
+            ], 422);
+        }
+
+        $targetPartner = Seat::where('roomID', $targetSeat->roomID)
+            ->where('rowSeat', $targetSeat->rowSeat)
+            ->where('seatTypeID', $validated['targetTypeID'])
+            ->where('seatID', '!=', $targetSeat->seatID)
+            ->whereIn('colSeat', [(int) $targetSeat->colSeat - 1, (int) $targetSeat->colSeat + 1])
+            ->orderBy('colSeat')
+            ->first();
+
+        if (!$targetPartner) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy ghế cặp đích hợp lệ.',
+            ], 422);
+        }
+
+        $targetIds = [$targetSeat->seatID, $targetPartner->seatID];
+        $sourceIds = [$sourceSeat->seatID, $sourcePartner->seatID];
+
+        if (DB::table('tickets')->whereIn('seatID', array_merge($sourceIds, $targetIds))->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Có ghế đã bán vé, không thể đổi.',
+            ], 422);
+        }
+
+        DB::transaction(function () use ($sourceSeat, $sourcePartner, $targetSeat, $targetPartner, $validated, $coupleTypeId) {
+            $sourceSeat->seatTypeID = (int) $validated['targetTypeID'];
+            $sourceSeat->save();
+            $sourcePartner->seatTypeID = (int) $validated['targetTypeID'];
+            $sourcePartner->save();
+
+            $targetSeat->seatTypeID = $coupleTypeId;
+            $targetSeat->save();
+            $targetPartner->seatTypeID = $coupleTypeId;
+            $targetPartner->save();
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Đổi loại ghế đôi thành công.',
+        ]);
+    }
+
     // ================= AJAX CONVERT COUPLE =================
     public function ajaxConvertCouple(Request $request)
     {
@@ -350,7 +575,7 @@ class SeatController extends Controller
         $coupleTypeID = SeatType::where('seatTypeName', 'like', '%đôi%')
             ->orWhere('seatTypeName', 'like', '%Đôi%')
             ->orWhere('seatTypeName', 'like', '%couple%')
-            ->value('seatTypeID') ?? 3;
+            ->value('seatTypeID') ?? $this->getCoupleTypeId();
 
         DB::transaction(function () use ($seatA, $seatB, $coupleTypeID) {
             $seatA->seatTypeID = $coupleTypeID;
@@ -370,31 +595,34 @@ class SeatController extends Controller
         ]);
 
         $seat = Seat::findOrFail($validated['seatID']);
-
-        // Chỉ chặn ghế đôi đang ghép cặp (typeID=3), không chặn bảo trì
-        if ($seat->seatTypeID === 3) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Ghế đôi không thể đổi loại trực tiếp. Dùng chức năng hoán đổi.',
-            ], 422);
-        }
+        $coupleTypeId = $this->getCoupleTypeId();
+        $partner = (int) $seat->seatTypeID === $coupleTypeId ? $this->findCouplePartner($seat) : null;
 
         // Không cho đổi nếu ghế đã có vé (trừ chuyển sang bảo trì)
-        $isMaintenance = (int)$validated['seatTypeID'] === 4;
-        if (!$isMaintenance && DB::table('tickets')->where('seatID', $seat->seatID)->exists()) {
+        $isMaintenance = (int) $validated['seatTypeID'] === $this->getMaintenanceTypeId();
+        $seatIdsToCheck = array_filter([$seat->seatID, $partner?->seatID]);
+
+        if (!$isMaintenance && DB::table('tickets')->whereIn('seatID', $seatIdsToCheck)->exists()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Ghế đã có vé, không thể thay đổi loại.',
             ], 422);
         }
 
-        $seat->seatTypeID = $validated['seatTypeID'];
-        $seat->save();
+        DB::transaction(function () use ($seat, $partner, $validated) {
+            $seat->seatTypeID = $validated['seatTypeID'];
+            $seat->save();
+
+            if ($partner) {
+                $partner->seatTypeID = $validated['seatTypeID'];
+                $partner->save();
+            }
+        });
 
         return response()->json([
             'success' => true,
             'message' => 'Cập nhật loại ghế thành công.',
-            'seat'    => $seat,
+            'seat'    => $seat->fresh(),
         ]);
     }
 
@@ -409,38 +637,66 @@ class SeatController extends Controller
             'seatTypeID' => 'required|integer|exists:seat_types,seatTypeID',
         ]);
 
-        $newTypeID = (int) $request->seatTypeID;
-        $ids       = $request->seatIDs;
+        $newTypeID      = (int) $request->seatTypeID;
+        $ids            = array_map('intval', $request->seatIDs);
+        $isMaintenance  = $newTypeID === $this->getMaintenanceTypeId();
+        $coupleTypeId   = $this->getCoupleTypeId();
+        $selectedSeats  = Seat::whereIn('seatID', $ids)->get()->keyBy('seatID');
+        $validSeatIds   = [];
+        $processedPairs = [];
 
-        // Lấy ghế hợp lệ: không phải ghế đôi, không có vé (trừ đổi sang bảo trì)
-        $isMaintenance = $newTypeID === 4;
+        foreach ($selectedSeats as $seat) {
+            if ((int) $seat->seatTypeID === $coupleTypeId) {
+                $partner = $this->findCouplePartner($seat);
+                if (!$partner) {
+                    continue;
+                }
 
-        $query = Seat::whereIn('seatID', $ids)
-            ->where('seatTypeID', '!=', 3); // bỏ ghế đôi
+                $pairKey = collect([$seat->seatID, $partner->seatID])->sort()->implode('-');
+                if (isset($processedPairs[$pairKey])) {
+                    continue;
+                }
+                $processedPairs[$pairKey] = true;
 
-        if (!$isMaintenance) {
-            $query->whereNotIn('seatID', function ($q) {
-                $q->select('seatID')->from('tickets');
-            });
+                $pairIds = [$seat->seatID, $partner->seatID];
+                if (
+                    !$isMaintenance &&
+                    DB::table('tickets')->whereIn('seatID', $pairIds)->exists()
+                ) {
+                    continue;
+                }
+
+                $validSeatIds = array_merge($validSeatIds, $pairIds);
+                continue;
+            }
+
+            if (
+                !$isMaintenance &&
+                DB::table('tickets')->where('seatID', $seat->seatID)->exists()
+            ) {
+                continue;
+            }
+
+            $validSeatIds[] = $seat->seatID;
         }
 
-        $validSeats = $query->get();
-        $updated    = $validSeats->count();
-        $skipped    = count($ids) - $updated;
+        $validSeatIds = array_values(array_unique($validSeatIds));
+        $updated      = count($validSeatIds);
+        $skipped      = count($ids) - count(array_intersect($ids, $validSeatIds));
 
         if ($updated === 0) {
             return response()->json([
                 'success' => false,
-                'message' => 'Không có ghế nào hợp lệ để cập nhật (ghế đôi và ghế có vé bị bỏ qua).',
+                'message' => 'Không có ghế nào hợp lệ để cập nhật (ghế có vé hoặc cặp ghế lỗi bị bỏ qua).',
             ]);
         }
 
-        Seat::whereIn('seatID', $validSeats->pluck('seatID'))
+        Seat::whereIn('seatID', $validSeatIds)
             ->update(['seatTypeID' => $newTypeID]);
 
         $typeName = SeatType::find($newTypeID)?->seatTypeName ?? 'loại mới';
         $msg      = "Đã cập nhật {$updated} ghế sang {$typeName}.";
-        if ($skipped > 0) $msg .= " Bỏ qua {$skipped} ghế (đôi/có vé).";
+        if ($skipped > 0) $msg .= " Bỏ qua {$skipped} ghế đã chọn.";
 
         return response()->json(['success' => true, 'updated' => $updated, 'message' => $msg]);
     }

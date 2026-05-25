@@ -302,7 +302,7 @@ class screeningRoomController extends Controller
                 $seatCounts['vipSeats'] = $seat->total;
                 $seatCounts['vipSeatTypeID'] = $seat->seatTypeID;
             } elseif (str_contains($name, 'đôi') || str_contains($name, 'double') || str_contains($name, 'couple')) {
-                $seatCounts['doubleSeats'] = $seat->total;
+                $seatCounts['doubleSeats'] = (int) floor($seat->total / 2);
                 $seatCounts['doubleSeatTypeID'] = $seat->seatTypeID;
             } else {
                 $seatCounts['normalSeats'] = $seat->total;
