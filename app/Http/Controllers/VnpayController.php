@@ -10,8 +10,7 @@ class VnpayController extends Controller
 {
     public function __construct(
         protected BookingService $bookingService
-    ) {
-    }
+    ) {}
 
     public function createPayment($amount)
     {
@@ -20,6 +19,7 @@ class VnpayController extends Controller
 
         $vnp_TmnCode = trim(env('VNP_TMN_CODE'));
         $vnp_HashSecret = trim(env('VNP_HASH_SECRET'));
+
         $vnp_TxnRef = date('YmdHis') . rand(1000, 9999);
 
         date_default_timezone_set('Asia/Ho_Chi_Minh');
@@ -42,28 +42,35 @@ class VnpayController extends Controller
 
         ksort($inputData);
 
-        $query = '';
-        $hashData = '';
-        $i = 0;
+        $query = "";
+        $hashData = "";
 
         foreach ($inputData as $key => $value) {
-            if ($i === 1) {
-                $hashData .= '&' . urlencode($key) . '=' . urlencode($value);
-            } else {
-                $hashData .= urlencode($key) . '=' . urlencode($value);
-                $i = 1;
-            }
-
-            $query .= urlencode($key) . '=' . urlencode($value) . '&';
+            $hashData .= urlencode($key) . "=" . urlencode($value) . '&';
+            $query .= urlencode($key) . "=" . urlencode($value) . '&';
         }
 
+        $hashData = rtrim($hashData, '&');
+
+        $vnpSecureHash = hash_hmac(
+            'sha512',
+            $hashData,
+            $vnp_HashSecret
+        );
+
         $paymentUrl = $vnp_Url
-            . '?'
+            . "?"
             . $query
             . 'vnp_SecureHash='
-            . hash_hmac('sha512', $hashData, $vnp_HashSecret);
+            . $vnpSecureHash;
 
-        session(['vnp_TxnRef' => $vnp_TxnRef]);
+        // Lưu mã giao dịch VNPay
+        session([
+            'vnp_TxnRef' => $vnp_TxnRef,
+        ]);
+
+        // BẮT BUỘC save session trước khi redirect VNPay
+        session()->save();
 
         return redirect()->away($paymentUrl);
     }
@@ -71,6 +78,7 @@ class VnpayController extends Controller
     public function vnpayReturn(Request $request)
     {
         $vnp_HashSecret = trim(env('VNP_HASH_SECRET'));
+
         $inputData = $request->except([
             'vnp_SecureHash',
             'vnp_SecureHashType',
@@ -78,65 +86,76 @@ class VnpayController extends Controller
 
         ksort($inputData);
 
-        $hashData = '';
-        $i = 0;
+        $hashData = "";
 
         foreach ($inputData as $key => $value) {
-            if ($i === 1) {
-                $hashData .= '&' . urlencode($key) . '=' . urlencode($value);
-            } else {
-                $hashData .= urlencode($key) . '=' . urlencode($value);
-                $i = 1;
-            }
+            $hashData .= urlencode($key) . "=" . urlencode($value) . '&';
         }
 
-        $secureHash = hash_hmac('sha512', $hashData, $vnp_HashSecret);
+        $hashData = rtrim($hashData, '&');
 
+        $secureHash = hash_hmac(
+            'sha512',
+            $hashData,
+            $vnp_HashSecret
+        );
+
+        // Check checksum
         if ($secureHash !== $request->vnp_SecureHash) {
             return redirect()->route('payment')
                 ->with('error', 'Sai chữ ký VNPAY!');
         }
 
-        if (session('vnp_TxnRef') && session('vnp_TxnRef') != $request->vnp_TxnRef) {
+        // Check mã giao dịch
+        if (
+            session('vnp_TxnRef') &&
+            session('vnp_TxnRef') != $request->vnp_TxnRef
+        ) {
             return redirect()->route('payment')
                 ->with('error', 'Mã giao dịch không hợp lệ!');
         }
 
+        // Thanh toán thất bại
         if ($request->vnp_ResponseCode !== '00') {
             return redirect()->route('payment')
                 ->with('error', 'Thanh toán VNPay thất bại!');
         }
 
+        // Lấy dữ liệu session
         $invoice = session('invoice');
         $paymentId = session('selected_payment_method');
         $customer = session('customer');
 
         if (!$invoice || !$paymentId || !$customer) {
-            return redirect()->route('payment')
-                ->with('error', 'Không tìm thấy dữ liệu thanh toán.');
+            return redirect()->route('show')
+                ->with('error', 'Không có dữ liệu hóa đơn!');
         }
 
         try {
-            $this->bookingService->finalizeFromSession(
+
+            // Tạo hóa đơn
+            $savedInvoice = $this->bookingService->finalizeFromSession(
                 $invoice,
                 (int) $paymentId,
                 (int) $customer->customerID
             );
+
         } catch (RuntimeException $e) {
+
             return redirect()->route('payment')
                 ->with('error', $e->getMessage());
         }
 
-        $transactionCode = $request->vnp_TransactionNo ?? $request->vnp_TxnRef;
-
+        // Xóa session
         session()->forget([
             'invoice',
             'selected_payment_method',
             'vnp_TxnRef',
         ]);
 
+        // Redirect success
         return redirect()->route('system.success', [
-            'transaction_code' => $transactionCode,
+            'invoiceID' => $savedInvoice->invoiceID,
         ]);
     }
 }

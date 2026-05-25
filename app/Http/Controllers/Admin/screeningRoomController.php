@@ -16,23 +16,34 @@ class screeningRoomController extends Controller
     public function index(Request $request)
     {
         $search = trim((string) $request->input('search'));
+        $screenType = $request->input('screenType');
 
         $room = screeningRoom::with('screenType')
 
+            // Search
             ->when($search, function ($query) use ($search) {
 
-                $query->where('roomID', 'like', "%{$search}%")
-                    ->orWhere('roomName', 'like', "%{$search}%")
-                    ->orWhere('capacity', 'like', "%{$search}%")
+                $query->where(function ($q) use ($search) {
 
-                    ->orWhereHas('screenType', function ($screenTypeQuery) use ($search) {
+                    $q->where('roomID', 'like', "%{$search}%")
+                        ->orWhere('roomName', 'like', "%{$search}%")
+                        ->orWhere('capacity', 'like', "%{$search}%")
 
-                        $screenTypeQuery->where(
-                            'name',
-                            'like',
-                            "%{$search}%"
-                        );
-                    });
+                        ->orWhereHas('screenType', function ($screenTypeQuery) use ($search) {
+
+                            $screenTypeQuery->where(
+                                'name',
+                                'like',
+                                "%{$search}%"
+                            );
+                        });
+                });
+            })
+
+            // Filter loại phòng
+            ->when($screenType, function ($query) use ($screenType) {
+
+                $query->where('screenTypeID', $screenType);
             })
 
             ->paginate(5)
@@ -46,7 +57,6 @@ class screeningRoomController extends Controller
             compact('room', 'screenTypes')
         );
     }
-
 
     public function create()
     {
@@ -67,65 +77,194 @@ class screeningRoomController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'roomName'          => 'required|string|max:100',
-            'cols'              => 'required|integer|min:1|max:50',
-            'vipSeats'          => 'required|integer|min:0',
-            'normalSeats'       => 'required|integer|min:0',
-            'doubleSeats'       => 'required|integer|min:0',
-            'vipSeatTypeID'     => 'required|exists:seat_types,seatTypeID',
-            'normalSeatTypeID'  => 'required|exists:seat_types,seatTypeID',
-            'doubleSeatTypeID'  => 'required|exists:seat_types,seatTypeID',
-            'screenTypeID'      => 'required|exists:screen_types,screenTypeID',
+            'roomName'         => 'required|string|max:100|unique:screening_rooms,roomName',
+            'rows'             => 'required|integer|min:1|max:26',
+            'cols'             => 'required|integer|min:1|max:50',
+
+            'vipSeats'         => 'required|integer|min:0',
+            'normalSeats'      => 'required|integer|min:0',
+            'doubleSeats'      => 'required|integer|min:0',
+
+            'vipSeatTypeID'    => 'required|exists:seat_types,seatTypeID',
+            'normalSeatTypeID' => 'required|exists:seat_types,seatTypeID',
+            'doubleSeatTypeID' => 'required|exists:seat_types,seatTypeID',
+
+            'screenTypeID'     => 'required|exists:screen_types,screenTypeID',
+        ], [
+            'roomName.unique'        => 'Tên phòng đã tồn tại',
+            'cols.max'               => 'Số cột tối đa là 50',
+            'rows.max'               => 'Số hàng tối đa là 26 (A-Z)',
         ]);
 
-        $capacity = $validated['vipSeats']
-            + $validated['normalSeats']
-            + $validated['doubleSeats'];
+        /*
+    |--------------------------------------------------------------------------
+    | TÍNH TỔNG GHẾ
+    | doubleSeats = số cặp đôi → mỗi cặp chiếm 2 ô ghế thực tế
+    |--------------------------------------------------------------------------
+    */
 
-        $room = screeningRoom::create([
+        $vipCount    = (int) $validated['vipSeats'];
+        $normalCount = (int) $validated['normalSeats'];
+        $doubleCount = (int) $validated['doubleSeats']; // số cặp
+
+        // Tổng ô ghế thực tế (ghế đôi mỗi cặp = 2 ô)
+        $totalSlots = $vipCount + $normalCount + ($doubleCount * 2);
+
+        // capacity = số đơn vị ghế (ghế đôi tính là 1)
+        $capacity = $vipCount + $normalCount + $doubleCount;
+
+        if ($capacity <= 0) {
+            return back()
+                ->withInput()
+                ->withErrors(['capacity' => 'Phòng phải có ít nhất 1 ghế']);
+        }
+
+        $maxRows = (int) $validated['rows'];
+        $maxCols = (int) $validated['cols'];
+
+        // Kiểm tra tổng ô ghế không vượt quá grid rows × cols
+        if ($totalSlots > $maxRows * $maxCols) {
+            return back()
+                ->withInput()
+                ->withErrors(['vipSeats' => 'Tổng số ghế vượt quá số ô trong lưới (' . $totalSlots . '/' . ($maxRows * $maxCols) . ')']);
+        }
+
+        /*
+    |--------------------------------------------------------------------------
+    | TẠO PHÒNG
+    |--------------------------------------------------------------------------
+    */
+
+        $room = ScreeningRoom::create([
             'roomName'     => $validated['roomName'],
             'capacity'     => $capacity,
             'screenTypeID' => $validated['screenTypeID'],
         ]);
 
-        $maxCols  = $validated['cols']; // ← dùng giá trị từ form
-        $rows     = range('A', 'Z');
-        $rowIndex = 0;
+        /*
+    |--------------------------------------------------------------------------
+    | BUILD DANH SÁCH GHẾ
+    | Dùng flag 'isDouble' để phân biệt, KHÔNG so sánh seatTypeID
+    | vì 3 dropdown có thể chọn cùng 1 ID
+    |--------------------------------------------------------------------------
+    */
+
+        $seatQueue = [];
+
+        for ($i = 0; $i < $vipCount; $i++) {
+            $seatQueue[] = [
+                'typeID'   => (int) $validated['vipSeatTypeID'],
+                'isDouble' => false,
+            ];
+        }
+
+        for ($i = 0; $i < $normalCount; $i++) {
+            $seatQueue[] = [
+                'typeID'   => (int) $validated['normalSeatTypeID'],
+                'isDouble' => false,
+            ];
+        }
+
+        // doubleSeats = số cặp, mỗi cặp push 1 phần tử isDouble=true
+        for ($i = 0; $i < $doubleCount; $i++) {
+            $seatQueue[] = [
+                'typeID'   => (int) $validated['doubleSeatTypeID'],
+                'isDouble' => true,
+            ];
+        }
+
+
+        // shuffle($seatQueue);
+
+        $rows       = range('A', 'Z');
+        $rowIndex   = 0;
         $currentCol = 1;
+        $insertData = [];
 
-        $createSeats = function (int $totalSeats, int $seatTypeID)
-        use (&$rowIndex, &$currentCol, $rows, $maxCols, $room) {
-            $seatsToInsert = [];
+        foreach ($seatQueue as $item) {
 
-            for ($i = 0; $i < $totalSeats; $i++) {
-                if ($rowIndex >= count($rows)) break; // tránh tràn A-Z
+            if ($rowIndex >= $maxRows || $rowIndex >= count($rows)) {
+                break;
+            }
 
-                $seatsToInsert[] = [
+            /*
+        |----------------------------------------------------------------------
+        | GHẾ ĐÔI — cần 2 cột liền nhau cùng hàng
+        |----------------------------------------------------------------------
+        */
+            if ($item['isDouble']) {
+
+                // Nếu không còn đủ 2 cột trong hàng hiện tại → sang hàng mới
+                if ($currentCol + 1 > $maxCols) {
+                    $rowIndex++;
+                    $currentCol = 1;
+
+                    if ($rowIndex >= $maxRows || $rowIndex >= count($rows)) {
+                        break;
+                    }
+                }
+
+                // Ghế trái của cặp đôi
+                $insertData[] = [
                     'roomID'     => $room->roomID,
                     'rowSeat'    => $rows[$rowIndex],
                     'colSeat'    => $currentCol,
-                    'seatTypeID' => $seatTypeID,
+                    'seatTypeID' => $item['typeID'],
+                ];
+
+                // Ghế phải của cặp đôi
+                $insertData[] = [
+                    'roomID'     => $room->roomID,
+                    'rowSeat'    => $rows[$rowIndex],
+                    'colSeat'    => $currentCol + 1,
+                    'seatTypeID' => $item['typeID'],
+                ];
+
+                $currentCol += 2;
+
+                /*
+        |----------------------------------------------------------------------
+        | GHẾ THƯỜNG / VIP — chiếm 1 ô
+        |----------------------------------------------------------------------
+        */
+            } else {
+
+                $insertData[] = [
+                    'roomID'     => $room->roomID,
+                    'rowSeat'    => $rows[$rowIndex],
+                    'colSeat'    => $currentCol,
+                    'seatTypeID' => $item['typeID'],
                 ];
 
                 $currentCol++;
-
-                if ($currentCol > $maxCols) {
-                    $currentCol = 1;
-                    $rowIndex++;
-                }
             }
 
-            // Insert bulk thay vì từng record → nhanh hơn nhiều
-            Seat::insert($seatsToInsert);
-        };
+            // Hết cột → xuống hàng tiếp theo
+            if ($currentCol > $maxCols) {
+                $currentCol = 1;
+                $rowIndex++;
+            }
+        }
 
-        $createSeats($validated['vipSeats'],    $validated['vipSeatTypeID']);
-        $createSeats($validated['normalSeats'], $validated['normalSeatTypeID']);
-        $createSeats($validated['doubleSeats'], $validated['doubleSeatTypeID']);
+        /*
+    |--------------------------------------------------------------------------
+    | INSERT DATABASE
+    |--------------------------------------------------------------------------
+    */
+
+        if (!empty($insertData)) {
+            Seat::insert($insertData);
+        }
+
+        /*
+    |--------------------------------------------------------------------------
+    | REDIRECT
+    |--------------------------------------------------------------------------
+    */
 
         return redirect()
             ->route('seat.index', ['roomID' => $room->roomID])
-            ->with('success', 'Tạo phòng + ghế thành công');
+            ->with('success', 'Tạo phòng và ghế thành công');
     }
 
 

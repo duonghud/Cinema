@@ -85,6 +85,7 @@
         display: flex;
         justify-content: center;
         margin-bottom: 24px;
+        color: #22c55e;
     }
 
     .success-icon {
@@ -314,6 +315,7 @@
             width: 100%;
             text-align: center;
         }
+
     }
 </style>
 
@@ -330,8 +332,9 @@
 
             {{-- Success Icon --}}
             <div class="success-icon-wrapper">
-                <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24">
-                    <path fill="currentColor" d="M19.78 2.2L24 6.42L8.44 22L0 13.55l4.22-4.22l4.22 4.22zm0 2.8L8.44 16.36l-4.22-4.17l-1.41 1.36l5.63 5.62L21.19 6.42z" />
+                <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 15 15">
+                    <path d="M0 0h15v15H0z" fill="none" />
+                    <path fill="none" stroke="currentColor" d="M4 7.5L7 10l4-5m-3.5 9.5a7 7 0 1 1 0-14a7 7 0 0 1 0 14Z" />
                 </svg>
             </div>
 
@@ -356,12 +359,10 @@
                 </div>
             </div>
 
-            {{-- Transaction Code --}}
             <div class="transaction-box">
                 <span>Mã giao dịch</span>
-                <strong>{{ $transactionCode }}</strong>
+                <strong>INV-{{ $invoiceID }}</strong>
             </div>
-
             {{-- Status --}}
             <div class="status-box">
                 <i class="fas fa-check-circle"></i>

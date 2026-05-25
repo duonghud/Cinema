@@ -138,33 +138,7 @@ class SeatController extends Controller
         return response()->json($seat);
     }
 
-    public function ajaxUpdateType(Request $request)
-    {
-        $validated = $request->validate([
-            'seatID'     => 'required|integer|exists:seats,seatID',
-            'seatTypeID' => 'required|integer|exists:seat_types,seatTypeID',
-        ]);
 
-        $seat = Seat::findOrFail($validated['seatID']);
-
-        // Chỉ chặn ghế đôi — ghế đôi cần dùng endpoint riêng (ajax-convert-couple)
-        if ($seat->seatTypeID === 3) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Ghế đôi không thể thay đổi loại trực tiếp. Dùng chức năng ghép/tách đôi.',
-            ], 422);
-        }
-
-        // Ghế bảo trì (typeID=4) được phép phục hồi → không chặn nữa
-        $seat->seatTypeID = $validated['seatTypeID'];
-        $seat->save();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Cập nhật loại ghế thành công.',
-            'seat'    => $seat,
-        ]);
-    }
 
     // ================= UPDATE MULTIPLE =================
     public function updateMultiple(Request $request)
@@ -388,46 +362,87 @@ class SeatController extends Controller
         return response()->json(['success' => true]);
     }
 
-    // ================= AJAX BATCH UPDATE TYPE =================
-    // FIX #3: Endpoint mới cho cập nhật nhiều ghế cùng lúc
-    public function ajaxBatchUpdateType(Request $request)
+    public function ajaxUpdateType(Request $request)
     {
         $validated = $request->validate([
+            'seatID'     => 'required|integer|exists:seats,seatID',
+            'seatTypeID' => 'required|integer|exists:seat_types,seatTypeID',
+        ]);
+
+        $seat = Seat::findOrFail($validated['seatID']);
+
+        // Chỉ chặn ghế đôi đang ghép cặp (typeID=3), không chặn bảo trì
+        if ($seat->seatTypeID === 3) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ghế đôi không thể đổi loại trực tiếp. Dùng chức năng hoán đổi.',
+            ], 422);
+        }
+
+        // Không cho đổi nếu ghế đã có vé (trừ chuyển sang bảo trì)
+        $isMaintenance = (int)$validated['seatTypeID'] === 4;
+        if (!$isMaintenance && DB::table('tickets')->where('seatID', $seat->seatID)->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ghế đã có vé, không thể thay đổi loại.',
+            ], 422);
+        }
+
+        $seat->seatTypeID = $validated['seatTypeID'];
+        $seat->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cập nhật loại ghế thành công.',
+            'seat'    => $seat,
+        ]);
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // FIX 2 — ajaxBatchUpdateType: cập nhật nhiều ghế 1 lúc (mới)
+    // ══════════════════════════════════════════════════════════════════
+    public function ajaxBatchUpdateType(Request $request)
+    {
+        $request->validate([
             'seatIDs'    => 'required|array|min:1',
             'seatIDs.*'  => 'integer|exists:seats,seatID',
             'seatTypeID' => 'required|integer|exists:seat_types,seatTypeID',
         ]);
 
-        $seats = Seat::whereIn('seatID', $validated['seatIDs'])->get();
+        $newTypeID = (int) $request->seatTypeID;
+        $ids       = $request->seatIDs;
 
-        if ($seats->isEmpty()) {
-            return response()->json(['success' => false, 'message' => 'Không tìm thấy ghế'], 404);
+        // Lấy ghế hợp lệ: không phải ghế đôi, không có vé (trừ đổi sang bảo trì)
+        $isMaintenance = $newTypeID === 4;
+
+        $query = Seat::whereIn('seatID', $ids)
+            ->where('seatTypeID', '!=', 3); // bỏ ghế đôi
+
+        if (!$isMaintenance) {
+            $query->whereNotIn('seatID', function ($q) {
+                $q->select('seatID')->from('tickets');
+            });
         }
 
-        $roomID = $seats->first()->roomID;
+        $validSeats = $query->get();
+        $updated    = $validSeats->count();
+        $skipped    = count($ids) - $updated;
 
-        // Bỏ qua ghế đã có vé
-        $ticketedIDs = DB::table('tickets')
-            ->whereIn('seatID', $validated['seatIDs'])
-            ->pluck('seatID')
-            ->toArray();
-
-        $updateIDs = array_diff($validated['seatIDs'], $ticketedIDs);
-
-        if (empty($updateIDs)) {
-            return response()->json(['success' => false, 'message' => 'Tất cả ghế đã có vé, không thể cập nhật'], 422);
+        if ($updated === 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không có ghế nào hợp lệ để cập nhật (ghế đôi và ghế có vé bị bỏ qua).',
+            ]);
         }
 
-        $updated = Seat::whereIn('seatID', $updateIDs)
-            ->update(['seatTypeID' => $validated['seatTypeID']]);
+        Seat::whereIn('seatID', $validSeats->pluck('seatID'))
+            ->update(['seatTypeID' => $newTypeID]);
 
-        return response()->json([
-            'success' => true,
-            'updated' => $updated,
-            'skipped' => count($ticketedIDs),
-            'roomID'  => $roomID,
-            'message' => "Đã cập nhật {$updated} ghế" . (count($ticketedIDs) ? ", bỏ qua " . count($ticketedIDs) . " ghế đã có vé" : ""),
-        ]);
+        $typeName = SeatType::find($newTypeID)?->seatTypeName ?? 'loại mới';
+        $msg      = "Đã cập nhật {$updated} ghế sang {$typeName}.";
+        if ($skipped > 0) $msg .= " Bỏ qua {$skipped} ghế (đôi/có vé).";
+
+        return response()->json(['success' => true, 'updated' => $updated, 'message' => $msg]);
     }
 
     // ================= EDIT MULTIPLE =================

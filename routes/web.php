@@ -140,8 +140,14 @@
         Route::post('seat/ajax-swap-type',      [SeatController::class, 'ajaxSwapType'])
             ->name('seat.ajax.swapType');
 
+
+
         Route::post('seat/ajax-convert-couple', [SeatController::class, 'ajaxConvertCouple'])
             ->name('seat.ajax.convertCouple');
+        Route::post(
+            '/admins/seat/ajax-batch-update-type',
+            [SeatController::class, 'ajaxBatchUpdateType']
+        );
         Route::resource('seat', SeatController::class);
     });
 
@@ -173,7 +179,7 @@
         Route::post('/payment', [SystemPaymentController::class, 'store'])
             ->name('system.payment');
 
-        Route::get('/payment/success', [SystemPaymentController::class, 'success'])
+        Route::get('/payment/success/{invoiceID}', [SystemPaymentController::class, 'success'])
             ->name('system.success');
 
         Route::get('/booking-history', [BookingHistoryController::class, 'index'])
