@@ -45,7 +45,7 @@ class SystemPaymentController extends Controller
         $now = Carbon::now('Asia/Ho_Chi_Minh');
 
         if ($now->greaterThanOrEqualTo($startDateTime)) {
-            return back()->with('error', 'Suất chiếu đã bắt đầu, không thể đặt vé!');
+            return back()->with('error', 'Suất chiếu đã bắt đầu!');
         }
 
         $lockTime = $startDateTime->copy()->subMinutes(10);
@@ -53,7 +53,6 @@ class SystemPaymentController extends Controller
         if ($now->greaterThanOrEqualTo($lockTime)) {
             return back()->with('error', 'Đã khóa đặt vé trước giờ chiếu!');
         }
-
 
         $seats = Seat::with('seatType')
             ->where('roomID', $showtime->roomID)
@@ -64,7 +63,7 @@ class SystemPaymentController extends Controller
             ->values();
 
         if ($seats->count() !== count($seatCodes)) {
-            return back()->with('error', 'Một hoặc nhiều ghế không hợp lệ.');
+            return back()->with('error', 'Ghế không hợp lệ!');
         }
 
         $total = $seats->sum(fn($seat) => $seat->seatType->price ?? 0);
@@ -100,6 +99,7 @@ class SystemPaymentController extends Controller
 
         if (!$showtime) {
             session()->forget('invoice');
+
             return redirect()->route('show')
                 ->with('error', 'Suất chiếu không tồn tại!');
         }
@@ -111,7 +111,7 @@ class SystemPaymentController extends Controller
             session()->forget('invoice');
 
             return redirect()->route('show')
-                ->with('error', 'Suất chiếu đã bắt đầu, không thể thanh toán!');
+                ->with('error', 'Suất chiếu đã bắt đầu!');
         }
 
         $paymentMethods = payment_method::all();
@@ -139,6 +139,7 @@ class SystemPaymentController extends Controller
             'selected_payment_method' => $paymentMethod->paymentID,
         ]);
 
+        // VNPAY
         if (stripos($paymentMethod->name, 'VNPAY') !== false) {
             return app(VnpayController::class)
                 ->createPayment($invoice['total']);
@@ -161,7 +162,7 @@ class SystemPaymentController extends Controller
         ]);
 
         return redirect()->route('system.success', [
-            'transaction_code' => 'INV-' . $savedInvoice->invoiceID,
+            'invoiceID' => $savedInvoice->invoiceID
         ])->with('success', 'Thanh toán thành công');
     }
 
@@ -182,10 +183,8 @@ class SystemPaymentController extends Controller
             ->with('error', 'Thanh toán VNPay thất bại!');
     }
 
-    public function success(Request $request)
+    public function success($invoiceID)
     {
-        $transactionCode = $request->get('transaction_code', 'N/A');
-
-        return view('system.success', compact('transactionCode'));
+        return view('system.success', compact('invoiceID'));
     }
 }
