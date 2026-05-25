@@ -144,6 +144,10 @@
 
         Route::post('seat/ajax-convert-couple', [SeatController::class, 'ajaxConvertCouple'])
             ->name('seat.ajax.convertCouple');
+        Route::post('seat/ajax-move-couple', [SeatController::class, 'ajaxMoveCouple'])
+            ->name('seat.ajax.moveCouple');
+        Route::post('seat/ajax-swap-couple-type', [SeatController::class, 'ajaxSwapCoupleType'])
+            ->name('seat.ajax.swapCoupleType');
         Route::post(
             '/admins/seat/ajax-batch-update-type',
             [SeatController::class, 'ajaxBatchUpdateType']

@@ -80,7 +80,7 @@
                             <th>Doanh thu vé</th>
                             <th>Doanh thu đồ ăn</th>
                             <th>Tổng doanh thu</th>
-                        </tr>   
+                        </tr>
                     </thead>
                     <tbody>
                         @forelse($rows as $row)

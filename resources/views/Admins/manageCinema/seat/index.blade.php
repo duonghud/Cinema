@@ -262,6 +262,16 @@
         animation: pp .8s infinite alternate;
         z-index: 25;
     }
+    .empty-slot.is-move-tgt,
+    .disabled-slot.is-move-tgt {
+        border-color: #a855f7;
+        color: #e9d5ff;
+        background: rgba(88, 28, 135, .35);
+        outline: 2px solid #c084fc;
+        box-shadow: 0 0 0 4px rgba(168, 85, 247, .22);
+        opacity: 1;
+        transform: scale(1.05);
+    }
     .seat.is-dimmed { opacity: .2; pointer-events: none; }
     .seat.is-multi {
         outline: 3px solid #6366f1;
@@ -442,6 +452,7 @@
         </div>
         <div class="d-flex gap-2 flex-wrap">
             <button class="btn-c bs" id="btnSwap"   onclick="startSwapPicking()">⇄ Hoán đổi</button>
+            <button class="btn-c bm" id="btnMoveCouple" onclick="startCoupleMove()">↦ Di chuyển cặp</button>
             <button class="btn-c bk" id="btnCouple" onclick="startCouplePicking()">💑 Ghế đôi</button>
             <button class="btn-c bw" id="btnMaint"  onclick="toggleMaintenance()">⚙ Bảo trì</button>
             <button class="btn-c bg"                onclick="resetMode()">✕ Huỷ</button>
@@ -547,9 +558,31 @@ const ROOM_ID  = parseInt("{{ (int)($roomID ?? 0) }}", 10);
 const CAPACITY = parseInt("{{ $room?->capacity ?? 0 }}", 10);
 const CSRF     = "{{ csrf_token() }}";
 
-const TYPE_CLASS = { 1:'t-vip', 2:'t-normal', 3:'t-couple', 4:'t-maint' };
+const SPECIAL_TYPE_IDS = {{ Js::from($specialTypeIds ?? ['vip' => 1, 'normal' => 2, 'couple' => 3, 'maintenance' => 4]) }};
+const SEAT_TYPE_NAMES  = {{ Js::from($seatTypeNames ?? []) }};
+
+const VIP_TYPE_ID         = Number(SPECIAL_TYPE_IDS.vip);
+const NORMAL_TYPE_ID      = Number(SPECIAL_TYPE_IDS.normal);
+const COUPLE_TYPE_ID      = Number(SPECIAL_TYPE_IDS.couple);
+const MAINTENANCE_TYPE_ID = Number(SPECIAL_TYPE_IDS.maintenance);
+
+const TYPE_CLASS = {
+    [VIP_TYPE_ID]: 't-vip',
+    [NORMAL_TYPE_ID]: 't-normal',
+    [COUPLE_TYPE_ID]: 't-couple',
+    [MAINTENANCE_TYPE_ID]: 't-maint'
+};
 const TYPE_NAME  = { 1:'VIP',   2:'Thường',   3:'Đôi',      4:'Bảo trì' };
-const TYPE_COLOR = { 1:'#f59e0b', 2:'#3b82f6', 3:'#ec4899', 4:'#6b7280' };
+const TYPE_COLOR = {
+    [VIP_TYPE_ID]: '#f59e0b',
+    [NORMAL_TYPE_ID]: '#3b82f6',
+    [COUPLE_TYPE_ID]: '#ec4899',
+    [MAINTENANCE_TYPE_ID]: '#6b7280'
+};
+TYPE_NAME[VIP_TYPE_ID] = 'VIP';
+TYPE_NAME[NORMAL_TYPE_ID] = 'Thường';
+TYPE_NAME[COUPLE_TYPE_ID] = 'Đôi';
+TYPE_NAME[MAINTENANCE_TYPE_ID] = 'Bảo trì';
 
 // ── State ──────────────────────────────────────────────────────────────────
 let seatsData     = [];
@@ -622,6 +655,78 @@ function getRealSeatCount() {
     return n;
 }
 
+function isCoupleSeat(seat) {
+    return !!seat && Number(seat.seatTypeID) === COUPLE_TYPE_ID;
+}
+
+function buildCouplePairMap() {
+    const pairMap = new Map();
+    const rowGroups = new Map();
+
+    seatsData.forEach(seat => {
+        if (!isCoupleSeat(seat)) return;
+        const rowKey = String(seat.rowSeat);
+        if (!rowGroups.has(rowKey)) rowGroups.set(rowKey, []);
+        rowGroups.get(rowKey).push(seat);
+    });
+
+    rowGroups.forEach(group => {
+        const sorted = [...group].sort((a, b) => Number(a.colSeat) - Number(b.colSeat));
+        for (let index = 0; index < sorted.length - 1; index += 2) {
+            const leftSeat = sorted[index];
+            const rightSeat = sorted[index + 1];
+
+            if (Number(rightSeat.colSeat) !== Number(leftSeat.colSeat) + 1) continue;
+
+            pairMap.set(String(leftSeat.seatID), rightSeat);
+            pairMap.set(String(rightSeat.seatID), leftSeat);
+        }
+    });
+
+    return pairMap;
+}
+
+function findCouplePair(seat) {
+    if (!isCoupleSeat(seat)) return null;
+    return buildCouplePairMap().get(String(seat.seatID)) || null;
+}
+
+function buildPairedIDs() {
+    return new Set(buildCouplePairMap().keys());
+}
+
+function buildSecondSeatIDs() {
+    const pairMap = buildCouplePairMap();
+    const seconds = new Set();
+
+    seatsData.forEach(seat => {
+        if (!isCoupleSeat(seat)) return;
+        const pair = pairMap.get(String(seat.seatID));
+        if (!pair) return;
+        if (Number(seat.colSeat) > Number(pair.colSeat)) {
+            seconds.add(String(seat.seatID));
+        }
+    });
+
+    return seconds;
+}
+
+function getRealSeatCount() {
+    const secondIDs = buildSecondSeatIDs();
+    let count = 0;
+
+    seatsData.forEach(seat => {
+        if (isCoupleSeat(seat)) {
+            if (!secondIDs.has(String(seat.seatID))) count++;
+            return;
+        }
+
+        count++;
+    });
+
+    return count;
+}
+
 // ══════════════════════════════════════════════════════════════════════════
 // LOAD & RENDER
 // ══════════════════════════════════════════════════════════════════════════
@@ -646,14 +751,15 @@ function loadSeats(silent = false) {
 function updateStats() {
     const rows   = [...new Set(seatsData.map(s => s.rowSeat))];
     const maxCol = seatsData.reduce((m, s) => Math.max(m, +s.colSeat), 0);
-    const cnt    = { 1:0, 2:0, 3:0, 4:0 };
+    const cnt    = {};
     seatsData.forEach(s => cnt[s.seatTypeID] = (cnt[s.seatTypeID] || 0) + 1);
 
     set('st-total',  getRealSeatCount());
-    set('st-normal', cnt[2] || 0);
-    set('st-vip',    cnt[1] || 0);
+    set('st-normal', cnt[NORMAL_TYPE_ID] || 0);
+    set('st-vip',    cnt[VIP_TYPE_ID] || 0);
     set('st-couple', Math.floor((cnt[3] || 0) / 2)); // mỗi cặp = 2 record
-    set('st-maint',  cnt[4] || 0);
+    set('st-maint',  cnt[MAINTENANCE_TYPE_ID] || 0);
+    set('st-couple', Math.floor((cnt[COUPLE_TYPE_ID] || 0) / 2));
     set('st-rows',   rows.length);
     set('st-cols',   maxCol);
 
@@ -698,7 +804,7 @@ function renderGrid() {
             }
 
             // ── Ghế đôi ──
-            if (seat.seatTypeID === 3) {
+            if (Number(seat.seatTypeID) === COUPLE_TYPE_ID) {
                 // Ô phải → đã được render bởi ô trái, skip
                 if (secondIDs.has(String(seat.seatID))) continue;
 
@@ -869,7 +975,7 @@ function selectSource(el) {
 
     // Badge
     let badge = `<span style="color:${TYPE_COLOR[sourceSeat.typeID]}">■</span> ${sourceSeat.name}`;
-    if (sourceSeat.typeID === 3 && sourceSeat.pairName) {
+    if (sourceSeat.typeID === COUPLE_TYPE_ID && sourceSeat.pairName) {
         badge += ` <span style="color:#6b7280;font-size:10px">+</span>
                    <span style="color:#ec4899">■</span> ${sourceSeat.pairName}`;
     }
@@ -878,7 +984,7 @@ function selectSource(el) {
 
     // Nút bảo trì
     const btnMaint = document.getElementById('btnMaint');
-    if (sourceSeat.typeID === 4) {
+    if (sourceSeat.typeID === MAINTENANCE_TYPE_ID) {
         btnMaint.textContent = '✓ Phục hồi';
         btnMaint.className   = 'btn-c bs';
     } else {
@@ -887,7 +993,7 @@ function selectSource(el) {
     }
 
     // Ẩn/hiện nút theo loại ghế
-    const isCouple = sourceSeat.typeID === 3;
+    const isCouple = sourceSeat.typeID === COUPLE_TYPE_ID;
     document.getElementById('btnSwap').style.display   = isCouple ? 'none' : '';
     document.getElementById('btnCouple').style.display = isCouple ? 'none' : '';
 
@@ -940,7 +1046,7 @@ function reApplyStyles() {
             if (el.dataset.id === src) { el.classList.add('is-source'); return; }
             const adj   = el.dataset.row === sourceSeat.row &&
                           Math.abs(+el.dataset.col - sourceSeat.col) === 1;
-            const valid = adj && +el.dataset.type !== 3 && +el.dataset.type !== 4 &&
+            const valid = adj && +el.dataset.type !== COUPLE_TYPE_ID && +el.dataset.type !== MAINTENANCE_TYPE_ID &&
                           !pairedIDs.has(el.dataset.id);
             if (valid) { el.classList.add('is-couple-tgt'); return; }
             el.classList.add('is-dimmed');
@@ -1186,6 +1292,629 @@ document.addEventListener('keydown', e => {
     document.addEventListener('DOMContentLoaded', () =>
         showToast({{ Js::from(session('error')) }}, 'error'));
 @endif
+
+function updateStats() {
+    const rows = [...new Set(seatsData.map(seat => seat.rowSeat))];
+    const maxCol = seatsData.reduce((max, seat) => Math.max(max, Number(seat.colSeat)), 0);
+    const counts = {};
+
+    seatsData.forEach(seat => {
+        counts[seat.seatTypeID] = (counts[seat.seatTypeID] || 0) + 1;
+    });
+
+    set('st-total', getRealSeatCount());
+    set('st-normal', counts[NORMAL_TYPE_ID] || 0);
+    set('st-vip', counts[VIP_TYPE_ID] || 0);
+    set('st-couple', Math.floor((counts[COUPLE_TYPE_ID] || 0) / 2));
+    set('st-maint', counts[MAINTENANCE_TYPE_ID] || 0);
+    set('st-rows', rows.length);
+    set('st-cols', maxCol);
+
+    document.getElementById('capWarn').style.display =
+        getRealSeatCount() >= CAPACITY ? 'block' : 'none';
+}
+
+function startSwapPicking() {
+    if (!sourceSeat) return;
+
+    const targetTypeId = getSwapTarget();
+    if (targetTypeId === sourceSeat.typeID) {
+        showToast('Chọn loại khác với hiện tại', 'warning');
+        return;
+    }
+
+    if (targetTypeId === COUPLE_TYPE_ID) {
+        showToast('Dùng nút "Ghế đôi" để tạo ghế đôi', 'warning');
+        return;
+    }
+
+    if (sourceSeat.typeID === COUPLE_TYPE_ID) {
+        const targetName = TYPE_NAME[targetTypeId] || SEAT_TYPE_NAMES[targetTypeId] || 'loại đã chọn';
+        if (!confirm(`Đổi cặp ghế ${sourceSeat.name}${sourceSeat.pairName ? ` + ${sourceSeat.pairName}` : ''} → ${targetName}?`)) {
+            return;
+        }
+
+        apiFetch('/admins/seat/ajax-update-type', 'POST', {
+            seatID: parseInt(sourceSeat.id, 10),
+            seatTypeID: targetTypeId
+        }).then(res => {
+            if (!res.success) {
+                showToast(res.message, 'error');
+                return;
+            }
+
+            showToast(`Đã đổi cặp ghế sang ${targetName}`, 'success');
+            resetMode();
+            loadSeats(true);
+        }).catch(err => showToast(err.message, 'error'));
+        return;
+    }
+
+    const availableSeats = seatsData.filter(seat =>
+        Number(seat.seatTypeID) === targetTypeId && String(seat.seatID) !== sourceSeat.id
+    );
+
+    if (!availableSeats.length) {
+        showToast(`Không có ghế ${TYPE_NAME[targetTypeId] || SEAT_TYPE_NAMES[targetTypeId] || ''} để hoán đổi`, 'warning');
+        return;
+    }
+
+    appMode = 'swap_picking';
+    reApplyStyles();
+    const hint = document.getElementById('hintSwap');
+    const targetName = TYPE_NAME[targetTypeId] || SEAT_TYPE_NAMES[targetTypeId] || 'đã chọn';
+    hint.textContent = `⇄ Chọn 1 ghế ${targetName} (tô xanh) để hoán đổi với ${sourceSeat.name}. [Esc] huỷ.`;
+    hint.classList.add('show');
+}
+
+function startCouplePicking() {
+    if (!sourceSeat || sourceSeat.typeID === COUPLE_TYPE_ID) return;
+
+    const pairedIDs = buildPairedIDs();
+    const adjacentSeats = seatsData.filter(seat =>
+        seat.rowSeat === sourceSeat.row &&
+        Math.abs(Number(seat.colSeat) - sourceSeat.col) === 1 &&
+        Number(seat.seatTypeID) !== COUPLE_TYPE_ID &&
+        Number(seat.seatTypeID) !== MAINTENANCE_TYPE_ID &&
+        !pairedIDs.has(String(seat.seatID))
+    );
+
+    if (!adjacentSeats.length) {
+        showToast('Không có ghế liền kề hợp lệ để ghép đôi', 'warning');
+        return;
+    }
+
+    appMode = 'couple_picking';
+    reApplyStyles();
+    document.getElementById('hintCouple').classList.add('show');
+    document.getElementById('hintSwap').classList.remove('show');
+}
+
+function toggleMaintenance() {
+    if (!sourceSeat) return;
+
+    const isMaintenanceSeat = sourceSeat.typeID === MAINTENANCE_TYPE_ID;
+    const nextTypeId = isMaintenanceSeat ? NORMAL_TYPE_ID : MAINTENANCE_TYPE_ID;
+    const label = isMaintenanceSeat ? 'Phục hồi thành ghế thường' : 'Chuyển sang bảo trì';
+    if (!confirm(`${label}: ghế ${sourceSeat.name}?`)) return;
+
+    apiFetch('/admins/seat/ajax-update-type', 'POST', {
+        seatID: parseInt(sourceSeat.id, 10),
+        seatTypeID: nextTypeId
+    }).then(res => {
+        if (!res.success) {
+            showToast(res.message, 'error');
+            return;
+        }
+
+        showToast(`Ghế ${sourceSeat.name} → ${TYPE_NAME[nextTypeId] || SEAT_TYPE_NAMES[nextTypeId] || ''}`, 'success');
+        resetMode();
+        loadSeats(true);
+    }).catch(err => showToast(err.message, 'error'));
+}
+
+function selectSource(el) {
+    sourceSeat = {
+        id:       el.dataset.id,
+        name:     el.dataset.name,
+        typeID:   +el.dataset.type,
+        row:      el.dataset.row,
+        col:      +el.dataset.col,
+        pairID:   el.dataset.pairid   || null,
+        pairName: el.dataset.pairname || null,
+    };
+    appMode = 'selected';
+
+    document.getElementById('swapIdle').style.display = 'none';
+    document.getElementById('swapPanel').classList.add('show');
+    document.getElementById('batchPanel').classList.remove('show');
+    document.getElementById('hintSwap').classList.remove('show');
+    document.getElementById('hintCouple').classList.remove('show');
+
+    let badge = `<span style="color:${TYPE_COLOR[sourceSeat.typeID]}">■</span> ${sourceSeat.name}`;
+    if (sourceSeat.typeID === COUPLE_TYPE_ID && sourceSeat.pairName) {
+        badge += ` <span style="color:#6b7280;font-size:10px">+</span>
+                   <span style="color:#ec4899">■</span> ${sourceSeat.pairName}`;
+    }
+    badge += ` <span style="color:#6b7280;font-size:11px">(${TYPE_NAME[sourceSeat.typeID] || SEAT_TYPE_NAMES[sourceSeat.typeID] || ''})</span>`;
+    document.getElementById('swapBadge').innerHTML = badge;
+
+    const btnMaint = document.getElementById('btnMaint');
+    if (sourceSeat.typeID === MAINTENANCE_TYPE_ID) {
+        btnMaint.textContent = '✓ Phục hồi';
+        btnMaint.className   = 'btn-c bs';
+    } else {
+        btnMaint.textContent = '⚙ Bảo trì';
+        btnMaint.className   = 'btn-c bw';
+    }
+
+    document.getElementById('btnSwap').style.display = '';
+    document.getElementById('btnSwap').textContent =
+        sourceSeat.typeID === COUPLE_TYPE_ID ? '✦ Đổi cặp ghế' : '⇄ Hoán đổi';
+    document.getElementById('btnMoveCouple').style.display =
+        sourceSeat.typeID === COUPLE_TYPE_ID ? '' : 'none';
+    document.getElementById('btnCouple').style.display =
+        sourceSeat.typeID === COUPLE_TYPE_ID ? 'none' : '';
+
+    const select = document.getElementById('swapTargetType');
+    for (const option of select.options) {
+        if (+option.value !== sourceSeat.typeID && +option.value !== COUPLE_TYPE_ID) {
+            option.selected = true;
+            break;
+        }
+    }
+
+    reApplyStyles();
+}
+
+function buildCoupleMoveTargets() {
+    if (!sourceSeat || sourceSeat.typeID !== COUPLE_TYPE_ID) return [];
+
+    const seatMap = new Map();
+    seatsData.forEach(seat => seatMap.set(`${seat.rowSeat}-${seat.colSeat}`, seat));
+
+    const rows = [...new Set(seatsData.map(seat => seat.rowSeat))].sort();
+    const maxCol = seatsData.reduce((max, seat) => Math.max(max, Number(seat.colSeat)), 0);
+    const targets = [];
+    const sourceCols = [sourceSeat.col, sourceSeat.col + 1];
+    const pairRow = sourceSeat.row;
+
+    rows.forEach(row => {
+        for (let col = 1; col <= maxCol; col++) {
+            const leftSeat = seatMap.get(`${row}-${col}`);
+            const rightSeat = seatMap.get(`${row}-${col + 1}`);
+            const isSourceSpot =
+                row === pairRow &&
+                col === sourceSeat.col;
+
+            if (isSourceSpot) continue;
+
+            const leftFree = !leftSeat || (row === pairRow && sourceCols.includes(col));
+            const rightFree = !rightSeat || (row === pairRow && sourceCols.includes(col + 1));
+
+            if (leftFree && rightFree) {
+                targets.push({ row, col });
+            }
+        }
+    });
+
+    return targets;
+}
+
+function buildCoupleSwapTargets(targetTypeId) {
+    if (!sourceSeat || sourceSeat.typeID !== COUPLE_TYPE_ID) return [];
+
+    const targets = [];
+    const addedIds = new Set();
+
+    seatsData.forEach(seat => {
+        if (Number(seat.seatTypeID) !== Number(targetTypeId)) return;
+        if (Number(seat.seatTypeID) === COUPLE_TYPE_ID || Number(seat.seatTypeID) === MAINTENANCE_TYPE_ID) return;
+
+        const partner = seatsData.find(candidate =>
+            candidate.seatID !== seat.seatID &&
+            candidate.rowSeat === seat.rowSeat &&
+            Number(candidate.seatTypeID) === Number(targetTypeId) &&
+            Math.abs(Number(candidate.colSeat) - Number(seat.colSeat)) === 1
+        );
+
+        if (!partner) return;
+
+        if (!addedIds.has(String(seat.seatID))) {
+            targets.push(seat);
+            addedIds.add(String(seat.seatID));
+        }
+
+        if (!addedIds.has(String(partner.seatID))) {
+            targets.push(partner);
+            addedIds.add(String(partner.seatID));
+        }
+    });
+
+    return targets;
+}
+
+function startCoupleMove() {
+    if (!sourceSeat || sourceSeat.typeID !== COUPLE_TYPE_ID) return;
+
+    const targets = buildCoupleMoveTargets();
+    if (!targets.length) {
+        showToast('Không có vị trí trống liền nhau để di chuyển cặp ghế', 'warning');
+        return;
+    }
+
+    appMode = 'couple_moving';
+    reApplyStyles();
+
+    const hint = document.getElementById('hintSwap');
+    hint.textContent = `↦ Chọn ô trống đầu tiên của vị trí đích cho cặp ${sourceSeat.name}${sourceSeat.pairName ? ` + ${sourceSeat.pairName}` : ''}.`;
+    hint.classList.add('show');
+}
+
+function confirmCoupleMove(row, col) {
+    if (!sourceSeat || sourceSeat.typeID !== COUPLE_TYPE_ID) return;
+
+    const targetLabel = `${row}${col}-${col + 1}`;
+    if (!confirm(`Di chuyển cặp ghế ${sourceSeat.name}${sourceSeat.pairName ? ` + ${sourceSeat.pairName}` : ''} → ${targetLabel}?`)) {
+        return;
+    }
+
+    apiFetch('/admins/seat/ajax-move-couple', 'POST', {
+        seatID: parseInt(sourceSeat.id, 10),
+        targetRow: row,
+        targetCol: col
+    }).then(res => {
+        if (!res.success) {
+            showToast(res.message, 'error');
+            return;
+        }
+
+        showToast(`Đã di chuyển cặp ghế tới ${targetLabel}`, 'success');
+        resetMode();
+        loadSeats(true);
+    }).catch(err => showToast(err.message, 'error'));
+}
+
+function clearStyles() {
+    document.querySelectorAll('.seat').forEach(el =>
+        el.classList.remove('is-source','is-couple-pair','is-swap-tgt',
+                            'is-couple-tgt','is-dimmed','is-multi')
+    );
+    document.querySelectorAll('.empty-slot, .disabled-slot').forEach(el =>
+        el.classList.remove('is-move-tgt', 'is-dimmed')
+    );
+}
+
+function reApplyStyles() {
+    clearStyles();
+    if (!sourceSeat && !selectedMulti.size) return;
+
+    if (selectedMulti.size > 0) {
+        document.querySelectorAll('.seat').forEach(el => {
+            if (selectedMulti.has(el.dataset.id)) el.classList.add('is-multi');
+        });
+        return;
+    }
+
+    const src = String(sourceSeat.id);
+
+    if (appMode === 'selected') {
+        document.querySelectorAll('.seat').forEach(el => {
+            if (el.dataset.id === src) { el.classList.add('is-source'); return; }
+            if (sourceSeat.pairID && el.dataset.id === String(sourceSeat.pairID)) {
+                el.classList.add('is-couple-pair'); return;
+            }
+        });
+    }
+
+    if (appMode === 'swap_picking') {
+        const tid = getSwapTarget();
+        document.querySelectorAll('.seat').forEach(el => {
+            if (el.dataset.id === src)       { el.classList.add('is-source');   return; }
+            if (+el.dataset.type === tid)    { el.classList.add('is-swap-tgt'); return; }
+            el.classList.add('is-dimmed');
+        });
+    }
+
+    if (appMode === 'couple_picking') {
+        const pairedIDs = buildPairedIDs();
+        document.querySelectorAll('.seat').forEach(el => {
+            if (el.dataset.id === src) { el.classList.add('is-source'); return; }
+            const adj = el.dataset.row === sourceSeat.row &&
+                        Math.abs(+el.dataset.col - sourceSeat.col) === 1;
+            const valid = adj && +el.dataset.type !== COUPLE_TYPE_ID && +el.dataset.type !== MAINTENANCE_TYPE_ID &&
+                          !pairedIDs.has(el.dataset.id);
+            if (valid) { el.classList.add('is-couple-tgt'); return; }
+            el.classList.add('is-dimmed');
+        });
+    }
+
+    if (appMode === 'couple_moving') {
+        const moveTargets = new Set(buildCoupleMoveTargets().map(target => `${target.row}-${target.col}`));
+
+        document.querySelectorAll('.seat').forEach(el => {
+            if (el.dataset.id === src || (sourceSeat.pairID && el.dataset.id === String(sourceSeat.pairID))) {
+                el.classList.add(el.dataset.id === src ? 'is-source' : 'is-couple-pair');
+                return;
+            }
+            el.classList.add('is-dimmed');
+        });
+
+        document.querySelectorAll('.empty-slot, .disabled-slot').forEach(el => {
+            const key = `${el.dataset.row}-${el.dataset.col}`;
+            if (moveTargets.has(key)) {
+                el.classList.add('is-move-tgt');
+                return;
+            }
+            el.classList.add('is-dimmed');
+        });
+    }
+}
+
+function bindGridEvents() {
+    const grid = document.getElementById('seatGrid');
+
+    document.querySelectorAll('.seat').forEach(el => {
+        el.addEventListener('click', function() {
+            if (dragJustFinished) { dragJustFinished = false; return; }
+            if (appMode === 'multi_select') return;
+            if (appMode === 'swap_picking') {
+                if (this.classList.contains('is-swap-tgt')) confirmSwap(this);
+                return;
+            }
+            if (appMode === 'couple_picking') {
+                if (this.classList.contains('is-couple-tgt')) confirmCouple(this);
+                return;
+            }
+            if (appMode === 'couple_moving') return;
+            selectSource(this);
+        });
+    });
+
+    document.querySelectorAll('.empty-slot, .disabled-slot').forEach(el => {
+        el.addEventListener('click', function() {
+            if (appMode === 'couple_moving' && this.classList.contains('is-move-tgt')) {
+                confirmCoupleMove(this.dataset.row, parseInt(this.dataset.col, 10));
+                return;
+            }
+            if (appMode === 'idle' || appMode === 'selected') {
+                quickFill(this.dataset.row, this.dataset.col);
+            }
+        });
+    });
+
+    grid.addEventListener('mousedown', function(e) {
+        if (e.button !== 0) return;
+        if (appMode === 'swap_picking' || appMode === 'couple_picking' || appMode === 'couple_moving') return;
+        drag = { active:false, pending:true, startX:e.clientX, startY:e.clientY };
+        e.preventDefault();
+    });
+}
+
+function resetMode() {
+    appMode = 'idle';
+    sourceSeat = null;
+    selectedMulti.clear();
+    clearStyles();
+    document.getElementById('swapIdle').style.display = '';
+    document.getElementById('swapPanel').classList.remove('show');
+    document.getElementById('batchPanel').classList.remove('show');
+    document.getElementById('hintSwap').classList.remove('show');
+    document.getElementById('hintCouple').classList.remove('show');
+    document.getElementById('btnMoveCouple').style.display = 'none';
+    document.getElementById('btnSwap').textContent = '⇄ Hoán đổi';
+}
+
+function startSwapPicking() {
+    if (!sourceSeat) return;
+
+    const targetTypeId = getSwapTarget();
+    if (targetTypeId === sourceSeat.typeID) {
+        showToast('Chọn loại khác với hiện tại', 'warning');
+        return;
+    }
+
+    if (targetTypeId === COUPLE_TYPE_ID) {
+        showToast('Dùng nút "Ghế đôi" để tạo ghế đôi', 'warning');
+        return;
+    }
+
+    if (sourceSeat.typeID === COUPLE_TYPE_ID) {
+        const targets = buildCoupleSwapTargets(targetTypeId);
+        if (!targets.length) {
+            showToast('Không có cặp ghế hợp lệ của loại đã chọn để đổi', 'warning');
+            return;
+        }
+
+        appMode = 'couple_swap_picking';
+        reApplyStyles();
+        const hint = document.getElementById('hintSwap');
+        const targetName = TYPE_NAME[targetTypeId] || SEAT_TYPE_NAMES[targetTypeId] || 'đã chọn';
+        hint.textContent = `⇄ Chọn 1 ghế đang sáng thuộc cặp ${targetName} để đổi với ${sourceSeat.name}${sourceSeat.pairName ? ` + ${sourceSeat.pairName}` : ''}.`;
+        hint.classList.add('show');
+        return;
+    }
+
+    const availableSeats = seatsData.filter(seat =>
+        Number(seat.seatTypeID) === targetTypeId && String(seat.seatID) !== sourceSeat.id
+    );
+
+    if (!availableSeats.length) {
+        showToast(`Không có ghế ${TYPE_NAME[targetTypeId] || SEAT_TYPE_NAMES[targetTypeId] || ''} để hoán đổi`, 'warning');
+        return;
+    }
+
+    appMode = 'swap_picking';
+    reApplyStyles();
+    const hint = document.getElementById('hintSwap');
+    const targetName = TYPE_NAME[targetTypeId] || SEAT_TYPE_NAMES[targetTypeId] || 'đã chọn';
+    hint.textContent = `⇄ Chọn 1 ghế ${targetName} (tô xanh) để hoán đổi với ${sourceSeat.name}. [Esc] huỷ.`;
+    hint.classList.add('show');
+}
+
+function confirmCoupleSwap(el) {
+    if (!sourceSeat || sourceSeat.typeID !== COUPLE_TYPE_ID) return;
+
+    const sourceLabel = `${sourceSeat.name}${sourceSeat.pairName ? ` + ${sourceSeat.pairName}` : ''}`;
+    const targetLabel = `${el.dataset.name}${el.dataset.pairname ? ` + ${el.dataset.pairname}` : ''}`;
+
+    if (!confirm(`Đổi cặp ghế:\n${sourceLabel} ⇄ ${targetLabel}?`)) return;
+
+    apiFetch('/admins/seat/ajax-swap-couple-type', 'POST', {
+        sourceSeatID: parseInt(sourceSeat.id, 10),
+        targetSeatID: parseInt(el.dataset.id, 10),
+        targetTypeID: getSwapTarget()
+    }).then(res => {
+        if (!res.success) {
+            showToast(res.message, 'error');
+            return;
+        }
+
+        showToast(`Đã đổi ${sourceLabel} với ${targetLabel}`, 'success');
+        resetMode();
+        loadSeats(true);
+    }).catch(err => showToast(err.message, 'error'));
+}
+
+function reApplyStyles() {
+    clearStyles();
+    if (!sourceSeat && !selectedMulti.size) return;
+
+    if (selectedMulti.size > 0) {
+        document.querySelectorAll('.seat').forEach(el => {
+            if (selectedMulti.has(el.dataset.id)) el.classList.add('is-multi');
+        });
+        return;
+    }
+
+    const src = String(sourceSeat.id);
+
+    if (appMode === 'selected') {
+        document.querySelectorAll('.seat').forEach(el => {
+            if (el.dataset.id === src) { el.classList.add('is-source'); return; }
+            if (sourceSeat.pairID && el.dataset.id === String(sourceSeat.pairID)) {
+                el.classList.add('is-couple-pair'); return;
+            }
+        });
+    }
+
+    if (appMode === 'swap_picking') {
+        const tid = getSwapTarget();
+        document.querySelectorAll('.seat').forEach(el => {
+            if (el.dataset.id === src) { el.classList.add('is-source'); return; }
+            if (+el.dataset.type === tid) { el.classList.add('is-swap-tgt'); return; }
+            el.classList.add('is-dimmed');
+        });
+    }
+
+    if (appMode === 'couple_swap_picking') {
+        const targets = buildCoupleSwapTargets(getSwapTarget());
+        const pairNames = new Map();
+
+        targets.forEach(seat => {
+            const partner = seatsData.find(candidate =>
+                candidate.seatID !== seat.seatID &&
+                candidate.rowSeat === seat.rowSeat &&
+                Number(candidate.seatTypeID) === Number(seat.seatTypeID) &&
+                Math.abs(Number(candidate.colSeat) - Number(seat.colSeat)) === 1
+            );
+            pairNames.set(String(seat.seatID), partner ? `${partner.rowSeat}${partner.colSeat}` : '');
+        });
+
+        document.querySelectorAll('.seat').forEach(el => {
+            if (el.dataset.id === src || (sourceSeat.pairID && el.dataset.id === String(sourceSeat.pairID))) {
+                el.classList.add(el.dataset.id === src ? 'is-source' : 'is-couple-pair');
+                return;
+            }
+
+            if (pairNames.has(String(el.dataset.id))) {
+                el.classList.add('is-swap-tgt');
+                el.dataset.pairname = pairNames.get(String(el.dataset.id));
+                return;
+            }
+
+            el.classList.add('is-dimmed');
+        });
+    }
+
+    if (appMode === 'couple_picking') {
+        const pairedIDs = buildPairedIDs();
+        document.querySelectorAll('.seat').forEach(el => {
+            if (el.dataset.id === src) { el.classList.add('is-source'); return; }
+            const adj = el.dataset.row === sourceSeat.row &&
+                Math.abs(+el.dataset.col - sourceSeat.col) === 1;
+            const valid = adj && +el.dataset.type !== COUPLE_TYPE_ID && +el.dataset.type !== MAINTENANCE_TYPE_ID &&
+                !pairedIDs.has(el.dataset.id);
+            if (valid) { el.classList.add('is-couple-tgt'); return; }
+            el.classList.add('is-dimmed');
+        });
+    }
+
+    if (appMode === 'couple_moving') {
+        const moveTargets = new Set(buildCoupleMoveTargets().map(target => `${target.row}-${target.col}`));
+
+        document.querySelectorAll('.seat').forEach(el => {
+            if (el.dataset.id === src || (sourceSeat.pairID && el.dataset.id === String(sourceSeat.pairID))) {
+                el.classList.add(el.dataset.id === src ? 'is-source' : 'is-couple-pair');
+                return;
+            }
+            el.classList.add('is-dimmed');
+        });
+
+        document.querySelectorAll('.empty-slot, .disabled-slot').forEach(el => {
+            const key = `${el.dataset.row}-${el.dataset.col}`;
+            if (moveTargets.has(key)) {
+                el.classList.add('is-move-tgt');
+                return;
+            }
+            el.classList.add('is-dimmed');
+        });
+    }
+}
+
+function bindGridEvents() {
+    const grid = document.getElementById('seatGrid');
+
+    document.querySelectorAll('.seat').forEach(el => {
+        el.addEventListener('click', function() {
+            if (dragJustFinished) { dragJustFinished = false; return; }
+            if (appMode === 'multi_select') return;
+            if (appMode === 'swap_picking') {
+                if (this.classList.contains('is-swap-tgt')) confirmSwap(this);
+                return;
+            }
+            if (appMode === 'couple_swap_picking') {
+                if (this.classList.contains('is-swap-tgt')) confirmCoupleSwap(this);
+                return;
+            }
+            if (appMode === 'couple_picking') {
+                if (this.classList.contains('is-couple-tgt')) confirmCouple(this);
+                return;
+            }
+            if (appMode === 'couple_moving') return;
+            selectSource(this);
+        });
+    });
+
+    document.querySelectorAll('.empty-slot, .disabled-slot').forEach(el => {
+        el.addEventListener('click', function() {
+            if (appMode === 'couple_moving' && this.classList.contains('is-move-tgt')) {
+                confirmCoupleMove(this.dataset.row, parseInt(this.dataset.col, 10));
+                return;
+            }
+            if (appMode === 'idle' || appMode === 'selected') {
+                quickFill(this.dataset.row, this.dataset.col);
+            }
+        });
+    });
+
+    grid.addEventListener('mousedown', function(e) {
+        if (e.button !== 0) return;
+        if (appMode === 'swap_picking' || appMode === 'couple_swap_picking' || appMode === 'couple_picking' || appMode === 'couple_moving') return;
+        drag = { active:false, pending:true, startX:e.clientX, startY:e.clientY };
+        e.preventDefault();
+    });
+}
 
 document.addEventListener('DOMContentLoaded', loadSeats);
 </script>
