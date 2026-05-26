@@ -153,6 +153,9 @@
             [SeatController::class, 'ajaxBatchUpdateType']
         );
         Route::resource('seat', SeatController::class);
+
+        Route::get('/admins/reports/invoices-by-period', [DashBoardController::class, 'invoicesByPeriod'])
+            ->name('admins.reports.invoices-by-period');
     });
 
 

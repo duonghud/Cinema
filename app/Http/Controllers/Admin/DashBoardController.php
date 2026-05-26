@@ -143,51 +143,68 @@ class DashBoardController extends Controller
         ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function invoicesByPeriod(Request $request)
     {
-        //
-    }
+        $period = $request->query('period');
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
+        if (preg_match('/^\d{4}$/', $period)) {
+            // Year view: '2025'
+            $start = Carbon::createFromFormat('Y', $period)->startOfYear();
+            $end   = $start->copy()->endOfYear();
+            $labelType = 'year';
+        } elseif (preg_match('/^\d{4}-\d{2}$/', $period)) {
+            $start = Carbon::createFromFormat('Y-m', $period)->startOfMonth();
+            $end   = $start->copy()->endOfMonth();
+            $labelType = 'month';
+        } elseif (preg_match('/^\d{2}\/\d{2}\/\d{4}$/', $period)) {
+            $start = Carbon::createFromFormat('d/m/Y', $period)->startOfDay();
+            $end   = $start->copy()->endOfDay();
+            $labelType = 'day';
+        } else {
+            return response()->json(['error' => 'Invalid period'], 422);
+        }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
+        // ── Invoice (vé) ──────────────────────────────────────────────
+        $invoiceList = invoice::with('customer')
+            ->whereBetween('createDate', [$start, $end])
+            ->orderByDesc('createDate')
+            ->get()
+            ->map(fn($inv) => [
+                'invoiceID'     => $inv->invoiceID,
+                'customer'      => $inv->customer->fullName ?? 'Khách vãng lai',
+                'paymentMethod' => $inv->paymentMethod->name ?? '---',
+                'createDate'    => Carbon::parse($inv->createDate)->format('d/m/Y'),
+                'totalAmount'   => (float) $inv->totalAmount,
+                'type'          => 'ticket',
+            ]);
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
+        // ── Food invoice (đồ ăn) ──────────────────────────────────────
+        $foodList = foodInvoice::with('customer')
+            ->whereBetween('orderDate', [$start, $end])
+            ->orderByDesc('orderDate')
+            ->get()
+            ->map(fn($fi) => [
+                'invoiceID'     => 'F-' . $fi->id,   // tuỳ field PK của foodInvoice
+                'customer'      => $fi->customer->fullName ?? 'Khách vãng lai',
+                'paymentMethod' => '---',
+                'createDate'    => Carbon::parse($fi->orderDate)->format('d/m/Y'),
+                'totalAmount'   => (float) $fi->total,
+                'type'          => 'food',
+            ]);
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
+        $ticketRevenue = $invoiceList->sum('totalAmount');
+        $foodRevenue   = $foodList->sum('totalAmount');
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        // Gộp và sắp xếp theo ngày mới nhất
+        $allInvoices = $invoiceList->concat($foodList)
+            ->sortByDesc(fn($i) => Carbon::createFromFormat('d/m/Y', $i['createDate']))
+            ->values();
+
+        return response()->json([
+            'ticketRevenue' => $ticketRevenue,
+            'foodRevenue'   => $foodRevenue,
+            'totalRevenue'  => $ticketRevenue + $foodRevenue,
+            'invoices'      => $allInvoices,
+        ]);
     }
 }

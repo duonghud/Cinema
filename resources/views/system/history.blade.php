@@ -117,7 +117,7 @@
                                     <div class="col-lg-3">
                                         <div class="info-label mb-2">Mã hóa đơn</div>
                                         <h4 class="fw-bold text-danger mb-0">
-                                            #{{ $invoice->invoiceID }}
+                                           INV-{{ $invoice->invoiceID }}
                                         </h4>
                                     </div>
 
