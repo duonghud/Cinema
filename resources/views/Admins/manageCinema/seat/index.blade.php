@@ -3,18 +3,17 @@
 @section('content')
 <style>
     :root {
-        --bg-deep: #080f1e;
-        --bg-card: #0f1a2e;
-        --bg-panel: #111827;
-        --border: #1e2d45;
-        --muted: #6b7280;
-        --accent: #3b82f6;
+        --bg-deep:   #f0f4f8;
+        --bg-card:   #ffffff;
+        --bg-panel:  #f8fafc;
+        --border:    #e2e8f0;
+        --muted:     #94a3b8;
+        --accent:    #3b82f6;
+        --text-main: #1e293b;
+        --text-sub:  #64748b;
     }
 
-    body {
-        background: var(--bg-deep);
-        color: #e5e7eb;
-    }
+    body { background: var(--bg-deep); color: var(--text-main); }
 
     .panel-card {
         background: var(--bg-card);
@@ -22,6 +21,7 @@
         border-radius: 16px;
         padding: 20px 24px;
         margin-bottom: 16px;
+        box-shadow: 0 1px 4px rgba(0,0,0,.06);
     }
 
     .panel-title {
@@ -36,7 +36,7 @@
     .ctrl {
         background: var(--bg-panel);
         border: 1px solid var(--border);
-        color: #e5e7eb;
+        color: var(--text-main);
         border-radius: 10px;
         padding: 10px 14px;
         font-size: 14px;
@@ -47,14 +47,15 @@
     .ctrl:focus {
         outline: none;
         border-color: var(--accent);
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, .15);
+        box-shadow: 0 0 0 3px rgba(59,130,246,.12);
+        background: #fff;
     }
 
-    .ctrl option { background: #1f2937; }
+    .ctrl option { background: #fff; }
 
     .form-label {
         font-size: 12px;
-        color: #9ca3af;
+        color: var(--text-sub);
         margin-bottom: 6px;
         font-weight: 600;
         display: block;
@@ -82,22 +83,21 @@
     .bp { background: var(--accent); color: #fff; }
     .bp:hover:not(:disabled) { background: #2563eb; }
 
-    .bg {
-        background: var(--bg-panel);
-        color: var(--muted);
-        border: 1px solid var(--border);
-    }
-    .bg:hover:not(:disabled) { background: #1f2937; color: #e5e7eb; }
+    .bg { background: var(--bg-panel); color: var(--text-sub); border: 1px solid var(--border); }
+    .bg:hover:not(:disabled) { background: #e2e8f0; color: var(--text-main); }
 
-    .bs { background: #14532d; color: #86efac; border: 1px solid #22c55e; }
-    .bw { background: #78350f; color: #fcd34d; border: 1px solid #f59e0b; }
-    .bk { background: #831843; color: #f9a8d4; border: 1px solid #ec4899; }
-    .bm { background: #1e1b4b; color: #a5b4fc; border: 1px solid #6366f1; }
-    .bm:hover:not(:disabled) { background: #312e81; }
+    .bs { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+    .bs:hover:not(:disabled) { background: #bbf7d0; }
+
+    .bw { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+    .bw:hover:not(:disabled) { background: #fde68a; }
+
+    .bm { background: #e0e7ff; color: #3730a3; border: 1px solid #a5b4fc; }
+    .bm:hover:not(:disabled) { background: #c7d2fe; }
 
     .swap-info {
-        background: #1e3a5f22;
-        border: 1px solid #1e40af;
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
         border-radius: 12px;
         padding: 14px 18px;
         display: none;
@@ -117,11 +117,12 @@
         padding: 6px 12px;
         font-weight: 700;
         font-size: 14px;
+        color: var(--text-main);
     }
 
     .batch-panel {
-        background: #0f172a;
-        border: 1px solid #312e81;
+        background: #eef2ff;
+        border: 1px solid #c7d2fe;
         border-radius: 12px;
         padding: 14px 18px;
         display: none;
@@ -141,8 +142,7 @@
         margin-top: 10px;
     }
     .mode-hint.show { display: block; }
-    .hint-swap { background: #0f172a; border: 1px dashed #22c55e; color: #86efac; }
-    .hint-couple { background: #1a0a1a; border: 1px dashed #ec4899; color: #f9a8d4; }
+    .hint-swap { background: #f0fdf4; border: 1px dashed #86efac; color: #166534; }
 
     .add-grid {
         display: grid;
@@ -161,6 +161,7 @@
         padding: 5px 14px;
         font-size: 12px;
         font-weight: 700;
+        color: var(--text-main);
         display: flex;
         align-items: center;
         gap: 6px;
@@ -171,18 +172,19 @@
 
     .screen-bar {
         width: 50%;
-        height: 6px;
+        height: 5px;
         margin: 0 auto 6px;
-        background: linear-gradient(to right, transparent, #fbbf24, transparent);
+        background: linear-gradient(to right, transparent, #f59e0b, transparent);
         border-radius: 999px;
-        box-shadow: 0 0 20px rgba(251, 191, 36, .4);
+        box-shadow: 0 0 14px rgba(245,158,11,.35);
     }
 
     .screen-label {
         font-size: 10px;
         letter-spacing: .18em;
-        color: #fbbf24;
+        color: #b45309;
         text-transform: uppercase;
+        font-weight: 700;
     }
 
     .seat-grid {
@@ -224,58 +226,28 @@
     .seat { cursor: pointer; border: 2px solid transparent; }
     .seat:hover { transform: translateY(-2px) scale(1.07); z-index: 10; }
 
-    .seat.t-normal { background: #1e3a5f; color: #93c5fd; border-color: #1e40af; }
-    .seat.t-vip    { background: #92400e; color: #fcd34d; border-color: #d97706; }
-    .seat.t-couple { background: #831843; color: #f9a8d4; border-color: #db2777; }
-    .seat.t-maint  { background: #374151; color: #9ca3af; border-color: #4b5563; }
+    .seat.t-normal { background: #dbeafe; color: #1d4ed8; border-color: #93c5fd; }
+    .seat.t-vip    { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
+    .seat.t-couple { background: #fce7f3; color: #9d174d; border-color: #f9a8d4; }
+    .seat.t-maint  { background: #f1f5f9; color: #94a3b8; border-color: #cbd5e1; }
 
-    .seat.t-couple.couple-wide {
-        width: 68px;
-        border-radius: 10px;
-        font-size: 8px;
-        gap: 2px;
-        flex-direction: column;
-        line-height: 1.1;
-    }
-
+    /* Selection states */
     .seat.is-source {
-        outline: 3px solid #60a5fa;
-        box-shadow: 0 0 0 5px rgba(96, 165, 250, .3);
+        outline: 3px solid #3b82f6;
+        box-shadow: 0 0 0 5px rgba(59,130,246,.2);
         z-index: 30;
         transform: scale(1.1);
     }
-    .seat.is-couple-pair {
-        outline: 3px solid #60a5fa;
-        box-shadow: 0 0 0 4px rgba(96, 165, 250, .2);
-        z-index: 20;
-        transform: scale(1.05);
-    }
     .seat.is-swap-tgt {
         outline: 3px solid #22c55e;
-        box-shadow: 0 0 0 5px rgba(34, 197, 94, .3);
+        box-shadow: 0 0 0 5px rgba(34,197,94,.2);
         animation: pg .8s infinite alternate;
         z-index: 25;
-    }
-    .seat.is-couple-tgt {
-        outline: 3px solid #ec4899;
-        box-shadow: 0 0 0 5px rgba(236, 72, 153, .3);
-        animation: pp .8s infinite alternate;
-        z-index: 25;
-    }
-    .empty-slot.is-move-tgt,
-    .disabled-slot.is-move-tgt {
-        border-color: #a855f7;
-        color: #e9d5ff;
-        background: rgba(88, 28, 135, .35);
-        outline: 2px solid #c084fc;
-        box-shadow: 0 0 0 4px rgba(168, 85, 247, .22);
-        opacity: 1;
-        transform: scale(1.05);
     }
     .seat.is-dimmed { opacity: .2; pointer-events: none; }
     .seat.is-multi {
         outline: 3px solid #6366f1;
-        box-shadow: 0 0 0 4px rgba(99, 102, 241, .25);
+        box-shadow: 0 0 0 4px rgba(99,102,241,.18);
         z-index: 20;
     }
     .seat.is-multi::after {
@@ -294,42 +266,38 @@
     }
 
     @keyframes pg {
-        from { box-shadow: 0 0 0 3px rgba(34,197,94,.2) }
-        to   { box-shadow: 0 0 0 8px rgba(34,197,94,.4) }
-    }
-    @keyframes pp {
-        from { box-shadow: 0 0 0 3px rgba(236,72,153,.2) }
-        to   { box-shadow: 0 0 0 8px rgba(236,72,153,.4) }
+        from { box-shadow: 0 0 0 3px rgba(34,197,94,.15) }
+        to   { box-shadow: 0 0 0 8px rgba(34,197,94,.3) }
     }
 
     .empty-slot {
-        background: #0f172a;
-        border: 1px dashed #1e293b;
-        color: #1e3a5f;
+        background: #f1f5f9;
+        border: 1px dashed #cbd5e1;
+        color: #cbd5e1;
         cursor: crosshair;
         font-size: 14px;
         font-weight: 300;
     }
     .empty-slot:hover {
         border-color: #22c55e;
-        color: #22c55e;
-        background: #071a0e;
+        color: #16a34a;
+        background: #f0fdf4;
         transform: scale(1.05);
     }
 
     .disabled-slot {
-        background: #050c1a33;
-        border: 1px dashed #0d172633;
-        color: #0d172633;
+        background: #f8fafc;
+        border: 1px dashed #e2e8f0;
+        color: #e2e8f0;
         cursor: pointer;
         font-size: 12px;
-        opacity: .4;
+        opacity: .5;
         border-radius: 8px;
     }
     .disabled-slot:hover {
-        border-color: #1e3a5f;
+        border-color: #93c5fd;
         color: #3b82f6;
-        background: #080f1e;
+        background: #eff6ff;
         opacity: 1;
         transform: scale(1.03);
     }
@@ -359,7 +327,7 @@
         margin-top: 16px;
         padding-bottom: 24px;
     }
-    .legend-item { display: flex; align-items: center; gap: 7px; font-size: 11px; color: #9ca3af; }
+    .legend-item { display: flex; align-items: center; gap: 7px; font-size: 11px; color: var(--text-sub); font-weight: 600; }
     .legend-box  { width: 18px; height: 18px; border-radius: 5px; }
 
     .grid-spinner { display: none; text-align: center; padding: 40px 0; color: var(--muted); }
@@ -385,13 +353,13 @@
         gap: 10px;
     }
     #toast.show    { opacity: 1; transform: translateY(0); }
-    #toast.success { background: #14532d; border: 1px solid #22c55e; color: #bbf7d0; }
-    #toast.error   { background: #7f1d1d; border: 1px solid #ef4444; color: #fecaca; }
-    #toast.info    { background: #1e3a5f; border: 1px solid #3b82f6; color: #bfdbfe; }
-    #toast.warning { background: #78350f; border: 1px solid #f59e0b; color: #fcd34d; }
+    #toast.success { background: #f0fdf4; border: 1px solid #86efac; color: #166534; box-shadow: 0 4px 16px rgba(34,197,94,.15); }
+    #toast.error   { background: #fef2f2; border: 1px solid #fca5a5; color: #991b1b; box-shadow: 0 4px 16px rgba(239,68,68,.15); }
+    #toast.info    { background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; box-shadow: 0 4px 16px rgba(59,130,246,.15); }
+    #toast.warning { background: #fffbeb; border: 1px solid #fcd34d; color: #92400e; box-shadow: 0 4px 16px rgba(245,158,11,.15); }
 </style>
 
-{{-- ══ PANEL 1: PHÒNG + STATS ══ --}}
+{{-- PANEL 1: PHÒNG + STATS --}}
 <div class="panel-card">
     <div class="row g-3 align-items-end">
         <div class="col-md-4">
@@ -415,18 +383,18 @@
         <div class="col-md-8">
             <div class="panel-title">Thống kê</div>
             <div class="stat-pills">
-                <span class="stat-pill"><span class="dot" style="background:#6b7280"></span>Tổng: <b id="st-total">0</b></span>
+                <span class="stat-pill"><span class="dot" style="background:#94a3b8"></span>Tổng: <b id="st-total">0</b></span>
                 <span class="stat-pill"><span class="dot" style="background:#3b82f6"></span>Thường: <b id="st-normal">0</b></span>
                 <span class="stat-pill"><span class="dot" style="background:#f59e0b"></span>VIP: <b id="st-vip">0</b></span>
                 <span class="stat-pill"><span class="dot" style="background:#ec4899"></span>Đôi: <b id="st-couple">0</b></span>
-                <span class="stat-pill"><span class="dot" style="background:#6b7280"></span>Bảo trì: <b id="st-maint">0</b></span>
-                <span class="stat-pill"><span class="dot" style="background:#374151"></span>Hàng: <b id="st-rows">0</b> | Cột: <b id="st-cols">0</b></span>
+                <span class="stat-pill"><span class="dot" style="background:#94a3b8"></span>Bảo trì: <b id="st-maint">0</b></span>
+                <span class="stat-pill"><span class="dot" style="background:#cbd5e1"></span>Hàng: <b id="st-rows">0</b> | Cột: <b id="st-cols">0</b></span>
             </div>
         </div>
     </div>
 </div>
 
-{{-- ══ PANEL 2: THAO TÁC GHẾ ══ --}}
+{{-- PANEL 2: THAO TÁC GHẾ --}}
 <div class="panel-card">
     <div class="panel-title">Thao tác ghế</div>
 
@@ -451,24 +419,19 @@
             </select>
         </div>
         <div class="d-flex gap-2 flex-wrap">
-            <button class="btn-c bs" id="btnSwap"   onclick="startSwapPicking()">⇄ Hoán đổi</button>
-            <button class="btn-c bm" id="btnMoveCouple" onclick="startCoupleMove()">↦ Di chuyển cặp</button>
-            <button class="btn-c bk" id="btnCouple" onclick="startCouplePicking()">💑 Ghế đôi</button>
-            <button class="btn-c bw" id="btnMaint"  onclick="toggleMaintenance()">⚙ Bảo trì</button>
-            <button class="btn-c bg"                onclick="resetMode()">✕ Huỷ</button>
+            <button class="btn-c bs" id="btnSwap"  onclick="startSwapPicking()">⇄ Hoán đổi</button>
+            <button class="btn-c bw" id="btnMaint" onclick="toggleMaintenance()">⚙ Bảo trì</button>
+            <button class="btn-c bg"               onclick="resetMode()">✕ Huỷ</button>
         </div>
     </div>
 
-    <div class="mode-hint hint-swap"   id="hintSwap"></div>
-    <div class="mode-hint hint-couple" id="hintCouple">
-        💑 Bấm vào ghế <b>liền kề cùng hàng</b> (tô hồng) để ghép thành cặp ghế đôi.
-    </div>
+    <div class="mode-hint hint-swap" id="hintSwap"></div>
 
     <div class="batch-panel" id="batchPanel">
         <div>
             <div class="form-label" style="margin-bottom:4px;">Đã chọn</div>
             <div class="seat-badge">
-                <span style="color:#a5b4fc">⬡</span>
+                <span style="color:#6366f1">⬡</span>
                 <span id="batchCount">0</span> ghế
             </div>
         </div>
@@ -487,7 +450,7 @@
     </div>
 </div>
 
-{{-- ══ PANEL 3: THÊM GHẾ ══ --}}
+{{-- PANEL 3: THÊM GHẾ --}}
 <div class="panel-card">
     <div class="panel-title">Thêm ghế mới</div>
     <div class="add-grid">
@@ -510,12 +473,12 @@
         </div>
         <button class="btn-c bp" onclick="addSeat()" id="btnAdd">+ Thêm ghế</button>
     </div>
-    <div id="capWarn" style="display:none;color:#f59e0b;font-size:12px;margin-top:6px;">
+    <div id="capWarn" style="display:none;color:#d97706;font-size:12px;margin-top:6px;font-weight:600;">
         ⚠ Số ghế hiện tại đã bằng sức chứa phòng.
     </div>
 </div>
 
-{{-- ══ GRID ══ --}}
+{{-- GRID --}}
 <div class="screen-wrap">
     <div class="screen-bar"></div>
     <div class="screen-label">Màn hình</div>
@@ -530,22 +493,22 @@
 
 <div class="legend">
     <div class="legend-item">
-        <div class="legend-box" style="background:#1e3a5f;border:2px solid #1e40af"></div>Ghế thường
+        <div class="legend-box" style="background:#dbeafe;border:2px solid #93c5fd"></div>Ghế thường
     </div>
     <div class="legend-item">
-        <div class="legend-box" style="background:#92400e;border:2px solid #d97706"></div>Ghế VIP
+        <div class="legend-box" style="background:#fef3c7;border:2px solid #fcd34d"></div>Ghế VIP
     </div>
     <div class="legend-item">
-        <div class="legend-box" style="background:#831843;border:2px solid #db2777;width:36px"></div>Ghế đôi
+        <div class="legend-box" style="background:#fce7f3;border:2px solid #f9a8d4"></div>Ghế đôi
     </div>
     <div class="legend-item">
-        <div class="legend-box" style="background:#374151;border:2px solid #4b5563"></div>Bảo trì
+        <div class="legend-box" style="background:#f1f5f9;border:2px solid #cbd5e1"></div>Bảo trì
     </div>
     <div class="legend-item">
-        <div class="legend-box" style="background:#0f172a;border:1px dashed #1e293b"></div>Ô trống
+        <div class="legend-box" style="background:#f1f5f9;border:1px dashed #cbd5e1"></div>Ô trống
     </div>
     <div class="legend-item">
-        <div class="legend-box" style="outline:3px solid #6366f1;border-radius:5px;background:#1e3a5f"></div>Chọn nhiều
+        <div class="legend-box" style="outline:3px solid #6366f1;border-radius:5px;background:#dbeafe"></div>Chọn nhiều
     </div>
 </div>
 
@@ -558,7 +521,7 @@ const ROOM_ID  = parseInt("{{ (int)($roomID ?? 0) }}", 10);
 const CAPACITY = parseInt("{{ $room?->capacity ?? 0 }}", 10);
 const CSRF     = "{{ csrf_token() }}";
 
-const SPECIAL_TYPE_IDS = {{ Js::from($specialTypeIds ?? ['vip' => 1, 'normal' => 2, 'couple' => 3, 'maintenance' => 4]) }};
+const SPECIAL_TYPE_IDS = {{ Js::from($specialTypeIds ?? ['vip'=>1,'normal'=>2,'couple'=>3,'maintenance'=>4]) }};
 const SEAT_TYPE_NAMES  = {{ Js::from($seatTypeNames ?? []) }};
 
 const VIP_TYPE_ID         = Number(SPECIAL_TYPE_IDS.vip);
@@ -567,169 +530,36 @@ const COUPLE_TYPE_ID      = Number(SPECIAL_TYPE_IDS.couple);
 const MAINTENANCE_TYPE_ID = Number(SPECIAL_TYPE_IDS.maintenance);
 
 const TYPE_CLASS = {
-    [VIP_TYPE_ID]: 't-vip',
-    [NORMAL_TYPE_ID]: 't-normal',
-    [COUPLE_TYPE_ID]: 't-couple',
-    [MAINTENANCE_TYPE_ID]: 't-maint'
+    [VIP_TYPE_ID]:         't-vip',
+    [NORMAL_TYPE_ID]:      't-normal',
+    [COUPLE_TYPE_ID]:      't-couple',
+    [MAINTENANCE_TYPE_ID]: 't-maint',
 };
-const TYPE_NAME  = { 1:'VIP',   2:'Thường',   3:'Đôi',      4:'Bảo trì' };
+const TYPE_NAME = {
+    [VIP_TYPE_ID]:         'VIP',
+    [NORMAL_TYPE_ID]:      'Thường',
+    [COUPLE_TYPE_ID]:      'Đôi',
+    [MAINTENANCE_TYPE_ID]: 'Bảo trì',
+};
 const TYPE_COLOR = {
-    [VIP_TYPE_ID]: '#f59e0b',
-    [NORMAL_TYPE_ID]: '#3b82f6',
-    [COUPLE_TYPE_ID]: '#ec4899',
-    [MAINTENANCE_TYPE_ID]: '#6b7280'
+    [VIP_TYPE_ID]:         '#d97706',
+    [NORMAL_TYPE_ID]:      '#2563eb',
+    [COUPLE_TYPE_ID]:      '#db2777',
+    [MAINTENANCE_TYPE_ID]: '#94a3b8',
 };
-TYPE_NAME[VIP_TYPE_ID] = 'VIP';
-TYPE_NAME[NORMAL_TYPE_ID] = 'Thường';
-TYPE_NAME[COUPLE_TYPE_ID] = 'Đôi';
-TYPE_NAME[MAINTENANCE_TYPE_ID] = 'Bảo trì';
 
-// ── State ──────────────────────────────────────────────────────────────────
 let seatsData     = [];
-let appMode       = 'idle'; // idle | selected | swap_picking | couple_picking | multi_select
+let appMode       = 'idle';   // idle | selected | swap_picking | multi_select
 let sourceSeat    = null;
 let selectedMulti = new Set();
 
-// ── Drag ───────────────────────────────────────────────────────────────────
 let drag = { active:false, pending:false, startX:0, startY:0 };
 let dragJustFinished = false;
 const DRAG_THRESHOLD = 6;
 
-// ══════════════════════════════════════════════════════════════════════════
-// HELPERS
-// ══════════════════════════════════════════════════════════════════════════
-
-// Tìm ghế đôi partner — cột kề trong cùng hàng, cùng type=3
-function findCouplePair(seat) {
-    if (!seat || seat.seatTypeID !== 3) return null;
-    const col = +seat.colSeat;
-    return seatsData.find(s =>
-        s.seatTypeID === 3 &&
-        s.rowSeat    === seat.rowSeat &&
-        Math.abs(+s.colSeat - col) === 1 &&
-        s.seatID !== seat.seatID
-    ) || null;
-}
-
-// Set tất cả seatID đã được ghép đôi (cả 2 ô)
-function buildPairedIDs() {
-    const paired = new Set();
-    seatsData.forEach(s => {
-        if (s.seatTypeID === 3) {
-            const p = findCouplePair(s);
-            if (p) {
-                paired.add(String(s.seatID));
-                paired.add(String(p.seatID));
-            }
-        }
-    });
-    return paired;
-}
-
-// Set seatID là "ô phải" (ô thứ 2) của cặp đôi → dùng để skip khi render
-function buildSecondSeatIDs() {
-    const seconds = new Set();
-    seatsData.forEach(s => {
-        if (s.seatTypeID !== 3) return;
-        const pair = findCouplePair(s);
-        if (!pair) return;
-        // Ô có cột LỚN HƠN = ô thứ 2 → skip
-        if (+s.colSeat > +pair.colSeat) {
-            seconds.add(String(s.seatID));
-        }
-    });
-    return seconds;
-}
-
-// Đếm ghế thực tế theo capacity (ghế đôi 1 cặp = 1 đơn vị)
-function getRealSeatCount() {
-    const secondIDs = buildSecondSeatIDs();
-    let n = 0;
-    seatsData.forEach(s => {
-        if (s.seatTypeID === 3) {
-            if (!secondIDs.has(String(s.seatID))) n++; // chỉ đếm ô trái
-        } else {
-            n++;
-        }
-    });
-    return n;
-}
-
-function isCoupleSeat(seat) {
-    return !!seat && Number(seat.seatTypeID) === COUPLE_TYPE_ID;
-}
-
-function buildCouplePairMap() {
-    const pairMap = new Map();
-    const rowGroups = new Map();
-
-    seatsData.forEach(seat => {
-        if (!isCoupleSeat(seat)) return;
-        const rowKey = String(seat.rowSeat);
-        if (!rowGroups.has(rowKey)) rowGroups.set(rowKey, []);
-        rowGroups.get(rowKey).push(seat);
-    });
-
-    rowGroups.forEach(group => {
-        const sorted = [...group].sort((a, b) => Number(a.colSeat) - Number(b.colSeat));
-        for (let index = 0; index < sorted.length - 1; index += 2) {
-            const leftSeat = sorted[index];
-            const rightSeat = sorted[index + 1];
-
-            if (Number(rightSeat.colSeat) !== Number(leftSeat.colSeat) + 1) continue;
-
-            pairMap.set(String(leftSeat.seatID), rightSeat);
-            pairMap.set(String(rightSeat.seatID), leftSeat);
-        }
-    });
-
-    return pairMap;
-}
-
-function findCouplePair(seat) {
-    if (!isCoupleSeat(seat)) return null;
-    return buildCouplePairMap().get(String(seat.seatID)) || null;
-}
-
-function buildPairedIDs() {
-    return new Set(buildCouplePairMap().keys());
-}
-
-function buildSecondSeatIDs() {
-    const pairMap = buildCouplePairMap();
-    const seconds = new Set();
-
-    seatsData.forEach(seat => {
-        if (!isCoupleSeat(seat)) return;
-        const pair = pairMap.get(String(seat.seatID));
-        if (!pair) return;
-        if (Number(seat.colSeat) > Number(pair.colSeat)) {
-            seconds.add(String(seat.seatID));
-        }
-    });
-
-    return seconds;
-}
-
-function getRealSeatCount() {
-    const secondIDs = buildSecondSeatIDs();
-    let count = 0;
-
-    seatsData.forEach(seat => {
-        if (isCoupleSeat(seat)) {
-            if (!secondIDs.has(String(seat.seatID))) count++;
-            return;
-        }
-
-        count++;
-    });
-
-    return count;
-}
-
-// ══════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════
 // LOAD & RENDER
-// ══════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════
 function loadSeats(silent = false) {
     if (!ROOM_ID) {
         document.getElementById('seatGrid').innerHTML =
@@ -739,125 +569,69 @@ function loadSeats(silent = false) {
     if (!silent) showSpinner(true);
     fetch(`/admins/seat/ajax/${ROOM_ID}`)
         .then(r => { if (!r.ok) throw new Error(`Lỗi ${r.status}`); return r.json(); })
-        .then(data => {
-            seatsData = Array.isArray(data) ? data : [];
-            renderGrid();
-            updateStats();
-        })
+        .then(data => { seatsData = Array.isArray(data) ? data : []; renderGrid(); updateStats(); })
         .catch(err => showToast(err.message, 'error'))
         .finally(() => showSpinner(false));
 }
 
 function updateStats() {
     const rows   = [...new Set(seatsData.map(s => s.rowSeat))];
-    const maxCol = seatsData.reduce((m, s) => Math.max(m, +s.colSeat), 0);
-    const cnt    = {};
-    seatsData.forEach(s => cnt[s.seatTypeID] = (cnt[s.seatTypeID] || 0) + 1);
+    const maxCol = seatsData.reduce((m, s) => Math.max(m, Number(s.colSeat)), 0);
+    const counts = {};
+    seatsData.forEach(s => counts[s.seatTypeID] = (counts[s.seatTypeID] || 0) + 1);
 
-    set('st-total',  getRealSeatCount());
-    set('st-normal', cnt[NORMAL_TYPE_ID] || 0);
-    set('st-vip',    cnt[VIP_TYPE_ID] || 0);
-    set('st-couple', Math.floor((cnt[3] || 0) / 2)); // mỗi cặp = 2 record
-    set('st-maint',  cnt[MAINTENANCE_TYPE_ID] || 0);
-    set('st-couple', Math.floor((cnt[COUPLE_TYPE_ID] || 0) / 2));
+    // Ghế đôi = 1 record = 1 chỗ, đếm thẳng
+    set('st-total',  seatsData.length);
+    set('st-normal', counts[NORMAL_TYPE_ID] || 0);
+    set('st-vip',    counts[VIP_TYPE_ID] || 0);
+    set('st-couple', counts[COUPLE_TYPE_ID] || 0);
+    set('st-maint',  counts[MAINTENANCE_TYPE_ID] || 0);
     set('st-rows',   rows.length);
     set('st-cols',   maxCol);
 
     document.getElementById('capWarn').style.display =
-        getRealSeatCount() >= CAPACITY ? 'block' : 'none';
+        seatsData.length >= CAPACITY ? 'block' : 'none';
 }
 
-// ── Render grid ────────────────────────────────────────────────────────────
 function renderGrid() {
-    const grid = document.getElementById('seatGrid');
-
-    // Build map và tính secondIDs 1 lần
-    const seatMap   = {};
+    const grid   = document.getElementById('seatGrid');
+    const seatMap = {};
     seatsData.forEach(s => { seatMap[`${s.rowSeat}-${s.colSeat}`] = s; });
 
-    const secondIDs = buildSecondSeatIDs(); // ô phải của cặp đôi → skip
-
-    const rows      = [...new Set(seatsData.map(s => s.rowSeat))].sort();
-    const maxCol    = seatsData.reduce((m, s) => Math.max(m, +s.colSeat), 0);
-    const renderCols = maxCol + 1; // +1 cho expansion slot
+    const rows       = [...new Set(seatsData.map(s => s.rowSeat))].sort();
+    const maxCol     = seatsData.reduce((m, s) => Math.max(m, +s.colSeat), 0);
+    const renderCols = maxCol + 1;
 
     let html = '';
-
     rows.forEach(row => {
         html += `<div class="seat-row"><span class="row-label">${row}</span>`;
-
         for (let col = 1; col <= renderCols; col++) {
             const seat = seatMap[`${row}-${col}`];
-
-            // Ô trống hoặc expansion
             if (!seat) {
-                if (col === renderCols) {
-                    html += `<div class="disabled-slot"
-                                  data-row="${row}" data-col="${col}"
-                                  onclick="quickFill('${row}',${col})"
-                                  title="Thêm ghế ${row}${col}">+</div>`;
-                } else {
-                    html += `<div class="empty-slot"
-                                  data-row="${row}" data-col="${col}">+</div>`;
-                }
+                html += col === renderCols
+                    ? `<div class="disabled-slot" data-row="${row}" data-col="${col}" onclick="quickFill('${row}',${col})" title="Thêm ghế ${row}${col}">+</div>`
+                    : `<div class="empty-slot" data-row="${row}" data-col="${col}">+</div>`;
                 continue;
             }
-
-            // ── Ghế đôi ──
-            if (Number(seat.seatTypeID) === COUPLE_TYPE_ID) {
-                // Ô phải → đã được render bởi ô trái, skip
-                if (secondIDs.has(String(seat.seatID))) continue;
-
-                // Ô trái → render wide (đại diện cho cả cặp)
-                const pair     = findCouplePair(seat);
-                const pairName = pair ? `${pair.rowSeat}${pair.colSeat}` : '';
-                html += `<div class="seat t-couple couple-wide"
-                              data-id="${seat.seatID}"
-                              data-row="${row}" data-col="${col}"
-                              data-type="${seat.seatTypeID}"
-                              data-name="${row}${col}"
-                              data-pairid="${pair ? pair.seatID : ''}"
-                              data-pairname="${pairName}">
-                            <span>${row}${col}${pairName ? '·' + pairName : ''}</span>
-                            <span class="del-btn"
-                                  onmousedown="event.stopPropagation()"
-                                  onclick="deleteSeat(${seat.seatID},event)">×</span>
-                         </div>`;
-                continue;
-            }
-
-            // ── Ghế thường / VIP / bảo trì ──
+            // Tất cả ghế (kể cả đôi) render 1 ô như nhau
             const cls = TYPE_CLASS[seat.seatTypeID] || 't-normal';
             html += `<div class="seat ${cls}"
-                          data-id="${seat.seatID}"
-                          data-row="${row}" data-col="${col}"
-                          data-type="${seat.seatTypeID}"
-                          data-name="${row}${col}">
+                          data-id="${seat.seatID}" data-row="${row}" data-col="${col}"
+                          data-type="${seat.seatTypeID}" data-name="${row}${col}">
                         ${row}${col}
-                        <span class="del-btn"
-                              onmousedown="event.stopPropagation()"
-                              onclick="deleteSeat(${seat.seatID},event)">×</span>
+                        <span class="del-btn" onmousedown="event.stopPropagation()" onclick="deleteSeat(${seat.seatID},event)">×</span>
                      </div>`;
         }
-
         html += `</div>`;
     });
 
-    // Hàng mở rộng tiếp theo
     if (rows.length > 0) {
         const lastRow = rows[rows.length - 1];
-        const nextRow = lastRow < 'Z'
-            ? String.fromCharCode(lastRow.charCodeAt(0) + 1)
-            : null;
-
+        const nextRow = lastRow < 'Z' ? String.fromCharCode(lastRow.charCodeAt(0) + 1) : null;
         if (nextRow) {
-            html += `<div class="seat-row">
-                        <span class="row-label" style="color:#374151">${nextRow}</span>`;
+            html += `<div class="seat-row"><span class="row-label" style="color:#cbd5e1">${nextRow}</span>`;
             for (let col = 1; col <= renderCols; col++) {
-                html += `<div class="disabled-slot"
-                              data-row="${nextRow}" data-col="${col}"
-                              onclick="quickFill('${nextRow}',${col})"
-                              title="Thêm ghế ${nextRow}${col}">+</div>`;
+                html += `<div class="disabled-slot" data-row="${nextRow}" data-col="${col}" onclick="quickFill('${nextRow}',${col})" title="Thêm ghế ${nextRow}${col}">+</div>`;
             }
             html += `</div>`;
         }
@@ -868,7 +642,6 @@ function renderGrid() {
     reApplyStyles();
 }
 
-// ── Quick fill ─────────────────────────────────────────────────────────────
 function quickFill(row, col) {
     if (appMode === 'multi_select') return;
     document.getElementById('addRow').value = row;
@@ -877,54 +650,48 @@ function quickFill(row, col) {
     document.getElementById('addRow').scrollIntoView({ behavior:'smooth', block:'center' });
 }
 
-// ══════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════
 // GRID EVENTS
-// ══════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════
 function bindGridEvents() {
     const grid = document.getElementById('seatGrid');
 
     document.querySelectorAll('.seat').forEach(el => {
-        el.addEventListener('click', function(e) {
+        el.addEventListener('click', function () {
             if (dragJustFinished) { dragJustFinished = false; return; }
             if (appMode === 'multi_select') return;
-            if (appMode === 'swap_picking') {
-                if (this.classList.contains('is-swap-tgt')) confirmSwap(this);
-                return;
-            }
-            if (appMode === 'couple_picking') {
-                if (this.classList.contains('is-couple-tgt')) confirmCouple(this);
-                return;
+            if (appMode === 'swap_picking' && this.classList.contains('is-swap-tgt')) {
+                confirmSwap(this); return;
             }
             selectSource(this);
         });
     });
 
-    document.querySelectorAll('.empty-slot').forEach(el => {
-        el.addEventListener('click', function() {
-            quickFill(this.dataset.row, this.dataset.col);
+    document.querySelectorAll('.empty-slot, .disabled-slot').forEach(el => {
+        el.addEventListener('click', function () {
+            if (appMode === 'idle' || appMode === 'selected') {
+                quickFill(this.dataset.row, this.dataset.col);
+            }
         });
     });
 
-    grid.addEventListener('mousedown', function(e) {
+    grid.addEventListener('mousedown', function (e) {
         if (e.button !== 0) return;
-        if (appMode === 'swap_picking' || appMode === 'couple_picking') return;
+        if (appMode === 'swap_picking') return;
         drag = { active:false, pending:true, startX:e.clientX, startY:e.clientY };
         e.preventDefault();
     });
 }
 
-document.addEventListener('mousemove', function(e) {
+document.addEventListener('mousemove', function (e) {
     if (!drag.pending && !drag.active) return;
-    const dx = Math.abs(e.clientX - drag.startX);
-    const dy = Math.abs(e.clientY - drag.startY);
+    const dx = Math.abs(e.clientX - drag.startX), dy = Math.abs(e.clientY - drag.startY);
     if (!drag.active && (dx > DRAG_THRESHOLD || dy > DRAG_THRESHOLD)) {
-        drag.active  = true;
-        drag.pending = false;
+        drag.active = true; drag.pending = false;
         if (appMode === 'selected') resetMode();
         document.getElementById('seatGrid').classList.add('dragging');
     }
     if (!drag.active) return;
-
     const el   = document.elementFromPoint(e.clientX, e.clientY);
     const seat = el ? el.closest('.seat') : null;
     if (seat && !selectedMulti.has(seat.dataset.id)) {
@@ -934,17 +701,16 @@ document.addEventListener('mousemove', function(e) {
     }
 });
 
-document.addEventListener('mouseup', function() {
+document.addEventListener('mouseup', function () {
     if (!drag.pending && !drag.active) return;
     const wasDragging = drag.active;
     drag = { active:false, pending:false, startX:0, startY:0 };
     document.getElementById('seatGrid').classList.remove('dragging');
     if (!wasDragging) return;
-
     if (selectedMulti.size > 0) {
         dragJustFinished = true;
         appMode = 'multi_select';
-        document.getElementById('swapIdle').style.display = 'none';
+        document.getElementById('swapIdle').style.display  = 'none';
         document.getElementById('swapPanel').classList.remove('show');
         document.getElementById('batchPanel').classList.add('show');
         set('batchCount', selectedMulti.size);
@@ -952,18 +718,16 @@ document.addEventListener('mouseup', function() {
     }
 });
 
-// ══════════════════════════════════════════════════════════════════════════
-// SELECT SINGLE SEAT
-// ══════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════
+// SELECT / STYLES
+// ══════════════════════════════════════════════════════════════════
 function selectSource(el) {
     sourceSeat = {
-        id:       el.dataset.id,
-        name:     el.dataset.name,
-        typeID:   +el.dataset.type,
-        row:      el.dataset.row,
-        col:      +el.dataset.col,
-        pairID:   el.dataset.pairid   || null,
-        pairName: el.dataset.pairname || null,
+        id:     el.dataset.id,
+        name:   el.dataset.name,
+        typeID: +el.dataset.type,
+        row:    el.dataset.row,
+        col:    +el.dataset.col,
     };
     appMode = 'selected';
 
@@ -971,44 +735,32 @@ function selectSource(el) {
     document.getElementById('swapPanel').classList.add('show');
     document.getElementById('batchPanel').classList.remove('show');
     document.getElementById('hintSwap').classList.remove('show');
-    document.getElementById('hintCouple').classList.remove('show');
 
-    // Badge
-    let badge = `<span style="color:${TYPE_COLOR[sourceSeat.typeID]}">■</span> ${sourceSeat.name}`;
-    if (sourceSeat.typeID === COUPLE_TYPE_ID && sourceSeat.pairName) {
-        badge += ` <span style="color:#6b7280;font-size:10px">+</span>
-                   <span style="color:#ec4899">■</span> ${sourceSeat.pairName}`;
-    }
-    badge += ` <span style="color:#6b7280;font-size:11px">(${TYPE_NAME[sourceSeat.typeID]})</span>`;
+    const badge = `<span style="color:${TYPE_COLOR[sourceSeat.typeID]}">■</span> ${sourceSeat.name}
+                   <span style="color:var(--muted);font-size:11px">(${TYPE_NAME[sourceSeat.typeID] || SEAT_TYPE_NAMES[sourceSeat.typeID] || ''})</span>`;
     document.getElementById('swapBadge').innerHTML = badge;
 
-    // Nút bảo trì
     const btnMaint = document.getElementById('btnMaint');
     if (sourceSeat.typeID === MAINTENANCE_TYPE_ID) {
-        btnMaint.textContent = '✓ Phục hồi';
-        btnMaint.className   = 'btn-c bs';
+        btnMaint.textContent = '✓ Phục hồi'; btnMaint.className = 'btn-c bs';
     } else {
-        btnMaint.textContent = '⚙ Bảo trì';
-        btnMaint.className   = 'btn-c bw';
+        btnMaint.textContent = '⚙ Bảo trì';  btnMaint.className = 'btn-c bw';
     }
 
-    // Ẩn/hiện nút theo loại ghế
-    const isCouple = sourceSeat.typeID === COUPLE_TYPE_ID;
-    document.getElementById('btnSwap').style.display   = isCouple ? 'none' : '';
-    document.getElementById('btnCouple').style.display = isCouple ? 'none' : '';
-
-    // Default swap target khác loại hiện tại
+    // Preset target type to something different from current
     const sel = document.getElementById('swapTargetType');
-    for (let o of sel.options) {
-        if (+o.value !== sourceSeat.typeID) { o.selected = true; break; }
+    for (const opt of sel.options) {
+        if (+opt.value !== sourceSeat.typeID) { opt.selected = true; break; }
     }
 
     reApplyStyles();
 }
 
-// ══════════════════════════════════════════════════════════════════════════
-// STYLES
-// ══════════════════════════════════════════════════════════════════════════
+function clearStyles() {
+    document.querySelectorAll('.seat').forEach(el =>
+        el.classList.remove('is-source','is-swap-tgt','is-dimmed','is-multi'));
+}
+
 function reApplyStyles() {
     clearStyles();
     if (!sourceSeat && !selectedMulti.size) return;
@@ -1024,67 +776,44 @@ function reApplyStyles() {
 
     if (appMode === 'selected') {
         document.querySelectorAll('.seat').forEach(el => {
-            if (el.dataset.id === src) { el.classList.add('is-source'); return; }
-            if (sourceSeat.pairID && el.dataset.id === String(sourceSeat.pairID)) {
-                el.classList.add('is-couple-pair'); return;
-            }
+            if (el.dataset.id === src) el.classList.add('is-source');
         });
     }
 
     if (appMode === 'swap_picking') {
         const tid = getSwapTarget();
         document.querySelectorAll('.seat').forEach(el => {
-            if (el.dataset.id === src)       { el.classList.add('is-source');   return; }
-            if (+el.dataset.type === tid)    { el.classList.add('is-swap-tgt'); return; }
-            el.classList.add('is-dimmed');
-        });
-    }
-
-    if (appMode === 'couple_picking') {
-        const pairedIDs = buildPairedIDs();
-        document.querySelectorAll('.seat').forEach(el => {
-            if (el.dataset.id === src) { el.classList.add('is-source'); return; }
-            const adj   = el.dataset.row === sourceSeat.row &&
-                          Math.abs(+el.dataset.col - sourceSeat.col) === 1;
-            const valid = adj && +el.dataset.type !== COUPLE_TYPE_ID && +el.dataset.type !== MAINTENANCE_TYPE_ID &&
-                          !pairedIDs.has(el.dataset.id);
-            if (valid) { el.classList.add('is-couple-tgt'); return; }
+            if (el.dataset.id === src)    { el.classList.add('is-source');   return; }
+            if (+el.dataset.type === tid) { el.classList.add('is-swap-tgt'); return; }
             el.classList.add('is-dimmed');
         });
     }
 }
 
-function clearStyles() {
-    document.querySelectorAll('.seat').forEach(el =>
-        el.classList.remove('is-source','is-couple-pair','is-swap-tgt',
-                            'is-couple-tgt','is-dimmed','is-multi')
-    );
-}
-
-// ══════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════
 // SWAP
-// ══════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════
 function startSwapPicking() {
     if (!sourceSeat) return;
     const tid = getSwapTarget();
     if (tid === sourceSeat.typeID) { showToast('Chọn loại khác với hiện tại', 'warning'); return; }
-    if (tid === 3) { showToast('Dùng nút "Ghế đôi" để tạo ghế đôi', 'warning'); return; }
+    if (tid === COUPLE_TYPE_ID)    { showToast('Chọn loại khác để hoán đổi', 'warning'); return; }
 
-    const avail = seatsData.filter(s => s.seatTypeID === tid && String(s.seatID) !== sourceSeat.id);
-    if (!avail.length) { showToast(`Không có ghế ${TYPE_NAME[tid]} để hoán đổi`, 'warning'); return; }
+    const avail = seatsData.filter(s => Number(s.seatTypeID) === tid && String(s.seatID) !== sourceSeat.id);
+    if (!avail.length) { showToast(`Không có ghế ${TYPE_NAME[tid] || ''} để hoán đổi`, 'warning'); return; }
 
     appMode = 'swap_picking';
     reApplyStyles();
-    const h = document.getElementById('hintSwap');
-    h.textContent = `⇄ Chọn 1 ghế ${TYPE_NAME[tid]} (tô xanh) để hoán đổi với ${sourceSeat.name}. [Esc] huỷ.`;
-    h.classList.add('show');
+
+    const hint = document.getElementById('hintSwap');
+    hint.textContent = `⇄ Chọn 1 ghế ${TYPE_NAME[tid] || ''} (tô xanh) để hoán đổi với ${sourceSeat.name}. [Esc] huỷ.`;
+    hint.classList.add('show');
 }
 
 function confirmSwap(el) {
     if (!confirm(`Hoán đổi:\n${sourceSeat.name}(${TYPE_NAME[sourceSeat.typeID]}) ⇄ ${el.dataset.name}(${TYPE_NAME[+el.dataset.type]})?`)) return;
     apiFetch('/admins/seat/ajax-swap-type', 'POST', {
-        seatID_a: parseInt(sourceSeat.id),
-        seatID_b: parseInt(el.dataset.id)
+        seatID_a: parseInt(sourceSeat.id), seatID_b: parseInt(el.dataset.id)
     }).then(res => {
         if (!res.success) { showToast(res.message, 'error'); return; }
         showToast('Hoán đổi thành công', 'success');
@@ -1092,70 +821,34 @@ function confirmSwap(el) {
     }).catch(err => showToast(err.message, 'error'));
 }
 
-// ══════════════════════════════════════════════════════════════════════════
-// COUPLE
-// ══════════════════════════════════════════════════════════════════════════
-function startCouplePicking() {
-    if (!sourceSeat || sourceSeat.typeID === 3) return;
-    const pairedIDs = buildPairedIDs();
-    const adj = seatsData.filter(s =>
-        s.rowSeat === sourceSeat.row &&
-        Math.abs(+s.colSeat - sourceSeat.col) === 1 &&
-        s.seatTypeID !== 3 && s.seatTypeID !== 4 &&
-        !pairedIDs.has(String(s.seatID))
-    );
-    if (!adj.length) { showToast('Không có ghế liền kề hợp lệ để ghép đôi', 'warning'); return; }
-
-    appMode = 'couple_picking';
-    reApplyStyles();
-    document.getElementById('hintCouple').classList.add('show');
-    document.getElementById('hintSwap').classList.remove('show');
-}
-
-function confirmCouple(el) {
-    if (!confirm(`Tạo ghế đôi:\n• ${sourceSeat.name} (${TYPE_NAME[sourceSeat.typeID]})\n• ${el.dataset.name} (${TYPE_NAME[+el.dataset.type]})\nCả 2 → Ghế đôi.`)) return;
-    apiFetch('/admins/seat/ajax-convert-couple', 'POST', {
-        seatID_a: parseInt(sourceSeat.id),
-        seatID_b: parseInt(el.dataset.id)
-    }).then(res => {
-        if (!res.success) { showToast(res.message, 'error'); return; }
-        showToast(`Đã tạo ghế đôi: ${sourceSeat.name} + ${el.dataset.name}`, 'success');
-        resetMode(); loadSeats(true);
-    }).catch(err => showToast(err.message, 'error'));
-}
-
-// ══════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════
 // MAINTENANCE
-// ══════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════
 function toggleMaintenance() {
     if (!sourceSeat) return;
-    const isMaint = sourceSeat.typeID === 4;
-    const newType = isMaint ? 2 : 4;
-    const label   = isMaint ? 'Phục hồi thành ghế thường' : 'Chuyển sang bảo trì';
+    const isMaint  = sourceSeat.typeID === MAINTENANCE_TYPE_ID;
+    const nextType = isMaint ? NORMAL_TYPE_ID : MAINTENANCE_TYPE_ID;
+    const label    = isMaint ? 'Phục hồi thành ghế thường' : 'Chuyển sang bảo trì';
     if (!confirm(`${label}: ghế ${sourceSeat.name}?`)) return;
-
     apiFetch('/admins/seat/ajax-update-type', 'POST', {
-        seatID:     parseInt(sourceSeat.id),
-        seatTypeID: newType
+        seatID: parseInt(sourceSeat.id), seatTypeID: nextType
     }).then(res => {
         if (!res.success) { showToast(res.message, 'error'); return; }
-        showToast(`Ghế ${sourceSeat.name} → ${TYPE_NAME[newType]}`, 'success');
+        showToast(`Ghế ${sourceSeat.name} → ${TYPE_NAME[nextType]}`, 'success');
         resetMode(); loadSeats(true);
     }).catch(err => showToast(err.message, 'error'));
 }
 
-// ══════════════════════════════════════════════════════════════════════════
-// BATCH UPDATE
-// ══════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════
+// BATCH
+// ══════════════════════════════════════════════════════════════════
 function applyBatch() {
     if (!selectedMulti.size) { showToast('Chưa chọn ghế nào', 'warning'); return; }
     const typeID   = parseInt(document.getElementById('batchTargetType').value);
-    const typeName = TYPE_NAME[typeID] || '?';
-    if (!confirm(`Đổi ${selectedMulti.size} ghế → ${typeName}?\n(Ghế đôi đang ghép và ghế có vé sẽ bị bỏ qua)`)) return;
-
+    const typeName = TYPE_NAME[typeID] || '';
+    if (!confirm(`Đổi ${selectedMulti.size} ghế → ${typeName}?\n(Ghế có vé sẽ bị bỏ qua)`)) return;
     apiFetch('/admins/seat/ajax-batch-update-type', 'POST', {
-        seatIDs:    [...selectedMulti].map(Number),
-        seatTypeID: typeID
+        seatIDs: [...selectedMulti].map(Number), seatTypeID: typeID
     }).then(res => {
         if (!res.success) { showToast(res.message, 'error'); return; }
         showToast(res.message || 'Cập nhật thành công', 'success');
@@ -1163,9 +856,9 @@ function applyBatch() {
     }).catch(err => showToast(err.message, 'error'));
 }
 
-// ══════════════════════════════════════════════════════════════════════════
-// THÊM GHẾ
-// ══════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════
+// ADD / DELETE
+// ══════════════════════════════════════════════════════════════════
 function addSeat() {
     const row    = document.getElementById('addRow').value.trim().toUpperCase();
     const col    = parseInt(document.getElementById('addCol').value);
@@ -1173,14 +866,12 @@ function addSeat() {
 
     if (!row || !/^[A-Z]$/.test(row)) { showToast('Hàng phải là 1 chữ A–Z', 'error'); return; }
     if (!col || col < 1 || col > 99)  { showToast('Cột phải từ 1–99', 'error'); return; }
-
-    if (getRealSeatCount() >= CAPACITY) {
-        if (!confirm(`Phòng đã có ${getRealSeatCount()}/${CAPACITY} ghế. Vẫn thêm?`)) return;
+    if (seatsData.length >= CAPACITY) {
+        if (!confirm(`Phòng đã có ${seatsData.length}/${CAPACITY} ghế. Vẫn thêm?`)) return;
     }
     if (seatsData.some(s => s.rowSeat === row && +s.colSeat === col)) {
         showToast(`Ghế ${row}${col} đã tồn tại`, 'error'); return;
     }
-
     const btn = document.getElementById('btnAdd');
     btn.disabled = true;
     apiFetch('/admins/seat/ajax-add', 'POST', {
@@ -1195,15 +886,11 @@ function addSeat() {
       .finally(() => { btn.disabled = false; });
 }
 
-// ══════════════════════════════════════════════════════════════════════════
-// XOÁ GHẾ
-// ══════════════════════════════════════════════════════════════════════════
 function deleteSeat(id, event) {
     event.stopPropagation();
     if (!confirm('Xoá ghế này?')) return;
     fetch(`/admins/seat/ajax-delete/${id}`, {
-        method: 'DELETE',
-        headers: { 'X-CSRF-TOKEN': CSRF }
+        method: 'DELETE', headers: { 'X-CSRF-TOKEN': CSRF }
     }).then(r => r.json()).then(res => {
         if (res.error) { showToast(res.error, 'error'); return; }
         if (sourceSeat && String(sourceSeat.id) === String(id)) resetMode();
@@ -1213,9 +900,9 @@ function deleteSeat(id, event) {
     }).catch(() => showToast('Lỗi kết nối', 'error'));
 }
 
-// ══════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════
 // RESET
-// ══════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════
 function resetMode() {
     appMode = 'idle';
     sourceSeat = null;
@@ -1225,46 +912,32 @@ function resetMode() {
     document.getElementById('swapPanel').classList.remove('show');
     document.getElementById('batchPanel').classList.remove('show');
     document.getElementById('hintSwap').classList.remove('show');
-    document.getElementById('hintCouple').classList.remove('show');
 }
 
-// ══════════════════════════════════════════════════════════════════════════
-// UTILITIES
-// ══════════════════════════════════════════════════════════════════════════
-function getSwapTarget() {
-    return parseInt(document.getElementById('swapTargetType').value);
-}
+// ══════════════════════════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════════════════════════
+function getSwapTarget() { return parseInt(document.getElementById('swapTargetType').value); }
 
 function apiFetch(url, method, body) {
     return fetch(url, {
         method,
-        headers: { 'Content-Type':'application/json', 'X-CSRF-TOKEN': CSRF },
-        body: JSON.stringify(body)
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
+        body: JSON.stringify(body),
     }).then(r => {
         if (!r.ok) return r.text().then(t => {
-            try {
-                const j = JSON.parse(t);
-                throw new Error(j.message || j.error || `Lỗi ${r.status}`);
-            } catch(e) {
-                throw new Error(t.trim().startsWith('<') ? `Lỗi ${r.status}` : t);
-            }
+            try { const j = JSON.parse(t); throw new Error(j.message || j.error || `Lỗi ${r.status}`); }
+            catch(e) { throw new Error(t.trim().startsWith('<') ? `Lỗi ${r.status}` : t); }
         });
         return r.json();
     });
 }
 
-function set(id, val) {
-    const e = document.getElementById(id);
-    if (e) e.textContent = val;
-}
-
-function showSpinner(on) {
-    document.getElementById('gridSpinner').classList.toggle('show', on);
-}
+function set(id, val) { const e = document.getElementById(id); if (e) e.textContent = val; }
+function showSpinner(on) { document.getElementById('gridSpinner').classList.toggle('show', on); }
 
 let _tt;
 const TICO = { success:'✓', error:'✕', info:'ℹ', warning:'⚠' };
-
 function showToast(msg, type = 'success') {
     const el = document.getElementById('toast');
     document.getElementById('t-ico').textContent = TICO[type] || '';
@@ -1274,647 +947,16 @@ function showToast(msg, type = 'success') {
     _tt = setTimeout(() => { el.className = ''; }, 3500);
 }
 
-document.getElementById('addRow').addEventListener('keydown', e => {
-    if (e.key === 'Enter') document.getElementById('addCol').focus();
-});
-document.getElementById('addCol').addEventListener('keydown', e => {
-    if (e.key === 'Enter') addSeat();
-});
-document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') resetMode();
-});
+document.getElementById('addRow').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('addCol').focus(); });
+document.getElementById('addCol').addEventListener('keydown', e => { if (e.key === 'Enter') addSeat(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') resetMode(); });
 
 @if(session('success'))
-    document.addEventListener('DOMContentLoaded', () =>
-        showToast({{ Js::from(session('success')) }}, 'success'));
+    document.addEventListener('DOMContentLoaded', () => showToast({{ Js::from(session('success')) }}, 'success'));
 @endif
 @if(session('error'))
-    document.addEventListener('DOMContentLoaded', () =>
-        showToast({{ Js::from(session('error')) }}, 'error'));
+    document.addEventListener('DOMContentLoaded', () => showToast({{ Js::from(session('error')) }}, 'error'));
 @endif
-
-function updateStats() {
-    const rows = [...new Set(seatsData.map(seat => seat.rowSeat))];
-    const maxCol = seatsData.reduce((max, seat) => Math.max(max, Number(seat.colSeat)), 0);
-    const counts = {};
-
-    seatsData.forEach(seat => {
-        counts[seat.seatTypeID] = (counts[seat.seatTypeID] || 0) + 1;
-    });
-
-    set('st-total', getRealSeatCount());
-    set('st-normal', counts[NORMAL_TYPE_ID] || 0);
-    set('st-vip', counts[VIP_TYPE_ID] || 0);
-    set('st-couple', Math.floor((counts[COUPLE_TYPE_ID] || 0) / 2));
-    set('st-maint', counts[MAINTENANCE_TYPE_ID] || 0);
-    set('st-rows', rows.length);
-    set('st-cols', maxCol);
-
-    document.getElementById('capWarn').style.display =
-        getRealSeatCount() >= CAPACITY ? 'block' : 'none';
-}
-
-function startSwapPicking() {
-    if (!sourceSeat) return;
-
-    const targetTypeId = getSwapTarget();
-    if (targetTypeId === sourceSeat.typeID) {
-        showToast('Chọn loại khác với hiện tại', 'warning');
-        return;
-    }
-
-    if (targetTypeId === COUPLE_TYPE_ID) {
-        showToast('Dùng nút "Ghế đôi" để tạo ghế đôi', 'warning');
-        return;
-    }
-
-    if (sourceSeat.typeID === COUPLE_TYPE_ID) {
-        const targetName = TYPE_NAME[targetTypeId] || SEAT_TYPE_NAMES[targetTypeId] || 'loại đã chọn';
-        if (!confirm(`Đổi cặp ghế ${sourceSeat.name}${sourceSeat.pairName ? ` + ${sourceSeat.pairName}` : ''} → ${targetName}?`)) {
-            return;
-        }
-
-        apiFetch('/admins/seat/ajax-update-type', 'POST', {
-            seatID: parseInt(sourceSeat.id, 10),
-            seatTypeID: targetTypeId
-        }).then(res => {
-            if (!res.success) {
-                showToast(res.message, 'error');
-                return;
-            }
-
-            showToast(`Đã đổi cặp ghế sang ${targetName}`, 'success');
-            resetMode();
-            loadSeats(true);
-        }).catch(err => showToast(err.message, 'error'));
-        return;
-    }
-
-    const availableSeats = seatsData.filter(seat =>
-        Number(seat.seatTypeID) === targetTypeId && String(seat.seatID) !== sourceSeat.id
-    );
-
-    if (!availableSeats.length) {
-        showToast(`Không có ghế ${TYPE_NAME[targetTypeId] || SEAT_TYPE_NAMES[targetTypeId] || ''} để hoán đổi`, 'warning');
-        return;
-    }
-
-    appMode = 'swap_picking';
-    reApplyStyles();
-    const hint = document.getElementById('hintSwap');
-    const targetName = TYPE_NAME[targetTypeId] || SEAT_TYPE_NAMES[targetTypeId] || 'đã chọn';
-    hint.textContent = `⇄ Chọn 1 ghế ${targetName} (tô xanh) để hoán đổi với ${sourceSeat.name}. [Esc] huỷ.`;
-    hint.classList.add('show');
-}
-
-function startCouplePicking() {
-    if (!sourceSeat || sourceSeat.typeID === COUPLE_TYPE_ID) return;
-
-    const pairedIDs = buildPairedIDs();
-    const adjacentSeats = seatsData.filter(seat =>
-        seat.rowSeat === sourceSeat.row &&
-        Math.abs(Number(seat.colSeat) - sourceSeat.col) === 1 &&
-        Number(seat.seatTypeID) !== COUPLE_TYPE_ID &&
-        Number(seat.seatTypeID) !== MAINTENANCE_TYPE_ID &&
-        !pairedIDs.has(String(seat.seatID))
-    );
-
-    if (!adjacentSeats.length) {
-        showToast('Không có ghế liền kề hợp lệ để ghép đôi', 'warning');
-        return;
-    }
-
-    appMode = 'couple_picking';
-    reApplyStyles();
-    document.getElementById('hintCouple').classList.add('show');
-    document.getElementById('hintSwap').classList.remove('show');
-}
-
-function toggleMaintenance() {
-    if (!sourceSeat) return;
-
-    const isMaintenanceSeat = sourceSeat.typeID === MAINTENANCE_TYPE_ID;
-    const nextTypeId = isMaintenanceSeat ? NORMAL_TYPE_ID : MAINTENANCE_TYPE_ID;
-    const label = isMaintenanceSeat ? 'Phục hồi thành ghế thường' : 'Chuyển sang bảo trì';
-    if (!confirm(`${label}: ghế ${sourceSeat.name}?`)) return;
-
-    apiFetch('/admins/seat/ajax-update-type', 'POST', {
-        seatID: parseInt(sourceSeat.id, 10),
-        seatTypeID: nextTypeId
-    }).then(res => {
-        if (!res.success) {
-            showToast(res.message, 'error');
-            return;
-        }
-
-        showToast(`Ghế ${sourceSeat.name} → ${TYPE_NAME[nextTypeId] || SEAT_TYPE_NAMES[nextTypeId] || ''}`, 'success');
-        resetMode();
-        loadSeats(true);
-    }).catch(err => showToast(err.message, 'error'));
-}
-
-function selectSource(el) {
-    sourceSeat = {
-        id:       el.dataset.id,
-        name:     el.dataset.name,
-        typeID:   +el.dataset.type,
-        row:      el.dataset.row,
-        col:      +el.dataset.col,
-        pairID:   el.dataset.pairid   || null,
-        pairName: el.dataset.pairname || null,
-    };
-    appMode = 'selected';
-
-    document.getElementById('swapIdle').style.display = 'none';
-    document.getElementById('swapPanel').classList.add('show');
-    document.getElementById('batchPanel').classList.remove('show');
-    document.getElementById('hintSwap').classList.remove('show');
-    document.getElementById('hintCouple').classList.remove('show');
-
-    let badge = `<span style="color:${TYPE_COLOR[sourceSeat.typeID]}">■</span> ${sourceSeat.name}`;
-    if (sourceSeat.typeID === COUPLE_TYPE_ID && sourceSeat.pairName) {
-        badge += ` <span style="color:#6b7280;font-size:10px">+</span>
-                   <span style="color:#ec4899">■</span> ${sourceSeat.pairName}`;
-    }
-    badge += ` <span style="color:#6b7280;font-size:11px">(${TYPE_NAME[sourceSeat.typeID] || SEAT_TYPE_NAMES[sourceSeat.typeID] || ''})</span>`;
-    document.getElementById('swapBadge').innerHTML = badge;
-
-    const btnMaint = document.getElementById('btnMaint');
-    if (sourceSeat.typeID === MAINTENANCE_TYPE_ID) {
-        btnMaint.textContent = '✓ Phục hồi';
-        btnMaint.className   = 'btn-c bs';
-    } else {
-        btnMaint.textContent = '⚙ Bảo trì';
-        btnMaint.className   = 'btn-c bw';
-    }
-
-    document.getElementById('btnSwap').style.display = '';
-    document.getElementById('btnSwap').textContent =
-        sourceSeat.typeID === COUPLE_TYPE_ID ? '✦ Đổi cặp ghế' : '⇄ Hoán đổi';
-    document.getElementById('btnMoveCouple').style.display =
-        sourceSeat.typeID === COUPLE_TYPE_ID ? '' : 'none';
-    document.getElementById('btnCouple').style.display =
-        sourceSeat.typeID === COUPLE_TYPE_ID ? 'none' : '';
-
-    const select = document.getElementById('swapTargetType');
-    for (const option of select.options) {
-        if (+option.value !== sourceSeat.typeID && +option.value !== COUPLE_TYPE_ID) {
-            option.selected = true;
-            break;
-        }
-    }
-
-    reApplyStyles();
-}
-
-function buildCoupleMoveTargets() {
-    if (!sourceSeat || sourceSeat.typeID !== COUPLE_TYPE_ID) return [];
-
-    const seatMap = new Map();
-    seatsData.forEach(seat => seatMap.set(`${seat.rowSeat}-${seat.colSeat}`, seat));
-
-    const rows = [...new Set(seatsData.map(seat => seat.rowSeat))].sort();
-    const maxCol = seatsData.reduce((max, seat) => Math.max(max, Number(seat.colSeat)), 0);
-    const targets = [];
-    const sourceCols = [sourceSeat.col, sourceSeat.col + 1];
-    const pairRow = sourceSeat.row;
-
-    rows.forEach(row => {
-        for (let col = 1; col <= maxCol; col++) {
-            const leftSeat = seatMap.get(`${row}-${col}`);
-            const rightSeat = seatMap.get(`${row}-${col + 1}`);
-            const isSourceSpot =
-                row === pairRow &&
-                col === sourceSeat.col;
-
-            if (isSourceSpot) continue;
-
-            const leftFree = !leftSeat || (row === pairRow && sourceCols.includes(col));
-            const rightFree = !rightSeat || (row === pairRow && sourceCols.includes(col + 1));
-
-            if (leftFree && rightFree) {
-                targets.push({ row, col });
-            }
-        }
-    });
-
-    return targets;
-}
-
-function buildCoupleSwapTargets(targetTypeId) {
-    if (!sourceSeat || sourceSeat.typeID !== COUPLE_TYPE_ID) return [];
-
-    const targets = [];
-    const addedIds = new Set();
-
-    seatsData.forEach(seat => {
-        if (Number(seat.seatTypeID) !== Number(targetTypeId)) return;
-        if (Number(seat.seatTypeID) === COUPLE_TYPE_ID || Number(seat.seatTypeID) === MAINTENANCE_TYPE_ID) return;
-
-        const partner = seatsData.find(candidate =>
-            candidate.seatID !== seat.seatID &&
-            candidate.rowSeat === seat.rowSeat &&
-            Number(candidate.seatTypeID) === Number(targetTypeId) &&
-            Math.abs(Number(candidate.colSeat) - Number(seat.colSeat)) === 1
-        );
-
-        if (!partner) return;
-
-        if (!addedIds.has(String(seat.seatID))) {
-            targets.push(seat);
-            addedIds.add(String(seat.seatID));
-        }
-
-        if (!addedIds.has(String(partner.seatID))) {
-            targets.push(partner);
-            addedIds.add(String(partner.seatID));
-        }
-    });
-
-    return targets;
-}
-
-function startCoupleMove() {
-    if (!sourceSeat || sourceSeat.typeID !== COUPLE_TYPE_ID) return;
-
-    const targets = buildCoupleMoveTargets();
-    if (!targets.length) {
-        showToast('Không có vị trí trống liền nhau để di chuyển cặp ghế', 'warning');
-        return;
-    }
-
-    appMode = 'couple_moving';
-    reApplyStyles();
-
-    const hint = document.getElementById('hintSwap');
-    hint.textContent = `↦ Chọn ô trống đầu tiên của vị trí đích cho cặp ${sourceSeat.name}${sourceSeat.pairName ? ` + ${sourceSeat.pairName}` : ''}.`;
-    hint.classList.add('show');
-}
-
-function confirmCoupleMove(row, col) {
-    if (!sourceSeat || sourceSeat.typeID !== COUPLE_TYPE_ID) return;
-
-    const targetLabel = `${row}${col}-${col + 1}`;
-    if (!confirm(`Di chuyển cặp ghế ${sourceSeat.name}${sourceSeat.pairName ? ` + ${sourceSeat.pairName}` : ''} → ${targetLabel}?`)) {
-        return;
-    }
-
-    apiFetch('/admins/seat/ajax-move-couple', 'POST', {
-        seatID: parseInt(sourceSeat.id, 10),
-        targetRow: row,
-        targetCol: col
-    }).then(res => {
-        if (!res.success) {
-            showToast(res.message, 'error');
-            return;
-        }
-
-        showToast(`Đã di chuyển cặp ghế tới ${targetLabel}`, 'success');
-        resetMode();
-        loadSeats(true);
-    }).catch(err => showToast(err.message, 'error'));
-}
-
-function clearStyles() {
-    document.querySelectorAll('.seat').forEach(el =>
-        el.classList.remove('is-source','is-couple-pair','is-swap-tgt',
-                            'is-couple-tgt','is-dimmed','is-multi')
-    );
-    document.querySelectorAll('.empty-slot, .disabled-slot').forEach(el =>
-        el.classList.remove('is-move-tgt', 'is-dimmed')
-    );
-}
-
-function reApplyStyles() {
-    clearStyles();
-    if (!sourceSeat && !selectedMulti.size) return;
-
-    if (selectedMulti.size > 0) {
-        document.querySelectorAll('.seat').forEach(el => {
-            if (selectedMulti.has(el.dataset.id)) el.classList.add('is-multi');
-        });
-        return;
-    }
-
-    const src = String(sourceSeat.id);
-
-    if (appMode === 'selected') {
-        document.querySelectorAll('.seat').forEach(el => {
-            if (el.dataset.id === src) { el.classList.add('is-source'); return; }
-            if (sourceSeat.pairID && el.dataset.id === String(sourceSeat.pairID)) {
-                el.classList.add('is-couple-pair'); return;
-            }
-        });
-    }
-
-    if (appMode === 'swap_picking') {
-        const tid = getSwapTarget();
-        document.querySelectorAll('.seat').forEach(el => {
-            if (el.dataset.id === src)       { el.classList.add('is-source');   return; }
-            if (+el.dataset.type === tid)    { el.classList.add('is-swap-tgt'); return; }
-            el.classList.add('is-dimmed');
-        });
-    }
-
-    if (appMode === 'couple_picking') {
-        const pairedIDs = buildPairedIDs();
-        document.querySelectorAll('.seat').forEach(el => {
-            if (el.dataset.id === src) { el.classList.add('is-source'); return; }
-            const adj = el.dataset.row === sourceSeat.row &&
-                        Math.abs(+el.dataset.col - sourceSeat.col) === 1;
-            const valid = adj && +el.dataset.type !== COUPLE_TYPE_ID && +el.dataset.type !== MAINTENANCE_TYPE_ID &&
-                          !pairedIDs.has(el.dataset.id);
-            if (valid) { el.classList.add('is-couple-tgt'); return; }
-            el.classList.add('is-dimmed');
-        });
-    }
-
-    if (appMode === 'couple_moving') {
-        const moveTargets = new Set(buildCoupleMoveTargets().map(target => `${target.row}-${target.col}`));
-
-        document.querySelectorAll('.seat').forEach(el => {
-            if (el.dataset.id === src || (sourceSeat.pairID && el.dataset.id === String(sourceSeat.pairID))) {
-                el.classList.add(el.dataset.id === src ? 'is-source' : 'is-couple-pair');
-                return;
-            }
-            el.classList.add('is-dimmed');
-        });
-
-        document.querySelectorAll('.empty-slot, .disabled-slot').forEach(el => {
-            const key = `${el.dataset.row}-${el.dataset.col}`;
-            if (moveTargets.has(key)) {
-                el.classList.add('is-move-tgt');
-                return;
-            }
-            el.classList.add('is-dimmed');
-        });
-    }
-}
-
-function bindGridEvents() {
-    const grid = document.getElementById('seatGrid');
-
-    document.querySelectorAll('.seat').forEach(el => {
-        el.addEventListener('click', function() {
-            if (dragJustFinished) { dragJustFinished = false; return; }
-            if (appMode === 'multi_select') return;
-            if (appMode === 'swap_picking') {
-                if (this.classList.contains('is-swap-tgt')) confirmSwap(this);
-                return;
-            }
-            if (appMode === 'couple_picking') {
-                if (this.classList.contains('is-couple-tgt')) confirmCouple(this);
-                return;
-            }
-            if (appMode === 'couple_moving') return;
-            selectSource(this);
-        });
-    });
-
-    document.querySelectorAll('.empty-slot, .disabled-slot').forEach(el => {
-        el.addEventListener('click', function() {
-            if (appMode === 'couple_moving' && this.classList.contains('is-move-tgt')) {
-                confirmCoupleMove(this.dataset.row, parseInt(this.dataset.col, 10));
-                return;
-            }
-            if (appMode === 'idle' || appMode === 'selected') {
-                quickFill(this.dataset.row, this.dataset.col);
-            }
-        });
-    });
-
-    grid.addEventListener('mousedown', function(e) {
-        if (e.button !== 0) return;
-        if (appMode === 'swap_picking' || appMode === 'couple_picking' || appMode === 'couple_moving') return;
-        drag = { active:false, pending:true, startX:e.clientX, startY:e.clientY };
-        e.preventDefault();
-    });
-}
-
-function resetMode() {
-    appMode = 'idle';
-    sourceSeat = null;
-    selectedMulti.clear();
-    clearStyles();
-    document.getElementById('swapIdle').style.display = '';
-    document.getElementById('swapPanel').classList.remove('show');
-    document.getElementById('batchPanel').classList.remove('show');
-    document.getElementById('hintSwap').classList.remove('show');
-    document.getElementById('hintCouple').classList.remove('show');
-    document.getElementById('btnMoveCouple').style.display = 'none';
-    document.getElementById('btnSwap').textContent = '⇄ Hoán đổi';
-}
-
-function startSwapPicking() {
-    if (!sourceSeat) return;
-
-    const targetTypeId = getSwapTarget();
-    if (targetTypeId === sourceSeat.typeID) {
-        showToast('Chọn loại khác với hiện tại', 'warning');
-        return;
-    }
-
-    if (targetTypeId === COUPLE_TYPE_ID) {
-        showToast('Dùng nút "Ghế đôi" để tạo ghế đôi', 'warning');
-        return;
-    }
-
-    if (sourceSeat.typeID === COUPLE_TYPE_ID) {
-        const targets = buildCoupleSwapTargets(targetTypeId);
-        if (!targets.length) {
-            showToast('Không có cặp ghế hợp lệ của loại đã chọn để đổi', 'warning');
-            return;
-        }
-
-        appMode = 'couple_swap_picking';
-        reApplyStyles();
-        const hint = document.getElementById('hintSwap');
-        const targetName = TYPE_NAME[targetTypeId] || SEAT_TYPE_NAMES[targetTypeId] || 'đã chọn';
-        hint.textContent = `⇄ Chọn 1 ghế đang sáng thuộc cặp ${targetName} để đổi với ${sourceSeat.name}${sourceSeat.pairName ? ` + ${sourceSeat.pairName}` : ''}.`;
-        hint.classList.add('show');
-        return;
-    }
-
-    const availableSeats = seatsData.filter(seat =>
-        Number(seat.seatTypeID) === targetTypeId && String(seat.seatID) !== sourceSeat.id
-    );
-
-    if (!availableSeats.length) {
-        showToast(`Không có ghế ${TYPE_NAME[targetTypeId] || SEAT_TYPE_NAMES[targetTypeId] || ''} để hoán đổi`, 'warning');
-        return;
-    }
-
-    appMode = 'swap_picking';
-    reApplyStyles();
-    const hint = document.getElementById('hintSwap');
-    const targetName = TYPE_NAME[targetTypeId] || SEAT_TYPE_NAMES[targetTypeId] || 'đã chọn';
-    hint.textContent = `⇄ Chọn 1 ghế ${targetName} (tô xanh) để hoán đổi với ${sourceSeat.name}. [Esc] huỷ.`;
-    hint.classList.add('show');
-}
-
-function confirmCoupleSwap(el) {
-    if (!sourceSeat || sourceSeat.typeID !== COUPLE_TYPE_ID) return;
-
-    const sourceLabel = `${sourceSeat.name}${sourceSeat.pairName ? ` + ${sourceSeat.pairName}` : ''}`;
-    const targetLabel = `${el.dataset.name}${el.dataset.pairname ? ` + ${el.dataset.pairname}` : ''}`;
-
-    if (!confirm(`Đổi cặp ghế:\n${sourceLabel} ⇄ ${targetLabel}?`)) return;
-
-    apiFetch('/admins/seat/ajax-swap-couple-type', 'POST', {
-        sourceSeatID: parseInt(sourceSeat.id, 10),
-        targetSeatID: parseInt(el.dataset.id, 10),
-        targetTypeID: getSwapTarget()
-    }).then(res => {
-        if (!res.success) {
-            showToast(res.message, 'error');
-            return;
-        }
-
-        showToast(`Đã đổi ${sourceLabel} với ${targetLabel}`, 'success');
-        resetMode();
-        loadSeats(true);
-    }).catch(err => showToast(err.message, 'error'));
-}
-
-function reApplyStyles() {
-    clearStyles();
-    if (!sourceSeat && !selectedMulti.size) return;
-
-    if (selectedMulti.size > 0) {
-        document.querySelectorAll('.seat').forEach(el => {
-            if (selectedMulti.has(el.dataset.id)) el.classList.add('is-multi');
-        });
-        return;
-    }
-
-    const src = String(sourceSeat.id);
-
-    if (appMode === 'selected') {
-        document.querySelectorAll('.seat').forEach(el => {
-            if (el.dataset.id === src) { el.classList.add('is-source'); return; }
-            if (sourceSeat.pairID && el.dataset.id === String(sourceSeat.pairID)) {
-                el.classList.add('is-couple-pair'); return;
-            }
-        });
-    }
-
-    if (appMode === 'swap_picking') {
-        const tid = getSwapTarget();
-        document.querySelectorAll('.seat').forEach(el => {
-            if (el.dataset.id === src) { el.classList.add('is-source'); return; }
-            if (+el.dataset.type === tid) { el.classList.add('is-swap-tgt'); return; }
-            el.classList.add('is-dimmed');
-        });
-    }
-
-    if (appMode === 'couple_swap_picking') {
-        const targets = buildCoupleSwapTargets(getSwapTarget());
-        const pairNames = new Map();
-
-        targets.forEach(seat => {
-            const partner = seatsData.find(candidate =>
-                candidate.seatID !== seat.seatID &&
-                candidate.rowSeat === seat.rowSeat &&
-                Number(candidate.seatTypeID) === Number(seat.seatTypeID) &&
-                Math.abs(Number(candidate.colSeat) - Number(seat.colSeat)) === 1
-            );
-            pairNames.set(String(seat.seatID), partner ? `${partner.rowSeat}${partner.colSeat}` : '');
-        });
-
-        document.querySelectorAll('.seat').forEach(el => {
-            if (el.dataset.id === src || (sourceSeat.pairID && el.dataset.id === String(sourceSeat.pairID))) {
-                el.classList.add(el.dataset.id === src ? 'is-source' : 'is-couple-pair');
-                return;
-            }
-
-            if (pairNames.has(String(el.dataset.id))) {
-                el.classList.add('is-swap-tgt');
-                el.dataset.pairname = pairNames.get(String(el.dataset.id));
-                return;
-            }
-
-            el.classList.add('is-dimmed');
-        });
-    }
-
-    if (appMode === 'couple_picking') {
-        const pairedIDs = buildPairedIDs();
-        document.querySelectorAll('.seat').forEach(el => {
-            if (el.dataset.id === src) { el.classList.add('is-source'); return; }
-            const adj = el.dataset.row === sourceSeat.row &&
-                Math.abs(+el.dataset.col - sourceSeat.col) === 1;
-            const valid = adj && +el.dataset.type !== COUPLE_TYPE_ID && +el.dataset.type !== MAINTENANCE_TYPE_ID &&
-                !pairedIDs.has(el.dataset.id);
-            if (valid) { el.classList.add('is-couple-tgt'); return; }
-            el.classList.add('is-dimmed');
-        });
-    }
-
-    if (appMode === 'couple_moving') {
-        const moveTargets = new Set(buildCoupleMoveTargets().map(target => `${target.row}-${target.col}`));
-
-        document.querySelectorAll('.seat').forEach(el => {
-            if (el.dataset.id === src || (sourceSeat.pairID && el.dataset.id === String(sourceSeat.pairID))) {
-                el.classList.add(el.dataset.id === src ? 'is-source' : 'is-couple-pair');
-                return;
-            }
-            el.classList.add('is-dimmed');
-        });
-
-        document.querySelectorAll('.empty-slot, .disabled-slot').forEach(el => {
-            const key = `${el.dataset.row}-${el.dataset.col}`;
-            if (moveTargets.has(key)) {
-                el.classList.add('is-move-tgt');
-                return;
-            }
-            el.classList.add('is-dimmed');
-        });
-    }
-}
-
-function bindGridEvents() {
-    const grid = document.getElementById('seatGrid');
-
-    document.querySelectorAll('.seat').forEach(el => {
-        el.addEventListener('click', function() {
-            if (dragJustFinished) { dragJustFinished = false; return; }
-            if (appMode === 'multi_select') return;
-            if (appMode === 'swap_picking') {
-                if (this.classList.contains('is-swap-tgt')) confirmSwap(this);
-                return;
-            }
-            if (appMode === 'couple_swap_picking') {
-                if (this.classList.contains('is-swap-tgt')) confirmCoupleSwap(this);
-                return;
-            }
-            if (appMode === 'couple_picking') {
-                if (this.classList.contains('is-couple-tgt')) confirmCouple(this);
-                return;
-            }
-            if (appMode === 'couple_moving') return;
-            selectSource(this);
-        });
-    });
-
-    document.querySelectorAll('.empty-slot, .disabled-slot').forEach(el => {
-        el.addEventListener('click', function() {
-            if (appMode === 'couple_moving' && this.classList.contains('is-move-tgt')) {
-                confirmCoupleMove(this.dataset.row, parseInt(this.dataset.col, 10));
-                return;
-            }
-            if (appMode === 'idle' || appMode === 'selected') {
-                quickFill(this.dataset.row, this.dataset.col);
-            }
-        });
-    });
-
-    grid.addEventListener('mousedown', function(e) {
-        if (e.button !== 0) return;
-        if (appMode === 'swap_picking' || appMode === 'couple_swap_picking' || appMode === 'couple_picking' || appMode === 'couple_moving') return;
-        drag = { active:false, pending:true, startX:e.clientX, startY:e.clientY };
-        e.preventDefault();
-    });
-}
 
 document.addEventListener('DOMContentLoaded', loadSeats);
 </script>

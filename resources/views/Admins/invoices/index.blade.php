@@ -22,7 +22,7 @@
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th>#ID</th>
+                        <th>ID</th>
                         <th>Khách hàng</th>
                         <th>Thanh toán</th>
                         <th>Tổng tiền</th>
@@ -34,7 +34,7 @@
                 <tbody>
                     @forelse($invoices as $inv)
                     <tr>
-                        <td class="text-muted">#{{ $inv->invoiceID }}</td>
+                        <td class="text-muted">INV-{{ $inv->invoiceID }}</td>
 
                         {{-- Khách hàng --}}
                         <td class="fw-medium">

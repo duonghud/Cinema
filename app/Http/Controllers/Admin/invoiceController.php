@@ -74,20 +74,11 @@ class InvoiceController extends Controller
             'invoices' => $invoices,
             'filters' => [
                 [
-                    'name' => 'customer_id',
-                    'all_label' => 'Tất cả khách hàng',
-                    'options' => $customers->toArray(),
-                ],
-                [
                     'name' => 'payment_id',
                     'all_label' => 'Tất cả thanh toán',
                     'options' => $payments->toArray(),
                 ],
-                [
-                    'name' => 'admin_id',
-                    'all_label' => 'Tất cả admin',
-                    'options' => $admins->toArray(),
-                ],
+               
                 [
                     'name' => 'create_date',
                     'all_label' => 'Tất cả ngày tạo',
