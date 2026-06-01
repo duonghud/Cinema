@@ -1,25 +1,25 @@
 @extends('layouts.app')
 @section('content')
 @php
-    use Carbon\Carbon;
+use Carbon\Carbon;
 
-    $dates = $movie->showTimes
-        ->groupBy('showDate')
-        ->map(function ($shows) {
-            return $shows->filter(function ($show) {
-                $showDateTime = Carbon::parse($show->showDate . ' ' . $show->startTime);
-                return now()->lt($showDateTime);
-            })->values();
-        })
-        ->filter(function ($shows) {
-            return $shows->count() > 0;
-        });
+$dates = $movie->showTimes
+->groupBy('showDate')
+->map(function ($shows) {
+return $shows->filter(function ($show) {
+$showDateTime = Carbon::parse($show->showDate . ' ' . $show->startTime);
+return now()->lt($showDateTime);
+})->values();
+})
+->filter(function ($shows) {
+return $shows->count() > 0;
+});
 
-    $firstDate = $selectedShowTime && $dates->has($selectedShowTime->showDate)
-        ? $selectedShowTime->showDate
-        : $dates->keys()->first();
+$firstDate = $selectedShowTime && $dates->has($selectedShowTime->showDate)
+? $selectedShowTime->showDate
+: $dates->keys()->first();
 
-    $selectedShowTimeId = $selectedShowTime?->showTimeID;
+$selectedShowTimeId = $selectedShowTime?->showTimeID;
 @endphp
 
 <style>
@@ -297,6 +297,7 @@
                 if (seat.classList.contains("booked")) return;
 
                 if (seat.classList.contains("couple")) {
+
                     const seatCode = seat.dataset.seat;
                     const match = seatCode.match(/^([A-Z]+)(\d+)$/);
 
@@ -304,38 +305,99 @@
 
                     const row = match[1];
                     const col = parseInt(match[2]);
-                    const firstCol = (col % 2 === 0) ? col : col - 1;
 
-                    const firstSeat = document.querySelector(`.seat[data-seat="${row}${firstCol}"]`);
-                    const secondSeat = document.querySelector(`.seat[data-seat="${row}${firstCol + 1}"]`);
+                    // kiểm tra ghế trái và phải
+                    const leftSeat = document.querySelector(
+                        `.seat[data-seat="${row}${col - 1}"]`
+                    );
 
-                    if (!firstSeat || !secondSeat) return;
+                    const rightSeat = document.querySelector(
+                        `.seat[data-seat="${row}${col + 1}"]`
+                    );
 
-                    if (firstSeat.classList.contains("booked") || secondSeat.classList.contains("booked")) {
+                    let pairSeats = [];
+
+                    // Ưu tiên ghép với ghế bên phải nếu:
+                    // - tồn tại
+                    // - là ghế đôi
+                    // - cột hiện tại là số lẻ
+                    if (
+                        col % 2 !== 0 &&
+                        rightSeat &&
+                        rightSeat.classList.contains("couple")
+                    ) {
+                        pairSeats = [seat, rightSeat];
+                    }
+
+                    // Nếu không thì ghép với ghế bên trái
+                    else if (
+                        col % 2 === 0 &&
+                        leftSeat &&
+                        leftSeat.classList.contains("couple")
+                    ) {
+                        pairSeats = [leftSeat, seat];
+                    }
+
+                    // fallback nếu dữ liệu lệch
+                    else if (
+                        rightSeat &&
+                        rightSeat.classList.contains("couple")
+                    ) {
+                        pairSeats = [seat, rightSeat];
+                    } else if (
+                        leftSeat &&
+                        leftSeat.classList.contains("couple")
+                    ) {
+                        pairSeats = [leftSeat, seat];
+                    }
+
+                    // không tìm được cặp hợp lệ
+                    if (pairSeats.length !== 2) {
                         return;
                     }
 
-                    const pairSeats = [firstSeat, secondSeat];
-                    const isSelected = pairSeats.every(s => s.classList.contains("selected"));
+                    // ghế đã đặt thì không chọn
+                    if (
+                        pairSeats.some(s => s.classList.contains("booked"))
+                    ) {
+                        return;
+                    }
+
+                    const isSelected = pairSeats.every(s =>
+                        s.classList.contains("selected")
+                    );
 
                     if (isSelected) {
+
                         pairSeats.forEach(s => {
+
                             const code = s.dataset.seat;
                             const price = parseInt(s.dataset.price || 0);
 
                             s.classList.remove("selected");
-                            selectedSeats = selectedSeats.filter(x => x !== code);
+
+                            selectedSeats = selectedSeats.filter(
+                                x => x !== code
+                            );
+
                             totalPrice -= price;
                         });
+
                     } else {
+
                         pairSeats.forEach(s => {
+
                             const code = s.dataset.seat;
                             const price = parseInt(s.dataset.price || 0);
 
                             if (!s.classList.contains("selected")) {
+
                                 s.classList.add("selected");
-                                selectedSeats.push(code);
-                                totalPrice += price;
+
+                                if (!selectedSeats.includes(code)) {
+                                    selectedSeats.push(code);
+                                    totalPrice += price;
+                                }
                             }
                         });
                     }
