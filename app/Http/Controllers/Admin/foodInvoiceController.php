@@ -64,11 +64,11 @@ class FoodInvoiceController extends Controller
             [
                 'invoices' => $invoices,
                 'filters' => [
-                    [
+                    /*[
                         'name' => 'customer_id',
                         'all_label' => 'Tất cả khách hàng',
                         'options' => $customers->toArray(),
-                    ],
+                    ],*/
                     [
                         'name' => 'payment_id',
                         'all_label' => 'Tất cả thanh toán',

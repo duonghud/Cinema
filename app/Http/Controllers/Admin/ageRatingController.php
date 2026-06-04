@@ -36,11 +36,11 @@ class ageRatingController extends Controller
 
         return view('admins.manageMovies.ageRating.index', [
             'ageRatings' => $ageRatings,
-            'filters' => [[
+            /*'filters' => [[
                 'name' => 'code',
                 'all_label' => 'Tất cả độ tuổi',
                 'options' => $codes->toArray(),
-            ]],
+            ]],*/
         ]);
     }
 

@@ -35,11 +35,11 @@ class paymentMethodController extends Controller
 
         return view('admins.paymentMethod.index', [
             'paymentMethods' => $paymentMethods,
-            'filters' => [[
+            /*'filters' => [[
                 'name' => 'payment_name',
                 'all_label' => 'Tất cả phương thức',
                 'options' => $paymentNames->toArray(),
-            ]],
+            ]],*/
         ]);
     }
 

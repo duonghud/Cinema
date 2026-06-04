@@ -19,6 +19,7 @@ class foodInvoice extends Model
         'paymentID',
         'orderDate',
         'total',
+        'adminID',
     ];
 
     // =========================================================
