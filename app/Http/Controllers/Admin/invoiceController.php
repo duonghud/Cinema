@@ -62,10 +62,10 @@ class InvoiceController extends Controller
         $payments = payment_method::query()->orderBy('name')->pluck('name', 'paymentID');
         $admins = Admin::query()->orderBy('fullName')->pluck('fullName', 'adminID');
         $dates = Invoice::query()
-            ->select('createDate')
+            ->selectRaw('DATE(createDate) as date_only')
             ->distinct()
-            ->orderByDesc('createDate')
-            ->pluck('createDate', 'createDate')
+            ->orderByDesc('date_only')
+            ->pluck('date_only')
             ->mapWithKeys(function ($date) {
                 return [$date => \Carbon\Carbon::parse($date)->format('d/m/Y')];
             });
@@ -78,7 +78,7 @@ class InvoiceController extends Controller
                     'all_label' => 'Tất cả thanh toán',
                     'options' => $payments->toArray(),
                 ],
-               
+
                 [
                     'name' => 'create_date',
                     'all_label' => 'Tất cả ngày tạo',

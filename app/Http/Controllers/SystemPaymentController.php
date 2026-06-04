@@ -145,6 +145,12 @@ class SystemPaymentController extends Controller
                 ->createPayment($invoice['total']);
         }
 
+        // MOMO
+        if (stripos($paymentMethod->name, 'MoMo') !== false) {
+            return app(MomoController::class)
+                ->createPayment($invoice['total']);
+        }
+
         try {
             $savedInvoice = $this->bookingService->finalizeFromSession(
                 $invoice,

@@ -95,6 +95,7 @@
     .bm { background: #e0e7ff; color: #3730a3; border: 1px solid #a5b4fc; }
     .bm:hover:not(:disabled) { background: #c7d2fe; }
 
+    /* Panel đơn lẻ */
     .swap-info {
         background: #eff6ff;
         border: 1px solid #bfdbfe;
@@ -106,6 +107,36 @@
         flex-wrap: wrap;
     }
     .swap-info.show { display: flex; }
+
+    /* Panel hoán đổi nhiều ghế */
+    .batch-panel {
+        background: #eef2ff;
+        border: 1px solid #c7d2fe;
+        border-radius: 12px;
+        padding: 16px 18px;
+        display: none;
+        flex-direction: column;
+        gap: 14px;
+        margin-top: 10px;
+    }
+    .batch-panel.show { display: flex; }
+
+    .batch-top {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+
+    .batch-validation {
+        font-size: 12px;
+        font-weight: 600;
+        padding: 8px 14px;
+        border-radius: 8px;
+        display: none;
+    }
+    .batch-validation.ok  { background: #f0fdf4; border: 1px solid #86efac; color: #166534; display: block; }
+    .batch-validation.err { background: #fef2f2; border: 1px solid #fca5a5; color: #991b1b; display: block; }
 
     .seat-badge {
         display: inline-flex;
@@ -119,19 +150,6 @@
         font-size: 14px;
         color: var(--text-main);
     }
-
-    .batch-panel {
-        background: #eef2ff;
-        border: 1px solid #c7d2fe;
-        border-radius: 12px;
-        padding: 14px 18px;
-        display: none;
-        gap: 14px;
-        align-items: center;
-        flex-wrap: wrap;
-        margin-top: 10px;
-    }
-    .batch-panel.show { display: flex; }
 
     .mode-hint {
         border-radius: 10px;
@@ -231,7 +249,6 @@
     .seat.t-couple { background: #fce7f3; color: #9d174d; border-color: #f9a8d4; }
     .seat.t-maint  { background: #f1f5f9; color: #94a3b8; border-color: #cbd5e1; }
 
-    /* Selection states */
     .seat.is-source {
         outline: 3px solid #3b82f6;
         box-shadow: 0 0 0 5px rgba(59,130,246,.2);
@@ -245,6 +262,8 @@
         z-index: 25;
     }
     .seat.is-dimmed { opacity: .2; pointer-events: none; }
+
+    /* Multi-select: màu tím */
     .seat.is-multi {
         outline: 3px solid #6366f1;
         box-shadow: 0 0 0 4px rgba(99,102,241,.18);
@@ -372,7 +391,7 @@
                     @forelse($rooms as $r)
                         <option value="{{ $r->roomID }}"
                             {{ (int)($roomID ?? 0) === (int)$r->roomID ? 'selected' : '' }}>
-                            {{ $r->roomName }} — {{ $r->capacity }} ghế
+                            {{ $r->roomName }}
                         </option>
                     @empty
                         <option value="">Chưa có phòng</option>
@@ -398,10 +417,12 @@
 <div class="panel-card">
     <div class="panel-title">Thao tác ghế</div>
 
+    {{-- Trạng thái idle --}}
     <p id="swapIdle" style="color:var(--muted);font-size:13px;margin:0;">
-        ← Bấm vào một ghế để thao tác đơn lẻ. Nhấn giữ và kéo chuột trên lưới để chọn nhiều ghế.
+        ← Bấm vào một ghế để thao tác đơn lẻ. Nhấn giữ và kéo chuột trên lưới để chọn nhiều ghế cùng lúc.
     </p>
 
+    {{-- Panel thao tác GHẾ ĐƠN --}}
     <div class="swap-info" id="swapPanel">
         <div>
             <div class="form-label" style="margin-bottom:4px;">Ghế đang chọn</div>
@@ -427,26 +448,49 @@
 
     <div class="mode-hint hint-swap" id="hintSwap"></div>
 
+    {{--
+        Panel HOÁN ĐỔI NHIỀU GHẾ
+        Flow:
+          1. Drag chọn N ghế (is-multi, tím)
+          2. Chọn loại muốn đổi sang
+          3. Validate: tất cả ghế chọn phải cùng 1 loại
+                       số ghế loại đích >= N
+          4. Confirm → gọi ajax-batch-update-type
+    --}}
     <div class="batch-panel" id="batchPanel">
-        <div>
-            <div class="form-label" style="margin-bottom:4px;">Đã chọn</div>
-            <div class="seat-badge">
-                <span style="color:#6366f1">⬡</span>
-                <span id="batchCount">0</span> ghế
+
+        <div class="batch-top">
+            {{-- Thông tin nhóm nguồn --}}
+            <div>
+                <div class="form-label" style="margin-bottom:4px;">Ghế đã chọn</div>
+                <div class="seat-badge">
+                    <span style="color:#6366f1">⬡</span>
+                    <span id="batchCount">0</span> ghế
+                    <span id="batchSourceType" style="color:var(--muted);font-size:11px;font-weight:600"></span>
+                </div>
+            </div>
+
+            <span style="color:var(--muted);font-size:20px;font-weight:300;">→</span>
+
+            {{-- Loại muốn đổi sang --}}
+            <div style="flex:1;min-width:160px;">
+                <div class="form-label" style="margin-bottom:4px;">Đổi tất cả sang loại</div>
+                <select id="batchTargetType" class="ctrl" onchange="validateBatch()">
+                    @foreach($seatTypes as $type)
+                        <option value="{{ $type->seatTypeID }}">{{ $type->seatTypeName }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="d-flex gap-2 flex-wrap align-items-end">
+                <button class="btn-c bm" id="btnApplyBatch" onclick="applyBatch()">✦ Áp dụng</button>
+                <button class="btn-c bg" onclick="resetMode()">✕ Huỷ chọn</button>
             </div>
         </div>
-        <div style="flex:1;min-width:150px;">
-            <div class="form-label" style="margin-bottom:4px;">Đổi tất cả sang loại</div>
-            <select id="batchTargetType" class="ctrl">
-                @foreach($seatTypes as $type)
-                    <option value="{{ $type->seatTypeID }}">{{ $type->seatTypeName }}</option>
-                @endforeach
-            </select>
-        </div>
-        <div class="d-flex gap-2 flex-wrap">
-            <button class="btn-c bm" onclick="applyBatch()">✦ Áp dụng</button>
-            <button class="btn-c bg" onclick="resetMode()">✕ Huỷ chọn</button>
-        </div>
+
+        {{-- Thông báo validate real-time --}}
+        <div class="batch-validation" id="batchValidation"></div>
+
     </div>
 </div>
 
@@ -551,15 +595,15 @@ const TYPE_COLOR = {
 let seatsData     = [];
 let appMode       = 'idle';   // idle | selected | swap_picking | multi_select
 let sourceSeat    = null;
-let selectedMulti = new Set();
+let selectedMulti = new Set(); // Set<seatID string>
 
 let drag = { active:false, pending:false, startX:0, startY:0 };
 let dragJustFinished = false;
 const DRAG_THRESHOLD = 6;
 
-// ══════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════
 // LOAD & RENDER
-// ══════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════
 function loadSeats(silent = false) {
     if (!ROOM_ID) {
         document.getElementById('seatGrid').innerHTML =
@@ -580,7 +624,6 @@ function updateStats() {
     const counts = {};
     seatsData.forEach(s => counts[s.seatTypeID] = (counts[s.seatTypeID] || 0) + 1);
 
-    // Ghế đôi = 1 record = 1 chỗ, đếm thẳng
     set('st-total',  seatsData.length);
     set('st-normal', counts[NORMAL_TYPE_ID] || 0);
     set('st-vip',    counts[VIP_TYPE_ID] || 0);
@@ -594,7 +637,7 @@ function updateStats() {
 }
 
 function renderGrid() {
-    const grid   = document.getElementById('seatGrid');
+    const grid    = document.getElementById('seatGrid');
     const seatMap = {};
     seatsData.forEach(s => { seatMap[`${s.rowSeat}-${s.colSeat}`] = s; });
 
@@ -610,10 +653,9 @@ function renderGrid() {
             if (!seat) {
                 html += col === renderCols
                     ? `<div class="disabled-slot" data-row="${row}" data-col="${col}" onclick="quickFill('${row}',${col})" title="Thêm ghế ${row}${col}">+</div>`
-                    : `<div class="empty-slot" data-row="${row}" data-col="${col}">+</div>`;
+                    : `<div class="empty-slot"    data-row="${row}" data-col="${col}">+</div>`;
                 continue;
             }
-            // Tất cả ghế (kể cả đôi) render 1 ô như nhau
             const cls = TYPE_CLASS[seat.seatTypeID] || 't-normal';
             html += `<div class="seat ${cls}"
                           data-id="${seat.seatID}" data-row="${row}" data-col="${col}"
@@ -650,9 +692,9 @@ function quickFill(row, col) {
     document.getElementById('addRow').scrollIntoView({ behavior:'smooth', block:'center' });
 }
 
-// ══════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════
 // GRID EVENTS
-// ══════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════
 function bindGridEvents() {
     const grid = document.getElementById('seatGrid');
 
@@ -697,7 +739,6 @@ document.addEventListener('mousemove', function (e) {
     if (seat && !selectedMulti.has(seat.dataset.id)) {
         selectedMulti.add(seat.dataset.id);
         seat.classList.add('is-multi');
-        set('batchCount', selectedMulti.size);
     }
 });
 
@@ -714,13 +755,15 @@ document.addEventListener('mouseup', function () {
         document.getElementById('swapPanel').classList.remove('show');
         document.getElementById('batchPanel').classList.add('show');
         set('batchCount', selectedMulti.size);
-        showToast(`Đã chọn ${selectedMulti.size} ghế`, 'info');
+        updateBatchSourceLabel();
+        validateBatch();
+        showToast(`Đã chọn ${selectedMulti.size} ghế — chọn loại muốn đổi rồi nhấn Áp dụng`, 'info');
     }
 });
 
-// ══════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════
 // SELECT / STYLES
-// ══════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════
 function selectSource(el) {
     sourceSeat = {
         id:     el.dataset.id,
@@ -747,7 +790,6 @@ function selectSource(el) {
         btnMaint.textContent = '⚙ Bảo trì';  btnMaint.className = 'btn-c bw';
     }
 
-    // Preset target type to something different from current
     const sel = document.getElementById('swapTargetType');
     for (const opt of sel.options) {
         if (+opt.value !== sourceSeat.typeID) { opt.selected = true; break; }
@@ -790,9 +832,9 @@ function reApplyStyles() {
     }
 }
 
-// ══════════════════════════════════════════════════════════════════
-// SWAP
-// ══════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════
+// SWAP (đơn lẻ)
+// ══════════════════════════════════════════════════════════
 function startSwapPicking() {
     if (!sourceSeat) return;
     const tid = getSwapTarget();
@@ -821,9 +863,9 @@ function confirmSwap(el) {
     }).catch(err => showToast(err.message, 'error'));
 }
 
-// ══════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════
 // MAINTENANCE
-// ══════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════
 function toggleMaintenance() {
     if (!sourceSeat) return;
     const isMaint  = sourceSeat.typeID === MAINTENANCE_TYPE_ID;
@@ -839,26 +881,148 @@ function toggleMaintenance() {
     }).catch(err => showToast(err.message, 'error'));
 }
 
-// ══════════════════════════════════════════════════════════════════
-// BATCH
-// ══════════════════════════════════════════════════════════════════
-function applyBatch() {
-    if (!selectedMulti.size) { showToast('Chưa chọn ghế nào', 'warning'); return; }
-    const typeID   = parseInt(document.getElementById('batchTargetType').value);
-    const typeName = TYPE_NAME[typeID] || '';
-    if (!confirm(`Đổi ${selectedMulti.size} ghế → ${typeName}?\n(Ghế có vé sẽ bị bỏ qua)`)) return;
-    apiFetch('/admins/seat/ajax-batch-update-type', 'POST', {
-        seatIDs: [...selectedMulti].map(Number), seatTypeID: typeID
-    }).then(res => {
-        if (!res.success) { showToast(res.message, 'error'); return; }
-        showToast(res.message || 'Cập nhật thành công', 'success');
-        resetMode(); loadSeats(true);
-    }).catch(err => showToast(err.message, 'error'));
+// ══════════════════════════════════════════════════════════
+// BATCH SWAP (nhiều ghế)
+// ══════════════════════════════════════════════════════════
+
+/**
+ * Cập nhật nhãn "loại nguồn" dựa trên các ghế đang được chọn.
+ * - Nếu tất cả cùng loại → hiển thị tên loại đó
+ * - Nếu hỗn hợp → hiển thị "(hỗn hợp)"
+ */
+function updateBatchSourceLabel() {
+    const selectedSeats = seatsData.filter(s => selectedMulti.has(String(s.seatID)));
+    const types = [...new Set(selectedSeats.map(s => Number(s.seatTypeID)))];
+    const label = types.length === 1
+        ? `(${TYPE_NAME[types[0]] || SEAT_TYPE_NAMES[types[0]] || ''})`
+        : '(hỗn hợp)';
+    document.getElementById('batchSourceType').textContent = label;
 }
 
-// ══════════════════════════════════════════════════════════════════
+/**
+ * Validate trước khi áp dụng hoán đổi nhiều ghế:
+ *
+ * Quy tắc:
+ *  1. Tất cả ghế được chọn phải cùng 1 loại
+ *  2. Loại đích phải khác loại nguồn
+ *  3. Số ghế loại đích hiện có trong phòng (chưa được chọn) >= số ghế đang chọn
+ *     → đảm bảo "hoán đổi" cân bằng: N ghế loại A ↔ N ghế loại B
+ *
+ * Trả về true nếu hợp lệ.
+ */
+function validateBatch() {
+    const el        = document.getElementById('batchValidation');
+    const btnApply  = document.getElementById('btnApplyBatch');
+    const targetID  = parseInt(document.getElementById('batchTargetType').value);
+
+    const selectedSeats  = seatsData.filter(s => selectedMulti.has(String(s.seatID)));
+    const sourceTypes    = [...new Set(selectedSeats.map(s => Number(s.seatTypeID)))];
+    const count          = selectedSeats.length;
+
+    // 1. Phải cùng 1 loại
+    if (sourceTypes.length > 1) {
+        el.className = 'batch-validation err';
+        el.textContent = `❌ Các ghế được chọn không cùng loại (${sourceTypes.map(t => TYPE_NAME[t] || t).join(', ')}). Vui lòng chọn lại.`;
+        btnApply.disabled = true;
+        return false;
+    }
+
+    const sourceTypeID = sourceTypes[0];
+
+    // 2. Loại đích phải khác loại nguồn
+    if (targetID === sourceTypeID) {
+        el.className = 'batch-validation err';
+        el.textContent = `❌ Loại đích phải khác loại nguồn (${TYPE_NAME[sourceTypeID] || ''}).`;
+        btnApply.disabled = true;
+        return false;
+    }
+
+    // 3. Số ghế loại đích >= số ghế đang chọn (để đảm bảo hoán đổi cân bằng)
+    const availableTargets = seatsData.filter(
+        s => Number(s.seatTypeID) === targetID && !selectedMulti.has(String(s.seatID))
+    );
+
+    if (availableTargets.length < count) {
+        el.className = 'batch-validation err';
+        el.textContent = `❌ Không đủ ghế ${TYPE_NAME[targetID] || ''} để hoán đổi. `
+            + `Cần ${count} ghế, hiện có ${availableTargets.length}.`;
+        btnApply.disabled = true;
+        return false;
+    }
+
+    // Hợp lệ
+    el.className = 'batch-validation ok';
+    el.textContent = `✓ Hợp lệ: đổi ${count} ghế ${TYPE_NAME[sourceTypeID] || ''} `
+        + `→ ${TYPE_NAME[targetID] || ''}, `
+        + `đồng thời ${count} ghế ${TYPE_NAME[targetID] || ''} → ${TYPE_NAME[sourceTypeID] || ''}.`;
+    btnApply.disabled = false;
+    return true;
+}
+
+/**
+ * Thực hiện hoán đổi nhiều ghế:
+ *  - Nhóm A (đang chọn): đổi sang loại đích
+ *  - Nhóm B (N ghế loại đích đầu tiên): đổi sang loại nguồn
+ * Gọi 2 lần ajax-batch-update-type liên tiếp.
+ */
+function applyBatch() {
+    if (!selectedMulti.size) { showToast('Chưa chọn ghế nào', 'warning'); return; }
+    if (!validateBatch()) return;
+
+    const targetID      = parseInt(document.getElementById('batchTargetType').value);
+    const selectedSeats = seatsData.filter(s => selectedMulti.has(String(s.seatID)));
+    const sourceTypeID  = Number(selectedSeats[0].seatTypeID);
+    const count         = selectedSeats.length;
+
+    // Lấy N ghế loại đích (không thuộc nhóm A) để hoán đổi ngược lại
+    const targetsToSwap = seatsData
+        .filter(s => Number(s.seatTypeID) === targetID && !selectedMulti.has(String(s.seatID)))
+        .slice(0, count);
+
+    const sourceIDs = [...selectedMulti].map(Number);
+    const targetIDs = targetsToSwap.map(s => s.seatID);
+
+    const sourceTypeName = TYPE_NAME[sourceTypeID] || '';
+    const targetTypeName = TYPE_NAME[targetID] || '';
+
+    if (!confirm(
+        `Hoán đổi ${count} ghế:\n`
+        + `• ${count} ghế ${sourceTypeName} (đang chọn) → ${targetTypeName}\n`
+        + `• ${count} ghế ${targetTypeName} → ${sourceTypeName}\n\n`
+        + `Ghế có vé đã bán sẽ bị bỏ qua.`
+    )) return;
+
+    const btnApply = document.getElementById('btnApplyBatch');
+    btnApply.disabled = true;
+
+    // Bước 1: Đổi nhóm A (đang chọn) → loại đích
+    apiFetch('/admins/seat/ajax-batch-update-type', 'POST', {
+        seatIDs: sourceIDs, seatTypeID: targetID
+    })
+    .then(res1 => {
+        if (!res1.success) throw new Error(res1.message || 'Lỗi bước 1');
+
+        // Bước 2: Đổi nhóm B (loại đích) → loại nguồn
+        return apiFetch('/admins/seat/ajax-batch-update-type', 'POST', {
+            seatIDs: targetIDs, seatTypeID: sourceTypeID
+        });
+    })
+    .then(res2 => {
+        if (!res2.success) throw new Error(res2.message || 'Lỗi bước 2');
+        showToast(`Hoán đổi thành công ${count} cặp ghế`, 'success');
+        resetMode();
+        loadSeats(true);
+    })
+    .catch(err => {
+        showToast(err.message, 'error');
+        loadSeats(true); // reload để đảm bảo dữ liệu nhất quán
+    })
+    .finally(() => { btnApply.disabled = false; });
+}
+
+// ══════════════════════════════════════════════════════════
 // ADD / DELETE
-// ══════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════
 function addSeat() {
     const row    = document.getElementById('addRow').value.trim().toUpperCase();
     const col    = parseInt(document.getElementById('addCol').value);
@@ -900,9 +1064,9 @@ function deleteSeat(id, event) {
     }).catch(() => showToast('Lỗi kết nối', 'error'));
 }
 
-// ══════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════
 // RESET
-// ══════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════
 function resetMode() {
     appMode = 'idle';
     sourceSeat = null;
@@ -912,11 +1076,14 @@ function resetMode() {
     document.getElementById('swapPanel').classList.remove('show');
     document.getElementById('batchPanel').classList.remove('show');
     document.getElementById('hintSwap').classList.remove('show');
+    document.getElementById('batchValidation').className = 'batch-validation';
+    document.getElementById('batchValidation').textContent = '';
+    document.getElementById('batchSourceType').textContent = '';
 }
 
-// ══════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════
 // UTILS
-// ══════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════
 function getSwapTarget() { return parseInt(document.getElementById('swapTargetType').value); }
 
 function apiFetch(url, method, body) {
