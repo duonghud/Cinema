@@ -95,7 +95,6 @@
     .bm { background: #e0e7ff; color: #3730a3; border: 1px solid #a5b4fc; }
     .bm:hover:not(:disabled) { background: #c7d2fe; }
 
-    /* Panel đơn lẻ */
     .swap-info {
         background: #eff6ff;
         border: 1px solid #bfdbfe;
@@ -108,7 +107,6 @@
     }
     .swap-info.show { display: flex; }
 
-    /* Panel hoán đổi nhiều ghế */
     .batch-panel {
         background: #eef2ff;
         border: 1px solid #c7d2fe;
@@ -263,7 +261,6 @@
     }
     .seat.is-dimmed { opacity: .2; pointer-events: none; }
 
-    /* Multi-select: màu tím */
     .seat.is-multi {
         outline: 3px solid #6366f1;
         box-shadow: 0 0 0 4px rgba(99,102,241,.18);
@@ -417,7 +414,6 @@
 <div class="panel-card">
     <div class="panel-title">Thao tác ghế</div>
 
-    {{-- Trạng thái idle --}}
     <p id="swapIdle" style="color:var(--muted);font-size:13px;margin:0;">
         ← Bấm vào một ghế để thao tác đơn lẻ. Nhấn giữ và kéo chuột trên lưới để chọn nhiều ghế cùng lúc.
     </p>
@@ -448,19 +444,9 @@
 
     <div class="mode-hint hint-swap" id="hintSwap"></div>
 
-    {{--
-        Panel HOÁN ĐỔI NHIỀU GHẾ
-        Flow:
-          1. Drag chọn N ghế (is-multi, tím)
-          2. Chọn loại muốn đổi sang
-          3. Validate: tất cả ghế chọn phải cùng 1 loại
-                       số ghế loại đích >= N
-          4. Confirm → gọi ajax-batch-update-type
-    --}}
+    {{-- Panel HOÁN ĐỔI NHIỀU GHẾ --}}
     <div class="batch-panel" id="batchPanel">
-
         <div class="batch-top">
-            {{-- Thông tin nhóm nguồn --}}
             <div>
                 <div class="form-label" style="margin-bottom:4px;">Ghế đã chọn</div>
                 <div class="seat-badge">
@@ -472,7 +458,6 @@
 
             <span style="color:var(--muted);font-size:20px;font-weight:300;">→</span>
 
-            {{-- Loại muốn đổi sang --}}
             <div style="flex:1;min-width:160px;">
                 <div class="form-label" style="margin-bottom:4px;">Đổi tất cả sang loại</div>
                 <select id="batchTargetType" class="ctrl" onchange="validateBatch()">
@@ -488,9 +473,7 @@
             </div>
         </div>
 
-        {{-- Thông báo validate real-time --}}
         <div class="batch-validation" id="batchValidation"></div>
-
     </div>
 </div>
 
@@ -593,9 +576,9 @@ const TYPE_COLOR = {
 };
 
 let seatsData     = [];
-let appMode       = 'idle';   // idle | selected | swap_picking | multi_select
+let appMode       = 'idle';
 let sourceSeat    = null;
-let selectedMulti = new Set(); // Set<seatID string>
+let selectedMulti = new Set();
 
 let drag = { active:false, pending:false, startX:0, startY:0 };
 let dragJustFinished = false;
@@ -643,7 +626,9 @@ function renderGrid() {
 
     const rows       = [...new Set(seatsData.map(s => s.rowSeat))].sort();
     const maxCol     = seatsData.reduce((m, s) => Math.max(m, +s.colSeat), 0);
-    const renderCols = maxCol + 1;
+
+    // FIX 1: renderCols = maxCol (không +1), hàng tiếp theo xử lý riêng bên dưới
+    const renderCols = maxCol;
 
     let html = '';
     rows.forEach(row => {
@@ -651,9 +636,8 @@ function renderGrid() {
         for (let col = 1; col <= renderCols; col++) {
             const seat = seatMap[`${row}-${col}`];
             if (!seat) {
-                html += col === renderCols
-                    ? `<div class="disabled-slot" data-row="${row}" data-col="${col}" onclick="quickFill('${row}',${col})" title="Thêm ghế ${row}${col}">+</div>`
-                    : `<div class="empty-slot"    data-row="${row}" data-col="${col}">+</div>`;
+                // FIX 1: tất cả ô trống trong hàng hiện tại đều là empty-slot
+                html += `<div class="empty-slot" data-row="${row}" data-col="${col}">+</div>`;
                 continue;
             }
             const cls = TYPE_CLASS[seat.seatTypeID] || 't-normal';
@@ -667,6 +651,7 @@ function renderGrid() {
         html += `</div>`;
     });
 
+    // Hàng tiếp theo (disabled-slot để gợi ý thêm ghế hàng mới)
     if (rows.length > 0) {
         const lastRow = rows[rows.length - 1];
         const nextRow = lastRow < 'Z' ? String.fromCharCode(lastRow.charCodeAt(0) + 1) : null;
@@ -839,7 +824,7 @@ function startSwapPicking() {
     if (!sourceSeat) return;
     const tid = getSwapTarget();
     if (tid === sourceSeat.typeID) { showToast('Chọn loại khác với hiện tại', 'warning'); return; }
-    if (tid === COUPLE_TYPE_ID)    { showToast('Chọn loại khác để hoán đổi', 'warning'); return; }
+    // FIX 2: đã xoá dòng chặn COUPLE_TYPE_ID — cho phép hoán đổi sang/từ ghế đôi
 
     const avail = seatsData.filter(s => Number(s.seatTypeID) === tid && String(s.seatID) !== sourceSeat.id);
     if (!avail.length) { showToast(`Không có ghế ${TYPE_NAME[tid] || ''} để hoán đổi`, 'warning'); return; }
@@ -884,12 +869,6 @@ function toggleMaintenance() {
 // ══════════════════════════════════════════════════════════
 // BATCH SWAP (nhiều ghế)
 // ══════════════════════════════════════════════════════════
-
-/**
- * Cập nhật nhãn "loại nguồn" dựa trên các ghế đang được chọn.
- * - Nếu tất cả cùng loại → hiển thị tên loại đó
- * - Nếu hỗn hợp → hiển thị "(hỗn hợp)"
- */
 function updateBatchSourceLabel() {
     const selectedSeats = seatsData.filter(s => selectedMulti.has(String(s.seatID)));
     const types = [...new Set(selectedSeats.map(s => Number(s.seatTypeID)))];
@@ -899,17 +878,6 @@ function updateBatchSourceLabel() {
     document.getElementById('batchSourceType').textContent = label;
 }
 
-/**
- * Validate trước khi áp dụng hoán đổi nhiều ghế:
- *
- * Quy tắc:
- *  1. Tất cả ghế được chọn phải cùng 1 loại
- *  2. Loại đích phải khác loại nguồn
- *  3. Số ghế loại đích hiện có trong phòng (chưa được chọn) >= số ghế đang chọn
- *     → đảm bảo "hoán đổi" cân bằng: N ghế loại A ↔ N ghế loại B
- *
- * Trả về true nếu hợp lệ.
- */
 function validateBatch() {
     const el        = document.getElementById('batchValidation');
     const btnApply  = document.getElementById('btnApplyBatch');
@@ -919,7 +887,6 @@ function validateBatch() {
     const sourceTypes    = [...new Set(selectedSeats.map(s => Number(s.seatTypeID)))];
     const count          = selectedSeats.length;
 
-    // 1. Phải cùng 1 loại
     if (sourceTypes.length > 1) {
         el.className = 'batch-validation err';
         el.textContent = `❌ Các ghế được chọn không cùng loại (${sourceTypes.map(t => TYPE_NAME[t] || t).join(', ')}). Vui lòng chọn lại.`;
@@ -929,7 +896,6 @@ function validateBatch() {
 
     const sourceTypeID = sourceTypes[0];
 
-    // 2. Loại đích phải khác loại nguồn
     if (targetID === sourceTypeID) {
         el.className = 'batch-validation err';
         el.textContent = `❌ Loại đích phải khác loại nguồn (${TYPE_NAME[sourceTypeID] || ''}).`;
@@ -937,7 +903,6 @@ function validateBatch() {
         return false;
     }
 
-    // 3. Số ghế loại đích >= số ghế đang chọn (để đảm bảo hoán đổi cân bằng)
     const availableTargets = seatsData.filter(
         s => Number(s.seatTypeID) === targetID && !selectedMulti.has(String(s.seatID))
     );
@@ -950,7 +915,6 @@ function validateBatch() {
         return false;
     }
 
-    // Hợp lệ
     el.className = 'batch-validation ok';
     el.textContent = `✓ Hợp lệ: đổi ${count} ghế ${TYPE_NAME[sourceTypeID] || ''} `
         + `→ ${TYPE_NAME[targetID] || ''}, `
@@ -959,12 +923,6 @@ function validateBatch() {
     return true;
 }
 
-/**
- * Thực hiện hoán đổi nhiều ghế:
- *  - Nhóm A (đang chọn): đổi sang loại đích
- *  - Nhóm B (N ghế loại đích đầu tiên): đổi sang loại nguồn
- * Gọi 2 lần ajax-batch-update-type liên tiếp.
- */
 function applyBatch() {
     if (!selectedMulti.size) { showToast('Chưa chọn ghế nào', 'warning'); return; }
     if (!validateBatch()) return;
@@ -974,7 +932,6 @@ function applyBatch() {
     const sourceTypeID  = Number(selectedSeats[0].seatTypeID);
     const count         = selectedSeats.length;
 
-    // Lấy N ghế loại đích (không thuộc nhóm A) để hoán đổi ngược lại
     const targetsToSwap = seatsData
         .filter(s => Number(s.seatTypeID) === targetID && !selectedMulti.has(String(s.seatID)))
         .slice(0, count);
@@ -995,14 +952,11 @@ function applyBatch() {
     const btnApply = document.getElementById('btnApplyBatch');
     btnApply.disabled = true;
 
-    // Bước 1: Đổi nhóm A (đang chọn) → loại đích
     apiFetch('/admins/seat/ajax-batch-update-type', 'POST', {
         seatIDs: sourceIDs, seatTypeID: targetID
     })
     .then(res1 => {
         if (!res1.success) throw new Error(res1.message || 'Lỗi bước 1');
-
-        // Bước 2: Đổi nhóm B (loại đích) → loại nguồn
         return apiFetch('/admins/seat/ajax-batch-update-type', 'POST', {
             seatIDs: targetIDs, seatTypeID: sourceTypeID
         });
@@ -1015,7 +969,7 @@ function applyBatch() {
     })
     .catch(err => {
         showToast(err.message, 'error');
-        loadSeats(true); // reload để đảm bảo dữ liệu nhất quán
+        loadSeats(true);
     })
     .finally(() => { btnApply.disabled = false; });
 }

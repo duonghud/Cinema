@@ -152,7 +152,8 @@ class DashBoardController extends Controller
                 $date   = $selectedMonth->copy()->day($day);
                 return [
                     'label'         => $date->format('d/m/Y'),
-                    'period'        => $date->format('d/m/Y'),
+                    // FIX: dùng Y-m-d để parsePeriod xử lý đúng trong invoicesByPeriod
+                    'period'        => $date->format('Y-m-d'),
                     'ticketRevenue' => $ticket,
                     'foodRevenue'   => $food,
                     'totalRevenue'  => $ticket + $food,
@@ -215,7 +216,6 @@ class DashBoardController extends Controller
                     ->map(fn ($inv) => [
                         'invoiceID'     => $inv->invoiceID,
                         'customer'      => $inv->customer->fullName ?? 'Khách vãng lai',
-                        // FIX TASK 1: dùng đúng tên relation paymentMethod() thay vì payment()
                         'paymentMethod' => $inv->paymentMethod->name ?? '---',
                         'createDate'    => Carbon::parse($inv->createDate)->format('d/m/Y'),
                         'totalAmount'   => (float) $inv->totalAmount,
@@ -224,16 +224,15 @@ class DashBoardController extends Controller
             }
 
             // ── Food invoices ─────────────────────────────────────────────
-            $foodList = collect();
+            $foodInvoiceList = collect();
             if (in_array($type, ['all', 'food'])) {
-                $foodList = foodInvoice::with(['customer', 'paymentMethod'])
+                $foodInvoiceList = foodInvoice::with(['customer', 'paymentMethod'])
                     ->whereBetween('orderDate', [$start, $end])
                     ->orderByDesc('orderDate')
                     ->get()
                     ->map(fn ($fi) => [
                         'invoiceID'     => $fi->foodInvoiceID,
                         'customer'      => $fi->customer->fullName ?? 'Khách vãng lai',
-                        // FIX TASK 1: foodInvoice model có paymentMethod(), không phải payment()
                         'paymentMethod' => $fi->paymentMethod->name ?? '---',
                         'createDate'    => Carbon::parse($fi->orderDate)->format('d/m/Y'),
                         'totalAmount'   => (float) $fi->total,
@@ -242,20 +241,20 @@ class DashBoardController extends Controller
             }
 
             $ticketRevenue = $invoiceList->sum('totalAmount');
-            $foodRevenue   = $foodList->sum('totalAmount');
+            $foodRevenue   = $foodInvoiceList->sum('totalAmount');
 
-            $allInvoices = $invoiceList->concat($foodList)
+            $allInvoices = $invoiceList->concat($foodInvoiceList)
                 ->sortByDesc(fn ($i) => Carbon::createFromFormat('d/m/Y', $i['createDate'])->timestamp)
                 ->values();
 
             $topMovie = $bottomMovie = $topFood = $bottomFood = null;
-            $movieList = $foodList2 = [];
+            $movieList = $foodList = [];
 
             if (in_array($type, ['all', 'ticket'])) {
                 [$topMovie, $bottomMovie, $movieList] = $this->getMovieHighlights($start, $end);
             }
             if (in_array($type, ['all', 'food'])) {
-                [$topFood, $bottomFood, $foodList2] = $this->getFoodHighlights($start, $end);
+                [$topFood, $bottomFood, $foodList] = $this->getFoodHighlights($start, $end);
             }
 
             return response()->json([
@@ -264,12 +263,13 @@ class DashBoardController extends Controller
                 'totalRevenue'  => $ticketRevenue + $foodRevenue,
                 'invoices'      => $allInvoices,
                 'type'          => $type,
+                'period'        => $period,
                 'topMovie'      => $topMovie,
                 'bottomMovie'   => $bottomMovie,
-                'movieList'     => $movieList,   // TASK 2: danh sách phim đầy đủ
+                'movieList'     => $movieList,
                 'topFood'       => $topFood,
                 'bottomFood'    => $bottomFood,
-                'foodList'      => $foodList2,   // TASK 2: danh sách món ăn đầy đủ
+                'foodList'      => $foodList,
             ]);
 
         } catch (\Throwable $e) {
@@ -287,18 +287,27 @@ class DashBoardController extends Controller
 
     /**
      * Parse period string → [Carbon $start, Carbon $end] hoặc [null, null]
+     * Hỗ trợ: "2026" | "2026-05" | "2026-05-25" | "25/05/2026"
      */
     private function parsePeriod(string $period): array
     {
         try {
+            // Năm: "2026"
             if (preg_match('/^\d{4}$/', $period)) {
                 $start = Carbon::createFromFormat('Y', $period)->startOfYear();
                 return [$start, $start->copy()->endOfYear()];
             }
+            // Tháng: "2026-05"
             if (preg_match('/^\d{4}-\d{2}$/', $period)) {
                 $start = Carbon::createFromFormat('Y-m', $period)->startOfMonth();
                 return [$start, $start->copy()->endOfMonth()];
             }
+            // Ngày ISO: "2026-05-25" ← format mới từ revenueByDay
+            if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $period)) {
+                $start = Carbon::createFromFormat('Y-m-d', $period)->startOfDay();
+                return [$start, $start->copy()->endOfDay()];
+            }
+            // Ngày VN: "25/05/2026" ← format cũ (giữ để tương thích)
             if (preg_match('/^\d{2}\/\d{2}\/\d{4}$/', $period)) {
                 $start = Carbon::createFromFormat('d/m/Y', $period)->startOfDay();
                 return [$start, $start->copy()->endOfDay()];
@@ -311,20 +320,22 @@ class DashBoardController extends Controller
     }
 
     /**
-     * FIX TASK 2: Top/bottom phim + toàn bộ danh sách theo doanh thu vé
-     * - Trả về array 3 phần tử: [topMovie, bottomMovie, movieList]
-     * - FIX lỗi min/max: chỉ tính phim có doanh thu > 0 (loại phim chưa bán vé)
-     *   để tránh hiển thị "Không rõ" hoặc phim trùng top/bottom
+     * Top/bottom phim + danh sách theo doanh thu vé trong kỳ.
+     *
+     * BUG CŨ: dùng showTime.showDate (ngày chiếu) → không khớp với invoice.createDate
+     *         → tháng 5 có vé nhưng showDate nằm ngoài tháng 5 thì không ra phim.
+     *
+     * FIX: join qua invoice.createDate để đồng nhất với cách tính doanh thu vé.
+     * Ticket → Invoice (invoiceID) → createDate nằm trong [$start, $end]
+     * rồi group theo movie qua showTime.
      */
     private function getMovieHighlights(Carbon $start, Carbon $end): array
     {
         $stats = ticket::with('showTime.movie')
-            ->whereHas('showTime', fn ($q) => $q->whereBetween(
-                'showDate', [$start->toDateString(), $end->toDateString()]
-            ))
+            ->whereHas('invoice', fn ($q) => $q->whereBetween('createDate', [$start, $end]))
             ->get()
             ->groupBy(fn ($t) => optional(optional($t->showTime)->movie)->movieID)
-            ->filter(fn ($g, $id) => $id !== null) // bỏ ticket không có movie
+            ->filter(fn ($g, $id) => $id !== null)
             ->map(function ($tickets) {
                 $movie = optional($tickets->first()->showTime)->movie;
                 return [
@@ -333,25 +344,20 @@ class DashBoardController extends Controller
                     'count'     => $tickets->count(),
                 ];
             })
-            // FIX: chỉ giữ phim có revenue > 0 trước khi sort → tránh bottom = 0đ
             ->filter(fn ($item) => $item['revenue'] > 0)
             ->sortByDesc('revenue')
             ->values();
 
-        $top    = $stats->first();  // phim doanh thu cao nhất
-        // FIX: bottomMovie chỉ hiển thị khi có ít nhất 2 phim khác nhau
+        $top    = $stats->first();
         $bottom = $stats->count() >= 2 ? $stats->last() : null;
-
-        // Toàn bộ danh sách để hiển thị trong modal
-        $list = $stats->map(fn ($item, $idx) => array_merge($item, ['rank' => $idx + 1]))->values()->toArray();
+        $list   = $stats->map(fn ($item, $idx) => array_merge($item, ['rank' => $idx + 1]))->values()->toArray();
 
         return [$top, $bottom, $list];
     }
 
     /**
-     * FIX TASK 2: Top/bottom món ăn + toàn bộ danh sách theo doanh thu
-     * - Trả về array 3 phần tử: [topFood, bottomFood, foodList]
-     * - FIX: chỉ tính món có revenue > 0
+     * Top/bottom món ăn + danh sách theo doanh thu trong kỳ.
+     * Dùng foodInvoice.orderDate để đồng nhất với cách tính doanh thu đồ ăn.
      */
     private function getFoodHighlights(Carbon $start, Carbon $end): array
     {
@@ -367,15 +373,13 @@ class DashBoardController extends Controller
                     'quantity' => (int) $details->sum('quantity'),
                 ];
             })
-            // FIX: chỉ giữ món có revenue > 0
             ->filter(fn ($item) => $item['revenue'] > 0)
             ->sortByDesc('revenue')
             ->values();
 
         $top    = $stats->first();
         $bottom = $stats->count() >= 2 ? $stats->last() : null;
-
-        $list = $stats->map(fn ($item, $idx) => array_merge($item, ['rank' => $idx + 1]))->values()->toArray();
+        $list   = $stats->map(fn ($item, $idx) => array_merge($item, ['rank' => $idx + 1]))->values()->toArray();
 
         return [$top, $bottom, $list];
     }

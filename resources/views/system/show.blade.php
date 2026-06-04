@@ -212,7 +212,6 @@ $selectedShowTimeId = $selectedShowTime?->showTimeID;
         @endforeach
     </div>
 
-    {{-- ── Giờ chiếu + sơ đồ ghế (căn giữa) ── --}}
     <div class="booking-wrapper pt-3">
 
         {{-- Giờ chiếu --}}
