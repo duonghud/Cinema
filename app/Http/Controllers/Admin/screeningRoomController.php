@@ -80,63 +80,33 @@ class screeningRoomController extends Controller
             'rows.max'        => 'Số hàng tối đa là 26 (A-Z)',
         ]);
 
-        /*
-        |----------------------------------------------------------------------
-        | TÍNH TỔNG GHẾ
-        | Ghế đôi = 1 record = 1 ô lưới = 1 chỗ ngồi
-        |----------------------------------------------------------------------
-        */
         $vipCount    = (int) $validated['vipSeats'];
         $normalCount = (int) $validated['normalSeats'];
         $doubleCount = (int) $validated['doubleSeats'];
+        $totalSlots  = $vipCount + $normalCount + $doubleCount;
+        $maxRows     = (int) $validated['rows'];
+        $maxCols     = (int) $validated['cols'];
 
-        // Tổng ô ghế = tổng chỗ ngồi (ghế đôi chỉ chiếm 1 ô)
-        $totalSlots = $vipCount + $normalCount + $doubleCount;
-        $capacity   = $totalSlots;
-
-        if ($capacity <= 0) {
-            return back()
-                ->withInput()
+        if ($totalSlots <= 0) {
+            return back()->withInput()
                 ->withErrors(['capacity' => 'Phòng phải có ít nhất 1 ghế']);
         }
 
-        $maxRows = (int) $validated['rows'];
-        $maxCols = (int) $validated['cols'];
-
         if ($totalSlots > $maxRows * $maxCols) {
-            return back()
-                ->withInput()
+            return back()->withInput()
                 ->withErrors(['vipSeats' => 'Tổng số ghế vượt quá số ô trong lưới (' . $totalSlots . '/' . ($maxRows * $maxCols) . ')']);
         }
 
-        /*
-        |----------------------------------------------------------------------
-        | TẠO PHÒNG
-        |----------------------------------------------------------------------
-        */
         $room = ScreeningRoom::create([
             'roomName'     => $validated['roomName'],
-            'capacity'     => $capacity,
+            'capacity'     => $totalSlots,
             'screenTypeID' => $validated['screenTypeID'],
         ]);
 
-        /*
-        |----------------------------------------------------------------------
-        | BUILD DANH SÁCH GHẾ
-        | Mỗi ghế (kể cả ghế đôi) = 1 record, chiếm 1 ô lưới
-        |----------------------------------------------------------------------
-        */
         $seatQueue = [];
-
-        for ($i = 0; $i < $vipCount; $i++) {
-            $seatQueue[] = ['typeID' => (int) $validated['vipSeatTypeID']];
-        }
-        for ($i = 0; $i < $normalCount; $i++) {
-            $seatQueue[] = ['typeID' => (int) $validated['normalSeatTypeID']];
-        }
-        for ($i = 0; $i < $doubleCount; $i++) {
-            $seatQueue[] = ['typeID' => (int) $validated['doubleSeatTypeID']];
-        }
+        for ($i = 0; $i < $vipCount;    $i++) $seatQueue[] = ['typeID' => (int) $validated['vipSeatTypeID']];
+        for ($i = 0; $i < $normalCount; $i++) $seatQueue[] = ['typeID' => (int) $validated['normalSeatTypeID']];
+        for ($i = 0; $i < $doubleCount; $i++) $seatQueue[] = ['typeID' => (int) $validated['doubleSeatTypeID']];
 
         $rows       = range('A', 'Z');
         $rowIndex   = 0;
@@ -144,9 +114,7 @@ class screeningRoomController extends Controller
         $insertData = [];
 
         foreach ($seatQueue as $item) {
-            if ($rowIndex >= $maxRows || $rowIndex >= count($rows)) {
-                break;
-            }
+            if ($rowIndex >= $maxRows || $rowIndex >= count($rows)) break;
 
             $insertData[] = [
                 'roomID'     => $room->roomID,
@@ -156,18 +124,12 @@ class screeningRoomController extends Controller
             ];
 
             $currentCol++;
-
             if ($currentCol > $maxCols) {
                 $currentCol = 1;
                 $rowIndex++;
             }
         }
 
-        /*
-        |----------------------------------------------------------------------
-        | INSERT DATABASE
-        |----------------------------------------------------------------------
-        */
         if (!empty($insertData)) {
             Seat::insert($insertData);
         }
@@ -183,6 +145,23 @@ class screeningRoomController extends Controller
         $seatTypes   = seatType::all();
         $screenTypes = screenType::all();
 
+        /*
+        |----------------------------------------------------------------------
+        | Tính rows/cols thực tế từ bảng seats
+        | - cols = MAX(colSeat) vì colSeat lưu dạng số (string "1","2",...)
+        | - rows = số lượng rowSeat unique (A, B, C...)
+        |----------------------------------------------------------------------
+        */
+        $seats = Seat::where('roomID', $room->roomID)->get();
+
+        $actualCols = $seats->max(fn($s) => (int) $s->colSeat) ?: 1;
+        $actualRows = $seats->pluck('rowSeat')->unique()->count() ?: 1;
+
+        /*
+        |----------------------------------------------------------------------
+        | Đếm ghế theo từng seatTypeID, giữ nguyên seatTypeID để bind dropdown
+        |----------------------------------------------------------------------
+        */
         $seatCounts = [
             'vipSeats'         => 0,
             'vipSeatTypeID'    => null,
@@ -192,33 +171,29 @@ class screeningRoomController extends Controller
             'doubleSeatTypeID' => null,
         ];
 
-        $seats = Seat::where('roomID', $room->roomID)
-            ->selectRaw('seatTypeID, COUNT(*) as total')
-            ->groupBy('seatTypeID')
-            ->get();
+        $grouped = $seats->groupBy('seatTypeID');
 
-        foreach ($seats as $seat) {
-            $seatType = seatType::find($seat->seatTypeID);
+        foreach ($grouped as $typeID => $group) {
+            $seatType = $seatTypes->firstWhere('seatTypeID', $typeID);
             if (!$seatType) continue;
 
             $name = strtolower($seatType->seatTypeName);
 
             if (str_contains($name, 'vip')) {
-                $seatCounts['vipSeats']      = $seat->total;
-                $seatCounts['vipSeatTypeID'] = $seat->seatTypeID;
+                $seatCounts['vipSeats']      = $group->count();
+                $seatCounts['vipSeatTypeID'] = $typeID;
             } elseif (str_contains($name, 'đôi') || str_contains($name, 'double') || str_contains($name, 'couple')) {
-                // Ghế đôi = 1 record = 1 chỗ, không chia 2 nữa
-                $seatCounts['doubleSeats']      = (int) $seat->total;
-                $seatCounts['doubleSeatTypeID'] = $seat->seatTypeID;
+                $seatCounts['doubleSeats']      = $group->count();
+                $seatCounts['doubleSeatTypeID'] = $typeID;
             } else {
-                $seatCounts['normalSeats']      = $seat->total;
-                $seatCounts['normalSeatTypeID'] = $seat->seatTypeID;
+                $seatCounts['normalSeats']      = $group->count();
+                $seatCounts['normalSeatTypeID'] = $typeID;
             }
         }
 
         return view(
             'admins.manageCinema.screeningRoom.edit',
-            compact('room', 'seatTypes', 'screenTypes', 'seatCounts')
+            compact('room', 'seatTypes', 'screenTypes', 'seatCounts', 'actualRows', 'actualCols')
         );
     }
 
@@ -228,6 +203,8 @@ class screeningRoomController extends Controller
 
         $validated = $request->validate([
             'roomName'         => 'required|string|max:100',
+            'rows'             => 'required|integer|min:1|max:26',
+            'cols'             => 'required|integer|min:1|max:50',
             'screenTypeID'     => 'required|exists:screen_types,screenTypeID',
             'vipSeats'         => 'nullable|integer|min:0',
             'vipSeatTypeID'    => 'nullable|exists:seat_types,seatTypeID',
@@ -240,22 +217,73 @@ class screeningRoomController extends Controller
             }],
             'doubleSeatTypeID' => 'nullable|exists:seat_types,seatTypeID',
         ], [
-            'roomName.required'    => 'Tên phòng không được để trống.',
-            'roomName.max'         => 'Tên phòng không được quá 100 ký tự.',
-            'screenTypeID.required'=> 'Vui lòng chọn loại phòng.',
-            'screenTypeID.exists'  => 'Loại phòng không hợp lệ.',
+            'roomName.required'     => 'Tên phòng không được để trống.',
+            'roomName.max'          => 'Tên phòng không được quá 100 ký tự.',
+            'screenTypeID.required' => 'Vui lòng chọn loại phòng.',
+            'screenTypeID.exists'   => 'Loại phòng không hợp lệ.',
+            'rows.max'              => 'Số hàng tối đa là 26 (A-Z)',
+            'cols.max'              => 'Số cột tối đa là 50',
         ]);
 
-        // Ghế đôi = 1 chỗ, cộng thẳng
-        $capacity = ($request->vipSeats ?? 0)
-                  + ($request->normalSeats ?? 0)
-                  + ($request->doubleSeats ?? 0);
+        $vipCount    = (int) ($validated['vipSeats']    ?? 0);
+        $normalCount = (int) ($validated['normalSeats'] ?? 0);
+        $doubleCount = (int) ($validated['doubleSeats'] ?? 0);
+        $totalSlots  = $vipCount + $normalCount + $doubleCount;
+        $maxRows     = (int) $validated['rows'];
+        $maxCols     = (int) $validated['cols'];
 
+        if ($totalSlots > $maxRows * $maxCols) {
+            return back()->withInput()
+                ->withErrors(['vipSeats' => 'Tổng số ghế vượt quá số ô trong lưới (' . $totalSlots . '/' . ($maxRows * $maxCols) . ')']);
+        }
+
+        // Cập nhật thông tin phòng
         $room->update([
             'roomName'     => $validated['roomName'],
             'screenTypeID' => $validated['screenTypeID'],
-            'capacity'     => $capacity,
+            'capacity'     => $totalSlots,
         ]);
+
+        /*
+        |----------------------------------------------------------------------
+        | Rebuild ghế: xóa toàn bộ ghế cũ → tạo lại theo cấu hình mới
+        | Chỉ xóa/tạo lại khi tổng ghế > 0
+        |----------------------------------------------------------------------
+        */
+        if ($totalSlots > 0) {
+            Seat::where('roomID', $room->roomID)->delete();
+
+            $seatQueue = [];
+            for ($i = 0; $i < $vipCount;    $i++) $seatQueue[] = (int) ($validated['vipSeatTypeID']    ?? 0);
+            for ($i = 0; $i < $normalCount; $i++) $seatQueue[] = (int) ($validated['normalSeatTypeID'] ?? 0);
+            for ($i = 0; $i < $doubleCount; $i++) $seatQueue[] = (int) ($validated['doubleSeatTypeID'] ?? 0);
+
+            $rows       = range('A', 'Z');
+            $rowIndex   = 0;
+            $currentCol = 1;
+            $insertData = [];
+
+            foreach ($seatQueue as $typeID) {
+                if ($rowIndex >= $maxRows || $rowIndex >= count($rows)) break;
+
+                $insertData[] = [
+                    'roomID'     => $room->roomID,
+                    'rowSeat'    => $rows[$rowIndex],
+                    'colSeat'    => $currentCol,
+                    'seatTypeID' => $typeID,
+                ];
+
+                $currentCol++;
+                if ($currentCol > $maxCols) {
+                    $currentCol = 1;
+                    $rowIndex++;
+                }
+            }
+
+            if (!empty($insertData)) {
+                Seat::insert($insertData);
+            }
+        }
 
         return redirect()
             ->route('seat.index', ['roomID' => $room->roomID])
