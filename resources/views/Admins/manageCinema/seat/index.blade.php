@@ -372,7 +372,7 @@
                     @forelse($rooms as $r)
                         <option value="{{ $r->roomID }}"
                             {{ (int)($roomID ?? 0) === (int)$r->roomID ? 'selected' : '' }}>
-                            {{ $r->roomName }} — {{ $r->capacity }} ghế
+                            {{ $r->roomName }}
                         </option>
                     @empty
                         <option value="">Chưa có phòng</option>

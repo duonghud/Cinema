@@ -74,16 +74,20 @@ class CustomerAuthController extends Controller
 
         $customer = Customer::where('email', $request->email)->first();
 
-        // Check mật khẩu
+        // Sai mật khẩu
         if (!Hash::check($request->password, $customer->password)) {
-            return back()->with('error', 'Mật khẩu không đúng');
+            return back()
+                ->withInput($request->only('email'))
+                ->withErrors([
+                    'password' => 'Mật khẩu không đúng'
+                ]);
         }
 
         // Đăng nhập thành công
-        // Navbar và middleware đều đọc thông tin đăng nhập từ key customer
         $request->session()->put('customer', $customer);
 
-        return redirect()->route('home')->with('success', 'Đăng nhập thành công!');
+        return redirect()->route('home')
+            ->with('success', 'Đăng nhập thành công!');
     }
 
     // logout

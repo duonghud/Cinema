@@ -16,7 +16,7 @@
         font-weight: 700;
         font-size: 1.5rem;
         letter-spacing: 1px;
-        color: #fff !important;
+        color: #f4f2f2 !important;
         font-family: 'Julee', cursive;
     }
 
@@ -183,11 +183,16 @@
         overflow: hidden;
         text-overflow: ellipsis;
     }
+    .vai{
+        background: linear-gradient(135deg, #ffc107, #ff9800);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
 </style>
 
 <nav class="navbar navbar-expand-lg sticky-top">
     <div class="container">
-        <a href="{{ route('home') }}" class="navbar-brand">VAI cinema</a>
+        <a href="{{ route('home') }}" class="navbar-brand">VAI <span class="vai">CINEMA</span></a>
 
         <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#menu">
             <span class="navbar-toggler-icon"></span>
@@ -204,42 +209,42 @@
 
         <div class="d-flex gap-2">
             @if(session('customer'))
-                <div class="dropdown">
-                    <a class="btn nav-btn dropdown-toggle customer-dropdown d-flex align-items-center gap-2"
-                        data-bs-toggle="dropdown">
-                        <div class="customer-avatar">
-                            {{ strtoupper(substr(session('customer')->fullName, 0, 2)) }}
-                        </div>
+            <div class="dropdown">
+                <a class="btn nav-btn dropdown-toggle customer-dropdown d-flex align-items-center gap-2"
+                    data-bs-toggle="dropdown">
+                    <div class="customer-avatar">
+                        {{ strtoupper(substr(session('customer')->fullName, 0, 2)) }}
+                    </div>
 
-                        <span class="fw-semibold customer-name">
-                            {{ session('customer')->fullName }}
-                        </span>
-                    </a>
+                    <span class="fw-semibold customer-name">
+                        {{ session('customer')->fullName }}
+                    </span>
+                </a>
 
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li>
-                            <a class="dropdown-item" href="{{ route('customer.profile') }}">
-                                Thông tin cá nhân
-                            </a>
-                        </li>
-                        <li>
-                            <form action="{{ route('customer.logout') }}" method="POST">
-                                @csrf
-                                <button type="submit" class="dropdown-item text-danger">
-                                    Đăng xuất
-                                </button>
-                            </form>
-                        </li>
-                    </ul>
-                </div>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                        <a class="dropdown-item" href="{{ route('customer.profile') }}">
+                            Thông tin cá nhân
+                        </a>
+                    </li>
+                    <li>
+                        <form action="{{ route('customer.logout') }}" method="POST">
+                            @csrf
+                            <button type="submit" class="dropdown-item text-danger">
+                                Đăng xuất
+                            </button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
             @else
-                <a href="{{ route('customer.register.form') }}" class="btn nav-btn btn-register">
-                    Đăng ký
-                </a>
+            <a href="{{ route('customer.register.form') }}" class="btn nav-btn btn-register">
+                Đăng ký
+            </a>
 
-                <a href="{{ route('auth.customerLogin') }}" class="btn nav-btn btn-login">
-                    Đăng nhập
-                </a>
+            <a href="{{ route('auth.customerLogin') }}" class="btn nav-btn btn-login">
+                Đăng nhập
+            </a>
             @endif
         </div>
     </div>

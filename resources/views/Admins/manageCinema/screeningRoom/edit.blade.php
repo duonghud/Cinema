@@ -3,7 +3,7 @@
 @section('content')
 <style>
 :root{
-    --bg:#080f1e;
+    --bg:#fff;
     --card:#0f1a2e;
     --panel:#111827;
     --border:#1e2d45;
@@ -27,7 +27,7 @@ body{
     border:1px solid var(--border);
     border-radius:20px;
     overflow:hidden;
-    box-shadow:0 10px 40px rgba(0,0,0,.35);
+    box-shadow:0 10px 40px rgb(255, 255, 255);
 }
 
 .room-header{
@@ -360,14 +360,25 @@ body{
                         <div class="col-md-4">
                             <label class="form-label">
                                 Ghế đôi
+                                <span style="color:#f472b6;font-size:11px;font-weight:600">(bắt buộc số chẵn)</span>
                             </label>
 
                             <input type="number"
                                    name="doubleSeats"
                                    id="doubleSeats"
                                    min="0"
-                                   class="form-control"
+                                   step="2"
+                                   class="form-control @error('doubleSeats') is-invalid @enderror"
                                    value="{{ old('doubleSeats', $seatCounts['doubleSeats'] ?? 0) }}">
+
+                            <div id="doubleSeatsError"
+                                 style="color:#f87171;font-size:12px;margin-top:6px;display:none">
+                                ⚠️ Số ghế đôi phải là số chẵn (ví dụ: 2, 4, 6...)
+                            </div>
+
+                            @error('doubleSeats')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
 
                     </div>
@@ -450,6 +461,7 @@ body{
                     </a>
 
                     <button type="submit"
+                            id="submitBtn"
                             class="btn-save">
                         Cập nhật phòng chiếu
                     </button>
@@ -463,69 +475,68 @@ body{
 </div>
 
 <script>
+const submitBtn        = document.getElementById('submitBtn');
+const doubleSeatsInput = document.getElementById('doubleSeats');
+const doubleSeatsError = document.getElementById('doubleSeatsError');
+
+// ── Kiểm tra ghế đôi số chẵn ────────────────────────────────────
+function validateDoubleSeats() {
+    const val = parseInt(doubleSeatsInput.value || 0);
+    if (val > 0 && val % 2 !== 0) {
+        doubleSeatsError.style.display    = 'block';
+        doubleSeatsInput.style.borderColor = '#ef4444';
+        doubleSeatsInput.style.boxShadow   = '0 0 0 4px rgba(239,68,68,.2)';
+        submitBtn.disabled                 = true;
+        submitBtn.style.opacity            = '.5';
+        submitBtn.style.cursor             = 'not-allowed';
+        return false;
+    }
+    doubleSeatsError.style.display    = 'none';
+    doubleSeatsInput.style.borderColor = '';
+    doubleSeatsInput.style.boxShadow   = '';
+    submitBtn.disabled                 = false;
+    submitBtn.style.opacity            = '1';
+    submitBtn.style.cursor             = 'pointer';
+    return true;
+}
+
+// ── Render preview sơ đồ ghế ────────────────────────────────────
 function renderPreview() {
+    validateDoubleSeats();
 
     const cols    = parseInt(document.getElementById('cols').value) || 0;
     let vip       = parseInt(document.getElementById('vipSeats').value) || 0;
     let normal    = parseInt(document.getElementById('normalSeats').value) || 0;
-    let dbl       = parseInt(document.getElementById('doubleSeats').value) || 0;
+    let dbl       = parseInt(doubleSeatsInput.value) || 0;
 
     const total   = vip + normal + dbl;
     const preview = document.getElementById('seatPreview');
-
     preview.innerHTML = '';
 
     if (!cols || !total) {
-        preview.innerHTML = `
-            <div style="color:#64748b;text-align:center;padding:30px;">
-                Nhập số ghế để xem trước sơ đồ
-            </div>
-        `;
+        preview.innerHTML = `<div style="color:#64748b;text-align:center;padding:30px;">
+            Nhập số ghế để xem trước sơ đồ</div>`;
         return;
     }
 
     const rows = Math.ceil(total / cols);
-
     let seatNo = 1;
 
     for (let r = 0; r < rows; r++) {
-
         const rowLetter = String.fromCharCode(65 + r);
-
         const row = document.createElement('div');
         row.className = 'seat-row';
-
-        row.innerHTML += `
-            <div class="row-label">
-                ${rowLetter}
-            </div>
-        `;
+        row.innerHTML += `<div class="row-label">${rowLetter}</div>`;
 
         for (let c = 1; c <= cols; c++) {
-
             if (seatNo > total) break;
 
             let type = 'normal';
+            if (vip > 0)         { type = 'vip';    vip--; }
+            else if (dbl > 0)    { type = 'double';  dbl--; }
+            else if (normal > 0) { type = 'normal'; normal--; }
 
-            if (vip > 0) {
-                type = 'vip';
-                vip--;
-            }
-            else if (dbl > 0) {
-                type = 'double';
-                dbl--;
-            }
-            else if (normal > 0) {
-                type = 'normal';
-                normal--;
-            }
-
-            row.innerHTML += `
-                <div class="seat ${type}">
-                    ${rowLetter}${c}
-                </div>
-            `;
-
+            row.innerHTML += `<div class="seat ${type}">${rowLetter}${c}</div>`;
             seatNo++;
         }
 
@@ -533,10 +544,21 @@ function renderPreview() {
     }
 }
 
-['cols','vipSeats','normalSeats','doubleSeats']
-.forEach(id => {
-    document.getElementById(id)
-        .addEventListener('input', renderPreview);
+// ── Event listeners ──────────────────────────────────────────────
+['cols', 'vipSeats', 'normalSeats', 'doubleSeats'].forEach(id => {
+    document.getElementById(id).addEventListener('input', renderPreview);
+});
+
+// ── Submit guard ─────────────────────────────────────────────────
+document.querySelector('form').addEventListener('submit', function (e) {
+    const dbl = parseInt(doubleSeatsInput.value || 0);
+    if (dbl > 0 && dbl % 2 !== 0) {
+        e.preventDefault();
+        doubleSeatsError.style.display = 'block';
+        doubleSeatsInput.focus();
+        doubleSeatsInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return false;
+    }
 });
 
 document.addEventListener('DOMContentLoaded', renderPreview);

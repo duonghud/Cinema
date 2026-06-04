@@ -4,20 +4,20 @@
 use Carbon\Carbon;
 
 $dates = $movie->showTimes
-->groupBy('showDate')
-->map(function ($shows) {
-return $shows->filter(function ($show) {
-$showDateTime = Carbon::parse($show->showDate . ' ' . $show->startTime);
-return now()->lt($showDateTime);
-})->values();
-})
-->filter(function ($shows) {
-return $shows->count() > 0;
-});
+    ->groupBy('showDate')
+    ->map(function ($shows) {
+        return $shows->filter(function ($show) {
+            $showDateTime = Carbon::parse($show->showDate . ' ' . $show->startTime);
+            return now()->lt($showDateTime);
+        })->values();
+    })
+    ->filter(function ($shows) {
+        return $shows->count() > 0;
+    });
 
 $firstDate = $selectedShowTime && $dates->has($selectedShowTime->showDate)
-? $selectedShowTime->showDate
-: $dates->keys()->first();
+    ? $selectedShowTime->showDate
+    : $dates->keys()->first();
 
 $selectedShowTimeId = $selectedShowTime?->showTimeID;
 @endphp
@@ -52,26 +52,71 @@ $selectedShowTimeId = $selectedShowTime?->showTimeID;
         color: #fca5a5;
         background: rgba(239, 68, 68, 0.12);
     }
+
+    /* ── Căn giữa toàn bộ khu vực showtime + seat ── */
+    .booking-wrapper {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 0 24px;
+    }
+
+    /* Showtime buttons row căn giữa */
+    .showtime-row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    /* ── Realtime: ghế vừa bị lock bởi người khác ── */
+    .seat.locked-by-other {
+        background: #f59e0b !important;
+        border-color: #f59e0b !important;
+        cursor: not-allowed !important;
+        opacity: 0.7;
+    }
+
+    /* Notification toast */
+    #seat-notify {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        background: rgba(239, 68, 68, 0.92);
+        color: #fff;
+        padding: 12px 20px;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 500;
+        display: none;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+        from { transform: translateX(60px); opacity: 0; }
+        to   { transform: translateX(0);    opacity: 1; }
+    }
 </style>
 
+<!-- Toast thông báo ghế bị người khác đặt -->
+<div id="seat-notify"></div>
+
 @if(session('error'))
-<div class="alert-error">
-    {{ session('error') }}
-</div>
+<div class="alert-error">{{ session('error') }}</div>
 @endif
 
 @if(session('success'))
-<div class="alert-success">
-    {{ session('success') }}
-</div>
+<div class="alert-success">{{ session('success') }}</div>
 @endif
 
 <div class="text-white">
+
+    {{-- ── Banner phim ── --}}
     <div class="relative z-10 px-10 py-4 flex justify-between items-center">
         <div class="absolute inset-0">
             <img src="{{ asset('posters/' . $movie->poster) }}"
-                class="w-full h-full object-cover">
-
+                 class="w-full h-full object-cover">
             <div class="absolute inset-0 bg-gradient-to-r from-black via-black/90 to-black/70"></div>
         </div>
 
@@ -80,7 +125,7 @@ $selectedShowTimeId = $selectedShowTime?->showTimeID;
                 <div class="grid grid-cols-3 gap-10 items-center">
                     <div>
                         <img src="{{ asset('posters/' . $movie->poster) }}"
-                            class="rounded-2xl shadow-2xl">
+                             class="rounded-2xl shadow-2xl">
                     </div>
 
                     <div class="col-span-2 space-y-3">
@@ -98,9 +143,9 @@ $selectedShowTimeId = $selectedShowTime?->showTimeID;
                         <p class="text-gray-300">
                             Thời lượng:
                             @if($movie->duration)
-                            {{ $movie->duration }} phút
+                                {{ $movie->duration }} phút
                             @else
-                            Chưa có thông tin
+                                Chưa có thông tin
                             @endif
                         </p>
 
@@ -129,43 +174,36 @@ $selectedShowTimeId = $selectedShowTime?->showTimeID;
         </div>
     </div>
 
+    {{-- ── Tabs ngày ── --}}
     @if($dates->isEmpty())
     <div class="text-center py-16">
-        <p class="text-gray-400 text-lg">
-            Hiện tại không còn suất chiếu nào có thể đặt vé.
-        </p>
+        <p class="text-gray-400 text-lg">Hiện tại không còn suất chiếu nào có thể đặt vé.</p>
     </div>
     @else
-    <div class="mt-0 flex h-[91px] justify-start sm:justify-center bg-[#1A1D23] overflow-x-auto"
-        role="tablist">
 
+    {{-- Tab chọn ngày --}}
+    <div class="mt-0 flex h-[91px] justify-start sm:justify-center bg-[#1A1D23] overflow-x-auto" role="tablist">
         @foreach($dates as $date => $shows)
         @php
-        $isActive = $date == $firstDate;
-        $day = date('d', strtotime($date));
-        $month = date('m', strtotime($date));
-        $weekday = date('l', strtotime($date));
-
-        $weekMap = [
-        'Monday' => 'Thứ hai',
-        'Tuesday' => 'Thứ ba',
-        'Wednesday' => 'Thứ tư',
-        'Thursday' => 'Thứ năm',
-        'Friday' => 'Thứ sáu',
-        'Saturday' => 'Thứ bảy',
-        'Sunday' => 'Chủ nhật'
-        ];
+            $isActive = $date == $firstDate;
+            $day      = date('d', strtotime($date));
+            $month    = date('m', strtotime($date));
+            $weekday  = date('l', strtotime($date));
+            $weekMap  = [
+                'Monday'    => 'Thứ hai',
+                'Tuesday'   => 'Thứ ba',
+                'Wednesday' => 'Thứ tư',
+                'Thursday'  => 'Thứ năm',
+                'Friday'    => 'Thứ sáu',
+                'Saturday'  => 'Thứ bảy',
+                'Sunday'    => 'Chủ nhật',
+            ];
         @endphp
-
-        <button
-            class="date-tab focus:outline-none"
-            data-date="{{ $date }}"
-            aria-selected="{{ $isActive ? 'true' : 'false' }}">
-
-            <div
-                class="w-[72px] h-full flex flex-col items-center justify-center text-xs transition-colors
-                    {{ $isActive ? 'bg-red-600' : 'bg-transparent hover:bg-[#2A2F38]' }}">
-
+        <button class="date-tab focus:outline-none"
+                data-date="{{ $date }}"
+                aria-selected="{{ $isActive ? 'true' : 'false' }}">
+            <div class="w-[72px] h-full flex flex-col items-center justify-center text-xs transition-colors
+                         {{ $isActive ? 'bg-red-600' : 'bg-transparent hover:bg-[#2A2F38]' }}">
                 <p>Th. {{ $month }}</p>
                 <p class="text-xl font-bold">{{ $day }}</p>
                 <p>{{ $weekMap[$weekday] }}</p>
@@ -174,277 +212,296 @@ $selectedShowTimeId = $selectedShowTime?->showTimeID;
         @endforeach
     </div>
 
-    <div class="mt-8 pb-20">
-        @foreach($dates as $date => $shows)
-        <div
-            class="showtime-row {{ $date == $firstDate ? '' : 'hidden' }}"
-            id="date-{{ $date }}">
+    {{-- ── Giờ chiếu + sơ đồ ghế (căn giữa) ── --}}
+    <div class="booking-wrapper pt-3">
 
-            <div class="flex gap-6 flex-wrap">
+        {{-- Giờ chiếu --}}
+        @foreach($dates as $date => $shows)
+        <div class="showtime-panel {{ $date == $firstDate ? '' : 'hidden' }}" id="date-{{ $date }}">
+            <div class="showtime-row">
                 @foreach($shows as $show)
                 <button
-                    class="px-12 py-3 border border-gray-600 rounded-full hover:border-red-500 hover:text-red-400 transition showtime-btn {{ $selectedShowTimeId === $show->showTimeID ? 'is-active' : '' }}"
+                    class="px-10 py-2.5 border border-gray-600 rounded-full
+                           hover:border-red-500 hover:text-red-400 transition showtime-btn
+                           {{ $selectedShowTimeId === $show->showTimeID ? 'is-active' : '' }}"
                     data-showtime-id="{{ $show->showTimeID }}"
                     data-url="{{ route('seat.select', $show->showTimeID) }}">
-
                     {{ substr($show->startTime, 0, 5) }}
-                    {{--@if($show->room)
-                    <span class="ml-2 text-xs text-gray-400">{{ $show->room->roomName }}</span>
-                    @endif--}}
                 </button>
                 @endforeach
             </div>
         </div>
         @endforeach
-    </div>
 
+        {{-- Sơ đồ ghế --}}
+        <div id="seat-container" class="mt-8"></div>
+
+    </div>{{-- /booking-wrapper --}}
     @endif
 
-    <div id="seat-container" class="mt-6"></div>
 </div>
 
 @include('layouts.trailer')
 @endsection
 
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        const tabs = document.querySelectorAll('.date-tab');
+document.addEventListener("DOMContentLoaded", function () {
 
-        tabs.forEach(tab => {
-            tab.addEventListener('click', function() {
-                const date = this.dataset.date;
+    /* ════════════════════════════════════
+       TABS NGÀY
+    ════════════════════════════════════ */
+    const tabs = document.querySelectorAll('.date-tab');
 
-                tabs.forEach(t => {
-                    t.setAttribute('aria-selected', 'false');
-                    const div = t.querySelector('div');
-                    if (div) {
-                        div.classList.remove('bg-red-600');
-                        div.classList.add('bg-transparent');
-                    }
-                });
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function () {
+            const date = this.dataset.date;
 
-                this.setAttribute('aria-selected', 'true');
-                const div = this.querySelector('div');
-                if (div) {
-                    div.classList.remove('bg-transparent');
-                    div.classList.add('bg-red-600');
-                }
-
-                document.querySelectorAll('.showtime-row')
-                    .forEach(row => row.classList.add('hidden'));
-
-                const active = document.getElementById('date-' + date);
-                if (active) active.classList.remove('hidden');
+            // Reset tất cả tabs
+            tabs.forEach(t => {
+                t.setAttribute('aria-selected', 'false');
+                const d = t.querySelector('div');
+                if (d) { d.classList.remove('bg-red-600'); d.classList.add('bg-transparent'); }
             });
+
+            // Active tab được chọn
+            this.setAttribute('aria-selected', 'true');
+            const d = this.querySelector('div');
+            if (d) { d.classList.remove('bg-transparent'); d.classList.add('bg-red-600'); }
+
+            // Ẩn/hiện showtime panel
+            document.querySelectorAll('.showtime-panel').forEach(p => p.classList.add('hidden'));
+            const panel = document.getElementById('date-' + date);
+            if (panel) panel.classList.remove('hidden');
+
+            // Reset seat container
+            document.getElementById('seat-container').innerHTML = '';
+            stopRealtimePolling();
         });
+    });
 
-        const showBtns = document.querySelectorAll('.showtime-btn');
+    /* ════════════════════════════════════
+       CHỌN GIỜ CHIẾU → TẢI SƠ ĐỒ GHẾ
+    ════════════════════════════════════ */
+    document.addEventListener('click', function (e) {
+        const btn = e.target.closest('.showtime-btn');
+        if (!btn) return;
 
-        showBtns.forEach(btn => {
-            btn.addEventListener('click', function() {
-                const url = this.dataset.url;
-                const showtimeId = this.dataset.showtimeId;
+        const url         = btn.dataset.url;
+        const showtimeId  = btn.dataset.showtimeId;
 
-                showBtns.forEach(item => item.classList.remove('is-active'));
-                this.classList.add('is-active');
+        document.querySelectorAll('.showtime-btn').forEach(b => b.classList.remove('is-active'));
+        btn.classList.add('is-active');
 
-                document.getElementById('seat-container').innerHTML = `
-                <div style="text-align:center; padding:30px;">
-                    Đang tải ghế...
-                </div>
-            `;
+        document.getElementById('seat-container').innerHTML =
+            '<div style="text-align:center;padding:40px;color:#9ca3af;">Đang tải sơ đồ ghế...</div>';
 
-                fetch(url)
-                    .then(res => res.text())
-                    .then(html => {
-                        document.getElementById('seat-container').innerHTML = html;
-                        attachSeatEvents();
-                        startSeatTimer();
+        fetch(url)
+            .then(res => res.text())
+            .then(html => {
+                document.getElementById('seat-container').innerHTML = html;
+                attachSeatEvents();
+                startSeatTimer();
+                startRealtimePolling(showtimeId);   // ← BẮT ĐẦU POLLING
 
-                        const nextUrl = new URL(window.location.href);
-                        nextUrl.searchParams.set('showtime', showtimeId);
-                        window.history.replaceState({}, '', nextUrl.toString());
-                    })
-                    .catch(err => {
-                        console.error(err);
-                        document.getElementById('seat-container').innerHTML =
-                            "<p>Lỗi tải ghế</p>";
-                    });
+                const nextUrl = new URL(window.location.href);
+                nextUrl.searchParams.set('showtime', showtimeId);
+                window.history.replaceState({}, '', nextUrl.toString());
+            })
+            .catch(err => {
+                console.error(err);
+                document.getElementById('seat-container').innerHTML =
+                    '<p style="text-align:center;color:#ef4444;">Lỗi tải sơ đồ ghế.</p>';
             });
-        });
+    });
 
-        const selectedShowtimeId = @json($selectedShowTimeId);
-        if (selectedShowtimeId) {
-            const selectedBtn = document.querySelector(`.showtime-btn[data-showtime-id="${selectedShowtimeId}"]`);
-            if (selectedBtn) {
-                selectedBtn.click();
+    // Auto-click suất chiếu đang được chọn (nếu có)
+    const selectedShowtimeId = @json($selectedShowTimeId);
+    if (selectedShowtimeId) {
+        const btn = document.querySelector(`.showtime-btn[data-showtime-id="${selectedShowtimeId}"]`);
+        if (btn) btn.click();
+    }
+});
+
+
+/* ════════════════════════════════════════════════════
+   REALTIME POLLING — kiểm tra ghế đã được đặt bởi người khác
+   Mỗi 5 giây gọi: GET /showtime/{id}/seat-status
+   Backend trả về: { bookedSeats: ["A1","A2",...] }
+════════════════════════════════════════════════════ */
+let realtimeInterval = null;
+let currentShowtimeId = null;
+
+function startRealtimePolling(showtimeId) {
+    stopRealtimePolling();
+    currentShowtimeId = showtimeId;
+
+    realtimeInterval = setInterval(() => {
+        fetch(`/showtime/${showtimeId}/seat-status`)
+            .then(res => res.json())
+            .then(data => {
+                const booked = data.bookedSeats || [];
+                updateSeatAvailability(booked);
+            })
+            .catch(() => {}); // Im lặng nếu network lỗi
+    }, 5000); // 5 giây / lần
+}
+
+function stopRealtimePolling() {
+    if (realtimeInterval) {
+        clearInterval(realtimeInterval);
+        realtimeInterval = null;
+    }
+}
+
+function updateSeatAvailability(bookedSeats) {
+    const seats = document.querySelectorAll('.seat');
+    let deselectedCount = 0;
+
+    seats.forEach(seat => {
+        const code = seat.dataset.seat;
+        if (!code) return;
+
+        const isNowBooked = bookedSeats.includes(code);
+
+        if (isNowBooked && !seat.classList.contains('booked')) {
+            // Ghế vừa bị người khác đặt
+            seat.classList.add('booked');
+
+            // Nếu người dùng đang chọn ghế này → bỏ chọn
+            if (seat.classList.contains('selected')) {
+                seat.classList.remove('selected');
+                const price = parseInt(seat.dataset.price || 0);
+                selectedSeats = selectedSeats.filter(s => s !== code);
+                totalPrice -= price;
+                deselectedCount++;
             }
         }
     });
 
-    let selectedSeats = [];
-    let totalPrice = 0;
-    let seatTimer = null;
+    // Cập nhật UI tổng tiền / danh sách ghế
+    if (deselectedCount > 0) {
+        refreshBookingSummary();
+        showSeatNotify(`${deselectedCount} ghế bạn đang chọn vừa được người khác đặt!`);
+    }
+}
 
-    function attachSeatEvents() {
-        selectedSeats = [];
-        totalPrice = 0;
+function showSeatNotify(msg) {
+    const el = document.getElementById('seat-notify');
+    if (!el) return;
+    el.textContent = msg;
+    el.style.display = 'block';
+    setTimeout(() => { el.style.display = 'none'; }, 4000);
+}
 
-        const seats = document.querySelectorAll(".seat");
+function refreshBookingSummary() {
+    const selectedSeatsEl = document.getElementById('selectedSeats');
+    const seatInput       = document.getElementById('seatInput');
+    const totalPriceEl    = document.getElementById('totalPrice');
 
-        seats.forEach(seat => {
-            seat.addEventListener("click", function() {
-                if (seat.classList.contains("booked")) return;
+    if (selectedSeatsEl)
+        selectedSeatsEl.innerText = selectedSeats.length ? selectedSeats.join(', ') : 'Chưa chọn';
+    if (seatInput)
+        seatInput.value = selectedSeats.join(',');
+    if (totalPriceEl)
+        totalPriceEl.innerText = totalPrice.toLocaleString() + ' đ';
+}
 
-                if (seat.classList.contains("couple")) {
 
-                    const seatCode = seat.dataset.seat;
-                    const match = seatCode.match(/^([A-Z]+)(\d+)$/);
+/* ════════════════════════════════════
+   GHẾ
+════════════════════════════════════ */
+let selectedSeats = [];
+let totalPrice    = 0;
+let seatTimer     = null;
 
-                    if (!match) return;
+function attachSeatEvents() {
+    selectedSeats = [];
+    totalPrice    = 0;
 
-                    const row = match[1];
-                    const col = parseInt(match[2]);
+    document.querySelectorAll('.seat').forEach(seat => {
+        seat.addEventListener('click', function () {
+            if (seat.classList.contains('booked')) return;
 
-                    // kiểm tra ghế trái và phải
-                    const leftSeat = document.querySelector(
-                        `.seat[data-seat="${row}${col - 1}"]`
-                    );
+            /* ── GHẾ ĐÔI ── */
+            if (seat.classList.contains('couple')) {
+                const row = seat.dataset.seat.match(/[A-Z]+/)[0];
+                const rowCoupleSeats = [...document.querySelectorAll(`.seat.couple[data-seat^="${row}"]`)]
+                    .sort((a, b) => parseInt(a.dataset.seat.match(/\d+/)[0]) - parseInt(b.dataset.seat.match(/\d+/)[0]));
 
-                    const rightSeat = document.querySelector(
-                        `.seat[data-seat="${row}${col + 1}"]`
-                    );
+                const idx = rowCoupleSeats.indexOf(seat);
+                if (idx === -1) return;
 
-                    let pairSeats = [];
+                const pairSeats = idx % 2 === 0
+                    ? [rowCoupleSeats[idx], rowCoupleSeats[idx + 1]]
+                    : [rowCoupleSeats[idx - 1], rowCoupleSeats[idx]];
 
-                    // Ưu tiên ghép với ghế bên phải nếu:
-                    // - tồn tại
-                    // - là ghế đôi
-                    // - cột hiện tại là số lẻ
-                    if (
-                        col % 2 !== 0 &&
-                        rightSeat &&
-                        rightSeat.classList.contains("couple")
-                    ) {
-                        pairSeats = [seat, rightSeat];
-                    }
+                if (pairSeats.length !== 2 || pairSeats.some(s => !s)) return;
+                if (pairSeats.some(s => s.classList.contains('booked'))) return;
 
-                    // Nếu không thì ghép với ghế bên trái
-                    else if (
-                        col % 2 === 0 &&
-                        leftSeat &&
-                        leftSeat.classList.contains("couple")
-                    ) {
-                        pairSeats = [leftSeat, seat];
-                    }
-
-                    // fallback nếu dữ liệu lệch
-                    else if (
-                        rightSeat &&
-                        rightSeat.classList.contains("couple")
-                    ) {
-                        pairSeats = [seat, rightSeat];
-                    } else if (
-                        leftSeat &&
-                        leftSeat.classList.contains("couple")
-                    ) {
-                        pairSeats = [leftSeat, seat];
-                    }
-
-                    // không tìm được cặp hợp lệ
-                    if (pairSeats.length !== 2) {
-                        return;
-                    }
-
-                    // ghế đã đặt thì không chọn
-                    if (
-                        pairSeats.some(s => s.classList.contains("booked"))
-                    ) {
-                        return;
-                    }
-
-                    const isSelected = pairSeats.every(s =>
-                        s.classList.contains("selected")
-                    );
-
+                const isSelected = pairSeats.every(s => s.classList.contains('selected'));
+                pairSeats.forEach(s => {
+                    const code  = s.dataset.seat;
+                    const price = parseInt(s.dataset.price || 0);
                     if (isSelected) {
-
-                        pairSeats.forEach(s => {
-
-                            const code = s.dataset.seat;
-                            const price = parseInt(s.dataset.price || 0);
-
-                            s.classList.remove("selected");
-
-                            selectedSeats = selectedSeats.filter(
-                                x => x !== code
-                            );
-
-                            totalPrice -= price;
-                        });
-
-                    } else {
-
-                        pairSeats.forEach(s => {
-
-                            const code = s.dataset.seat;
-                            const price = parseInt(s.dataset.price || 0);
-
-                            if (!s.classList.contains("selected")) {
-
-                                s.classList.add("selected");
-
-                                if (!selectedSeats.includes(code)) {
-                                    selectedSeats.push(code);
-                                    totalPrice += price;
-                                }
-                            }
-                        });
-                    }
-                } else {
-                    const code = seat.dataset.seat;
-                    const price = parseInt(seat.dataset.price || 0);
-
-                    if (seat.classList.contains("selected")) {
-                        seat.classList.remove("selected");
-                        selectedSeats = selectedSeats.filter(s => s !== code);
+                        s.classList.remove('selected');
+                        selectedSeats = selectedSeats.filter(i => i !== code);
                         totalPrice -= price;
                     } else {
-                        seat.classList.add("selected");
+                        if (!s.classList.contains('selected')) {
+                            s.classList.add('selected');
+                            if (!selectedSeats.includes(code)) {
+                                selectedSeats.push(code);
+                                totalPrice += price;
+                            }
+                        }
+                    }
+                });
+
+            /* ── GHẾ THƯỜNG / VIP ── */
+            } else {
+                const code  = seat.dataset.seat;
+                const price = parseInt(seat.dataset.price || 0);
+
+                if (seat.classList.contains('selected')) {
+                    seat.classList.remove('selected');
+                    selectedSeats = selectedSeats.filter(i => i !== code);
+                    totalPrice -= price;
+                } else {
+                    seat.classList.add('selected');
+                    if (!selectedSeats.includes(code)) {
                         selectedSeats.push(code);
                         totalPrice += price;
                     }
                 }
-
-                document.getElementById("selectedSeats").innerText =
-                    selectedSeats.length ? selectedSeats.join(", ") : "Chưa chọn";
-
-                document.getElementById("seatInput").value = selectedSeats.join(",");
-                document.getElementById("totalPrice").innerText = totalPrice.toLocaleString() + " đ";
-            });
-        });
-    }
-
-    function startSeatTimer() {
-        if (seatTimer) clearInterval(seatTimer);
-
-        let time = 300;
-
-        seatTimer = setInterval(() => {
-            let m = Math.floor(time / 60);
-            let s = time % 60;
-
-            if (s < 10) s = "0" + s;
-
-            const timerEl = document.getElementById("timer");
-            if (timerEl) timerEl.innerText = m + ":" + s;
-
-            if (time <= 0) {
-                clearInterval(seatTimer);
-                window.location.href = "/";
             }
 
-            time--;
-        }, 1000);
-    }
+            refreshBookingSummary();
+        });
+    });
+}
+
+
+/* ════════════════════════════════════
+   ĐẾM NGƯỢC 5 PHÚT
+════════════════════════════════════ */
+function startSeatTimer() {
+    if (seatTimer) clearInterval(seatTimer);
+    let time = 300;
+
+    seatTimer = setInterval(() => {
+        const m = Math.floor(time / 60);
+        let   s = time % 60;
+        if (s < 10) s = '0' + s;
+
+        const timerEl = document.getElementById('timer');
+        if (timerEl) timerEl.innerText = m + ':' + s;
+
+        if (time <= 0) {
+            clearInterval(seatTimer);
+            stopRealtimePolling();
+            window.location.href = '/';
+        }
+        time--;
+    }, 1000);
+}
 </script>

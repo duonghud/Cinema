@@ -394,9 +394,12 @@
                         </select>
                     </div>
                     <div>
-                        <label class="form-label">Số lượng ghế đôi</label>
-                        <input type="number" name="doubleSeats" min="0"
-                               value="{{ old('doubleSeats',0) }}" class="ctrl">
+                        <label class="form-label">Số lượng ghế đôi <span style="color:#db2777;font-size:11px">(bắt buộc số chẵn)</span></label>
+                        <input type="number" name="doubleSeats" min="0" step="2"
+                               value="{{ old('doubleSeats',0) }}" class="ctrl" id="doubleSeatsInput">
+                        <div id="doubleSeatsError" style="color:#dc2626;font-size:12px;margin-top:4px;display:none">
+                            Số ghế đôi phải là số chẵn
+                        </div>
                     </div>
                 </div>
 
@@ -472,9 +475,25 @@
     const colsInput        = document.querySelector('input[name="cols"]');
     const vipSeatsInput    = document.querySelector('input[name="vipSeats"]');
     const normalSeatsInput = document.querySelector('input[name="normalSeats"]');
-    const doubleSeatsInput = document.querySelector('input[name="doubleSeats"]');
+    const doubleSeatsInput = document.getElementById('doubleSeatsInput');
+    const doubleSeatsError = document.getElementById('doubleSeatsError');
     const previewGrid      = document.getElementById('previewGrid');
     const submitBtn        = document.getElementById('submitBtn');
+
+    // Kiểm tra ghế đôi số chẵn
+    function validateDoubleSeats() {
+        const val = parseInt(doubleSeatsInput.value || 0);
+        if (val > 0 && val % 2 !== 0) {
+            doubleSeatsError.style.display = 'block';
+            doubleSeatsInput.style.borderColor = '#dc2626';
+            doubleSeatsInput.style.boxShadow   = '0 0 0 3px rgba(220,38,38,.12)';
+            return false;
+        }
+        doubleSeatsError.style.display = 'none';
+        doubleSeatsInput.style.borderColor = '';
+        doubleSeatsInput.style.boxShadow   = '';
+        return true;
+    }
 
     function generatePreview() {
         previewGrid.innerHTML = '';
@@ -497,9 +516,15 @@
         document.getElementById('usedSeatsText').innerText      = totalUsed;
 
         const warning = document.getElementById('seatWarning');
-        if (totalUsed > maxSeats) {
-            warning.innerHTML       = `❌ Vượt quá số ghế cho phép (${totalUsed}/${maxSeats})`;
-            warning.style.color     = '#dc2626';
+        const isDoubleValid = validateDoubleSeats();
+
+        if (totalUsed > maxSeats || !isDoubleValid) {
+            if (totalUsed > maxSeats) {
+                warning.innerHTML   = `❌ Vượt quá số ghế cho phép (${totalUsed}/${maxSeats})`;
+                warning.style.color = '#dc2626';
+            } else {
+                warning.innerHTML   = '';
+            }
             submitBtn.disabled      = true;
             submitBtn.style.opacity = '.5';
             submitBtn.style.cursor  = 'not-allowed';
@@ -574,6 +599,15 @@
         const doubleSeats = parseInt(doubleSeatsInput.value || 0);
         const total       = vipSeats + normalSeats + doubleSeats;
         const maxSeats    = rows * cols;
+
+        // Chặn nếu ghế đôi là số lẻ
+        if (doubleSeats > 0 && doubleSeats % 2 !== 0) {
+            e.preventDefault();
+            doubleSeatsError.style.display = 'block';
+            doubleSeatsInput.focus();
+            doubleSeatsInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return false;
+        }
 
         if (total > maxSeats) {
             e.preventDefault();

@@ -63,7 +63,11 @@ class screeningRoomController extends Controller
 
             'vipSeats'         => 'required|integer|min:0',
             'normalSeats'      => 'required|integer|min:0',
-            'doubleSeats'      => 'required|integer|min:0',
+            'doubleSeats'      => ['required', 'integer', 'min:0', function ($attr, $value, $fail) {
+                if ((int) $value > 0 && (int) $value % 2 !== 0) {
+                    $fail('Số ghế đôi phải là số chẵn (ghế đôi luôn đi theo cặp 2 chỗ).');
+                }
+            }],
 
             'vipSeatTypeID'    => 'required|exists:seat_types,seatTypeID',
             'normalSeatTypeID' => 'required|exists:seat_types,seatTypeID',
@@ -229,7 +233,11 @@ class screeningRoomController extends Controller
             'vipSeatTypeID'    => 'nullable|exists:seat_types,seatTypeID',
             'normalSeats'      => 'nullable|integer|min:0',
             'normalSeatTypeID' => 'nullable|exists:seat_types,seatTypeID',
-            'doubleSeats'      => 'nullable|integer|min:0',
+            'doubleSeats'      => ['nullable', 'integer', 'min:0', function ($attr, $value, $fail) {
+                if ((int) $value > 0 && (int) $value % 2 !== 0) {
+                    $fail('Số ghế đôi phải là số chẵn (ghế đôi luôn đi theo cặp 2 chỗ).');
+                }
+            }],
             'doubleSeatTypeID' => 'nullable|exists:seat_types,seatTypeID',
         ], [
             'roomName.required'    => 'Tên phòng không được để trống.',

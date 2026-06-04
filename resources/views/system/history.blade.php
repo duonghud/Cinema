@@ -73,6 +73,19 @@
         background: rgba(220, 53, 69, 0.15);
         color: #fff;
     }
+
+    .ticket-count-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        background: rgba(220, 53, 69, 0.15);
+        border: 1px solid rgba(220, 53, 69, 0.35);
+        color: #fca5a5;
+        border-radius: 999px;
+        padding: .3rem .85rem;
+        font-size: .9rem;
+        font-weight: 700;
+    }
 </style>
 
 <section class="history-page py-5 px-3">
@@ -109,6 +122,7 @@
                                 })
                                 ->filter()
                                 ->implode(', ');
+                            $ticketCount = $invoice->tickets->count();
                         @endphp
 
                         <div class="col-12">
@@ -152,19 +166,27 @@
                                 <hr class="border-secondary my-4">
 
                                 <div class="row g-3 mb-4">
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
                                         <div class="info-label mb-2">Phim</div>
                                         <div class="fw-semibold">{{ $movieTitle }}</div>
                                     </div>
 
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
                                         <div class="info-label mb-2">Suất chiếu</div>
                                         <div class="fw-semibold">{{ $showDateTime }}</div>
                                     </div>
 
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
                                         <div class="info-label mb-2">Ghế</div>
                                         <div class="fw-semibold">{{ $seatLabels ?: 'N/A' }}</div>
+                                    </div>
+
+                                    <div class="col-md-1">
+                                        <div class="info-label mb-2">Số vé</div>
+                                        <span class="ticket-count-badge">
+                                            <i class="bi bi-ticket-perforated-fill"></i>
+                                            {{ $ticketCount }}
+                                        </span>
                                     </div>
                                 </div>
 

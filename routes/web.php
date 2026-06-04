@@ -30,6 +30,8 @@ use App\Http\Controllers\Admin\TicketController;
 use App\Http\Controllers\Admin\ShowTimeController;
 use App\Http\Controllers\Admin\InvoiceController;
 use App\Http\Controllers\VnpayController;
+use App\Http\Controllers\MomoController;
+
 
 
 // ================== CLIENT ==================
@@ -44,6 +46,12 @@ Route::get('/profile', function () {
 
 Route::get('/vnpay/return', [VnpayController::class, 'vnpayReturn'])
     ->name('vnpay.return');
+
+Route::get('/momo/return', [MomoController::class, 'momoReturn'])
+    ->name('momo.return');
+Route::post('/momo/notify', [MomoController::class, 'momoNotify'])
+    ->name('momo.notify');
+    
 
 // ================== AUTH CUSTOMER ==================
 Route::prefix('customer')->group(function () {
@@ -85,10 +93,10 @@ Route::prefix('admins')->middleware('admin.auth')->group(function () {
     Route::get('reports/revenue-by-day', [DashBoardController::class, 'revenueByDay'])
         ->name('reports.revenue.day');
 
-    // ── FIXED: was incorrectly placed with '/admins/' prefix inside the 'admins' group ──
-    // Correct path resolves to: /admins/reports/invoices-by-period
-    Route::get('reports/invoices-by-period', [DashBoardController::class, 'invoicesByPeriod'])
-        ->name('reports.invoices.by-period');
+    Route::get('/reports/invoices-by-period', [DashBoardController::class, 'invoicesByPeriod'])
+        ->name('admins.reports.invoices-by-period');
+
+
 
     // Resources
     Route::resource('admin',             AdminController::class);
@@ -127,9 +135,9 @@ Route::prefix('admins')->middleware('admin.auth')->group(function () {
         ->name('seat.ajax.convertCouple');
     Route::post('seat/ajax-move-couple',     [SeatController::class, 'ajaxMoveCouple'])
         ->name('seat.ajax.moveCouple');
-    Route::post('seat/ajax-swap-couple-type',[SeatController::class, 'ajaxSwapCoupleType'])
+    Route::post('seat/ajax-swap-couple-type', [SeatController::class, 'ajaxSwapCoupleType'])
         ->name('seat.ajax.swapCoupleType');
-    Route::post('seat/ajax-batch-update-type',[SeatController::class, 'ajaxBatchUpdateType'])
+    Route::post('seat/ajax-batch-update-type', [SeatController::class, 'ajaxBatchUpdateType'])
         ->name('seat.ajax.batchUpdateType');
     Route::resource('seat', SeatController::class);
 });

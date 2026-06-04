@@ -2,87 +2,297 @@
 
 @section('content')
 <style>
+    @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap');
+
     .schedule-shell {
-        background:
-            radial-gradient(circle at top left, rgba(255, 87, 87, 0.16), transparent 26%),
-            radial-gradient(circle at top right, rgba(255, 184, 0, 0.12), transparent 24%),
-            #10141B;
+        background: #0d1117;
+        min-height: 100vh;
+        font-family: 'Be Vietnam Pro', sans-serif;
     }
 
-    .schedule-date-tab {
-        min-width: 104px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        background: rgba(255, 255, 255, 0.03);
-        color: #cbd5e1;
-        transition: all 0.25s ease;
+    .schedule-heading {
+        text-align: center;
+        padding: 36px 0 24px;
     }
 
-    .schedule-date-tab.is-active {
-        background: linear-gradient(135deg, #ef4444, #f97316);
-        border-color: transparent;
+    .schedule-heading .label {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 20px;
+        font-weight: 700;
         color: #fff;
-        box-shadow: 0 14px 30px rgba(239, 68, 68, 0.28);
+        letter-spacing: 0.02em;
     }
 
-    .schedule-card {
-        background: linear-gradient(180deg, rgba(18, 24, 33, 0.96), rgba(11, 15, 22, 0.94));
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        box-shadow: 0 18px 45px rgba(0, 0, 0, 0.18);
+    .schedule-heading .label::before {
+        content: '';
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #ef4444;
+        box-shadow: 0 0 8px rgba(239,68,68,0.7);
     }
 
-    .schedule-showtime {
-        border: 1px solid rgba(248, 113, 113, 0.28);
-        background: rgba(255, 255, 255, 0.03);
-        transition: all 0.25s ease;
+    /* Date Tabs */
+    .date-tabs {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 28px;
     }
 
-    .schedule-showtime:hover {
-        border-color: rgba(248, 113, 113, 0.95);
+    .date-tab {
+        padding: 8px 20px;
+        border-radius: 8px;
+        border: 1.5px solid rgba(255,255,255,0.12);
+        background: transparent;
+        color: #94a3b8;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-family: 'Be Vietnam Pro', sans-serif;
+    }
+
+    .date-tab:hover {
+        border-color: rgba(239,68,68,0.5);
         color: #fff;
-        transform: translateY(-2px);
-        box-shadow: 0 10px 22px rgba(248, 113, 113, 0.16);
+    }
+
+    .date-tab.is-active {
+        background: #ef4444;
+        border-color: #ef4444;
+        color: #fff;
+    }
+
+    /* Grid Layout */
+    .movies-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+
+    @media (max-width: 768px) {
+        .movies-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Movie Card */
+    .movie-poster {
+        width: 200px;
+        min-width: 200px;
+        position: relative;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+
+    .movie-poster img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        transition: transform 0.4s ease, filter 0.4s ease;
+    }
+
+    .movie-poster:hover img {
+        transform: scale(1.08);
+        filter: brightness(1.15) saturate(1.1);
+    }
+
+    .movie-poster::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(to top, rgba(239,68,68,0.18) 0%, transparent 60%);
+        opacity: 0;
+        transition: opacity 0.4s ease;
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    .movie-poster:hover::after {
+        opacity: 1;
+    }
+
+    .movie-format-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: rgba(15,20,30,0.82);
+        color: #e2e8f0;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 3px 9px;
+        border-radius: 6px;
+        border: 1px solid rgba(255,255,255,0.18);
+        letter-spacing: 0.04em;
+    }
+
+    .movie-info {
+        flex: 1;
+        padding: 20px 22px;
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+        min-width: 0;
+    }
+
+    .movie-meta {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: #64748b;
+    }
+
+    .movie-meta .dot {
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: #475569;
+        flex-shrink: 0;
+    }
+
+    .movie-title {
+        font-size: 17px;
+        font-weight: 800;
+        color: #fff;
+        letter-spacing: 0.01em;
+        line-height: 1.3;
+        margin-top: 2px;
+    }
+
+    .movie-origin {
+        font-size: 13px;
+        color: #94a3b8;
+    }
+
+    .movie-release {
+        font-size: 13px;
+        color: #94a3b8;
+    }
+
+    .movie-age {
+        font-size: 13px;
+        color: #f87171;
+        line-height: 1.5;
+    }
+
+    .showtimes-label {
+        font-size: 12px;
+        font-weight: 700;
+        color: #475569;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        margin-top: 6px;
+    }
+
+    .showtimes-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 4px;
+    }
+
+    .showtime-btn {
+        display: inline-block;
+        padding: 7px 16px;
+        border-radius: 8px;
+        border: 1.5px solid rgba(255,255,255,0.15);
+        background: transparent;
+        color: #e2e8f0;
+        font-size: 14px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.22s ease;
+        font-family: 'Be Vietnam Pro', sans-serif;
+        white-space: nowrap;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .showtime-btn::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, rgba(239,68,68,0.18), rgba(249,115,22,0.12));
+        opacity: 0;
+        transition: opacity 0.22s ease;
+    }
+
+    .showtime-btn:hover {
+        border-color: rgba(239,68,68,0.75);
+        color: #fff;
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(239,68,68,0.22);
+    }
+
+    .showtime-btn:hover::before {
+        opacity: 1;
+    }
+
+    .showtime-btn:active {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(239,68,68,0.15);
+    }
+
+    .movie-card {
+        background: #161b24;
+        border-radius: 14px;
+        overflow: hidden;
+        border: 1px solid rgba(255,255,255,0.07);
+        display: flex;
+        flex-direction: row;
+        min-height: 260px;
+        transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    }
+
+    .movie-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 20px 48px rgba(0,0,0,0.38);
+        border-color: rgba(239,68,68,0.22);
+    }
+
+    .empty-state {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 60px 20px;
+        color: #475569;
+        font-size: 15px;
     }
 </style>
 
-<div class="schedule-shell min-h-screen py-12 text-white">
-    <div class="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+<div class="schedule-shell">
+    <div class="container mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-10">
+
         @if(session('error'))
-            <div class="mb-6 rounded-2xl border border-red-500/40 bg-red-500/10 px-5 py-4 text-red-200">
+            <div style="margin-bottom:16px; padding:12px 16px; border-radius:10px; border:1px solid rgba(239,68,68,0.3); background:rgba(239,68,68,0.08); color:#fca5a5; font-size:14px;">
                 {{ session('error') }}
             </div>
         @endif
 
         @if(session('success'))
-            <div class="mb-6 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 px-5 py-4 text-emerald-200">
+            <div style="margin-bottom:16px; padding:12px 16px; border-radius:10px; border:1px solid rgba(16,185,129,0.3); background:rgba(16,185,129,0.08); color:#6ee7b7; font-size:14px;">
                 {{ session('success') }}
             </div>
         @endif
 
-        <div class="mb-8 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-            <div>
-                <p class="mb-2 text-sm uppercase tracking-[0.32em] text-red-300">Lịch chiếu</p>
-                <h1 class="text-3xl font-black uppercase tracking-wide sm:text-4xl">Chọn phim và suất chiếu</h1>
-                <p class="mt-3 max-w-2xl text-sm text-slate-300 sm:text-base">
-                    Lọc theo ngày để xem nhanh phim đang chiếu và đặt vé ngay từ danh sách suất chiếu.
-                </p>
-            </div>
+        <div class="schedule-heading">
+            <span class="label">Phim đang chiếu</span>
         </div>
 
         @if($scheduleDates->isEmpty())
-            <div class="rounded-3xl border border-white/10 bg-white/5 px-6 py-16 text-center text-slate-300">
-                Hiện tại chưa có lịch chiếu sắp tới.
-            </div>
+            <div class="empty-state">Hiện tại chưa có lịch chiếu sắp tới.</div>
         @else
-            <div class="mb-8 flex gap-3 overflow-x-auto pb-2" id="schedule-date-tabs">
+            <div class="date-tabs" id="schedule-date-tabs">
                 @foreach($scheduleDates as $index => $date)
                     @php($carbonDate = \Carbon\Carbon::parse($date))
                     <button
                         type="button"
-                        class="schedule-date-tab {{ $index === 0 ? 'is-active' : '' }} flex shrink-0 flex-col rounded-3xl px-4 py-3 text-center"
+                        class="date-tab {{ $index === 0 ? 'is-active' : '' }}"
                         data-date="{{ $date }}">
-                        <span class="text-xs uppercase tracking-[0.2em]">{{ $carbonDate->translatedFormat('D') }}</span>
-                        <span class="mt-1 text-2xl font-bold leading-none">{{ $carbonDate->format('d') }}</span>
-                        <span class="mt-1 text-xs">{{ $carbonDate->format('m/Y') }}</span>
+                        {{ $carbonDate->format('d-m-Y') }}
                     </button>
                 @endforeach
             </div>
@@ -91,71 +301,57 @@
                 @php($movies = $scheduleByDate->get($date, collect()))
                 <div class="schedule-panel {{ $index === 0 ? '' : 'hidden' }}" data-date-panel="{{ $date }}">
                     @if($movies->isEmpty())
-                        <div class="rounded-3xl border border-white/10 bg-white/5 px-6 py-16 text-center text-slate-300">
-                            Ngày này chưa có phim đang mở bán.
-                        </div>
+                        <div class="empty-state">Ngày này chưa có phim đang mở bán.</div>
                     @else
-                        <div class="space-y-6">
+                        <div class="movies-grid">
                             @foreach($movies as $item)
                                 @php($movie = $item['movie'])
-                                <article class="schedule-card rounded-[28px] p-4 sm:p-6">
-                                    <div class="flex flex-col gap-5 lg:flex-row">
-                                        <a href="{{ route('movies.show', $movie) }}" class="block w-full max-w-[210px] shrink-0 overflow-hidden rounded-3xl">
+                                <div class="movie-card">
+                                    <div class="movie-poster">
+                                        <a href="{{ route('movies.show', $movie) }}">
                                             <img
                                                 src="{{ asset('posters/' . $movie->poster) }}"
-                                                alt="{{ $movie->movieTitle }}"
-                                                class="h-[300px] w-full object-cover">
+                                                alt="{{ $movie->movieTitle }}">
+                                        </a>
+                                        <span class="movie-format-badge">2D</span>
+                                    </div>
+
+                                    <div class="movie-info">
+                                        <div class="movie-meta">
+                                            <span>{{ $movie->genres->pluck('name')->first() ?? 'Phim' }}</span>
+                                            @if($movie->duration)
+                                                <span class="dot"></span>
+                                                <span>{{ $movie->duration }} phút</span>
+                                            @endif
+                                        </div>
+
+                                        <a href="{{ route('movies.show', $movie) }}" style="text-decoration:none;">
+                                            <div class="movie-title">{{ $movie->movieTitle }}</div>
                                         </a>
 
-                                        <div class="flex-1">
-                                            <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                                                <div>
-                                                    <div class="mb-2 flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.18em] text-slate-400">
-                                                        <span>{{ $movie->ageRating->code ?? 'P' }}</span>
-                                                        <span class="h-1 w-1 rounded-full bg-slate-600"></span>
-                                                        <span>{{ $movie->genres->pluck('name')->join(', ') }}</span>
-                                                    </div>
+                                        <div class="movie-origin">Xuất xứ: {{ $movie->country ?? 'Việt Nam' }}</div>
 
-                                                    <h2 class="text-2xl font-extrabold uppercase tracking-wide text-white">
-                                                        {{ $movie->movieTitle }}
-                                                    </h2>
+                                        <div class="movie-release">Khởi chiếu: {{ optional($movie->releaseDate)->format('d/m/Y') }}</div>
 
-                                                    <div class="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-300">
-                                                        <span>{{ $movie->duration ? $movie->duration . ' phút' : 'Chưa cập nhật thời lượng' }}</span>
-                                                        <span>Khởi chiếu: {{ optional($movie->releaseDate)->format('d/m/Y') }}</span>
-                                                    </div>
-                                                </div>
+                                        @if($movie->ageRating)
+                                            <div class="movie-age">
+                                                {{ $movie->ageRating->description ?? 'Phim được phổ biến đến người xem từ đủ tuổi trở lên (' . ($movie->ageRating->code ?? 'P') . ')' }}
+                                            </div>
+                                        @endif
 
+                                        <div class="showtimes-label">Lịch chiếu</div>
+
+                                        <div class="showtimes-list">
+                                            @foreach($item['showTimes'] as $showTime)
                                                 <a
-                                                    href="{{ route('movies.show', ['movie' => $movie, 'showtime' => optional($item['showTimes']->first())->showTimeID]) }}"
-                                                    class="inline-flex items-center rounded-full border border-red-400/35 px-4 py-2 text-sm font-semibold text-red-200 transition hover:border-red-300 hover:bg-red-500/10 hover:text-white">
-                                                    Chi tiết phim
+                                                    href="{{ route('movies.show', ['movie' => $movie, 'showtime' => $showTime->showTimeID]) }}"
+                                                    class="showtime-btn">
+                                                    {{ substr($showTime->startTime, 0, 5) }}
                                                 </a>
-                                            </div>
-
-                                            <div class="mt-5 border-t border-white/10 pt-5">
-                                                <p class="mb-4 text-sm font-semibold uppercase tracking-[0.24em] text-slate-400">
-                                                    Suất chiếu trong ngày
-                                                </p>
-
-                                                <div class="flex flex-wrap gap-3">
-                                                    @foreach($item['showTimes'] as $showTime)
-                                                        <a
-                                                            href="{{ route('movies.show', ['movie' => $movie, 'showtime' => $showTime->showTimeID]) }}"
-                                                            class="schedule-showtime inline-flex min-w-[118px] flex-col rounded-2xl px-4 py-3 text-left text-slate-200">
-                                                            <span class="text-lg font-bold leading-none">
-                                                                {{ substr($showTime->startTime, 0, 5) }}
-                                                            </span>
-                                                            <span class="mt-2 text-xs uppercase tracking-[0.16em] text-slate-400">
-                                                                {{ $showTime->room->roomName ?? 'Phòng chiếu' }}
-                                                            </span>
-                                                        </a>
-                                                    @endforeach
-                                                </div>
-                                            </div>
+                                            @endforeach
                                         </div>
                                     </div>
-                                </article>
+                                </div>
                             @endforeach
                         </div>
                     @endif
@@ -173,10 +369,8 @@
         tabs.forEach((tab) => {
             tab.addEventListener('click', function () {
                 const targetDate = this.dataset.date;
-
                 tabs.forEach((item) => item.classList.remove('is-active'));
                 this.classList.add('is-active');
-
                 panels.forEach((panel) => {
                     panel.classList.toggle('hidden', panel.dataset.datePanel !== targetDate);
                 });
