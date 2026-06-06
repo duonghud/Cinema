@@ -78,6 +78,7 @@
         border-bottom: 2px solid var(--border); padding: 12px 14px;
     }
     #revenueTable tbody tr { transition: background .12s; }
+    #revenueTable tbody tr:hover { background: #eef2ff; }
     #revenueTable tbody td { padding: 11px 14px; font-size: .9rem; color: var(--text); border-color: var(--border); }
 
     /* ── Pagination ── */
@@ -105,15 +106,22 @@
         background: #fff; cursor: pointer;
     }
 
+    #barChart, #lineChart { cursor: pointer; }
+
     /* ── Iconify sizing helpers ── */
     iconify-icon { display: inline-flex; vertical-align: middle; }
     .s-icon iconify-icon { font-size: 1.6rem; }
+    .s-hint iconify-icon { font-size: .7rem; }
 </style>
 
 @php
     $filterDisplay = $filterKey === 'year'
         ? (string) $filterValue
         : \Carbon\Carbon::createFromFormat('Y-m', $filterValue)->format('m/Y');
+
+    $firstPeriod = $rows->isNotEmpty() ? ($rows->first()['period'] ?? '') : '';
+
+    $summaryPeriod = $filterKey === 'year' ? (string) $filterValue : $firstPeriod;
 @endphp
 
 <div class="container-fluid px-0">
@@ -151,7 +159,7 @@
         </div>
     </div>
 
-    {{-- ── Summary boxes ── --}}
+    {{-- ── Summary boxes (bỏ onclick/hover, chỉ hiển thị số liệu) ── --}}
     <div class="row g-3 mb-4">
         <div class="col-md-4">
             <div class="summary-box ticket">
@@ -182,7 +190,7 @@
         </div>
     </div>
 
-    {{-- ── Chart card ── --}}
+    {{-- ── Chart card (giữ nguyên) ── --}}
     <div class="card report-card mb-4">
         <div class="card-body">
             <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
@@ -212,7 +220,7 @@
         </div>
     </div>
 
-    {{-- ── Data table ── --}}
+    {{-- ── Data table (giữ nguyên) ── --}}
     <div class="card report-card">
         <div class="card-body">
             <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
@@ -240,28 +248,40 @@
                     <thead>
                         <tr>
                             <th>Mốc thời gian</th>
-                            <th>Doanh thu vé</th>
+                            <th>
+                                Doanh thu vé
+                                <small style="color:var(--primary);font-size:.7rem;font-weight:400">(nhấn hàng)</small>
+                            </th>
                             <th>Doanh thu đồ ăn</th>
                             <th>Tổng doanh thu</th>
                         </tr>
                     </thead>
                     <tbody id="tableBody">
                         @forelse($rows as $row)
-                            <tr data-row>
+                            @php
+                                $rowPeriod = $row['period'] ?? $row['label'];
+                            @endphp
+                            <tr data-row data-period="{{ $rowPeriod }}" data-label="{{ $row['label'] }}">
                                 <td class="fw-semibold">{{ $row['label'] }}</td>
                                 <td>
-                                    <span style="color:#6366f1;font-weight:600">
+                                    <span style="color:#6366f1;font-weight:600;cursor:pointer"
+                                        onclick="event.stopPropagation();openModal('{{ $rowPeriod }}','ticket','Hóa đơn vé – {{ $row['label'] }}')">
                                         {{ number_format($row['ticketRevenue'], 0, ',', '.') }} đ
+                                        <iconify-icon icon="mdi:arrow-top-right" style="font-size:.7rem;opacity:.6"></iconify-icon>
                                     </span>
                                 </td>
                                 <td>
-                                    <span style="color:#06b6d4;font-weight:600">
+                                    <span style="color:#06b6d4;font-weight:600;cursor:pointer"
+                                        onclick="event.stopPropagation();openModal('{{ $rowPeriod }}','food','Hóa đơn đồ ăn – {{ $row['label'] }}')">
                                         {{ number_format($row['foodRevenue'], 0, ',', '.') }} đ
+                                        <iconify-icon icon="mdi:arrow-top-right" style="font-size:.7rem;opacity:.6"></iconify-icon>
                                     </span>
                                 </td>
                                 <td>
-                                    <span style="color:#10b981;font-weight:700">
+                                    <span style="color:#10b981;font-weight:700;cursor:pointer"
+                                        onclick="event.stopPropagation();openModal('{{ $rowPeriod }}','all','Tất cả hóa đơn – {{ $row['label'] }}')">
                                         {{ number_format($row['totalRevenue'], 0, ',', '.') }} đ
+                                        <iconify-icon icon="mdi:arrow-top-right" style="font-size:.7rem;opacity:.6"></iconify-icon>
                                     </span>
                                 </td>
                             </tr>
@@ -285,25 +305,41 @@
     </div>
 </div>
 
+{{-- ── Nhúng dữ liệu phim (phải trước @include modal) ── --}}
+<script>
+const _pageMovieData = {
+    topMovie    : @json($topMovie    ?? null),
+    bottomMovie : @json($bottomMovie ?? null),
+    movieList   : @json($movieList   ?? []),
+};
+</script>
+
+{{-- ── Invoice Modal ── --}}
+@include('Admins.DashBoard.revenue.modal')
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script>
 // ── Data từ Laravel ──────────────────────────────────────────────
 const labels     = @json($rows->pluck('label'));
 const ticketData = @json($rows->pluck('ticketRevenue'));
 const foodData   = @json($rows->pluck('foodRevenue'));
+const totalData  = @json($rows->pluck('totalRevenue'));
+const periods    = @json($rows->pluck('period')->toArray());
+
+const summaryTicket = {{ $summary['ticketRevenue'] }};
+const summaryFood   = {{ $summary['foodRevenue'] }};
 
 // ── Chart helpers ─────────────────────────────────────────────────
 const C = {
     ticket : '#6366f1', ticketA : 'rgba(99,102,241,0.15)',
     food   : '#06b6d4', foodA   : 'rgba(6,182,212,0.12)',
 };
-
 const tooltipPlugin = {
     callbacks: {
-        label: ctx => ' ' + new Intl.NumberFormat('vi-VN').format(Math.round(ctx.parsed.y ?? ctx.parsed)) + ' đ',
+        label     : ctx => ' ' + fmt(ctx.parsed.y ?? ctx.parsed),
+        afterLabel: ()  => '  ← Nhấn để xem hóa đơn',
     }
 };
-
 const axisDefaults = {
     grid : { color: 'rgba(0,0,0,0.04)' },
     ticks: {
@@ -312,7 +348,19 @@ const axisDefaults = {
     }
 };
 
-new Chart(document.getElementById('barChart'), {
+function makeClickHandler(chart) {
+    return function (evt) {
+        const pts = chart.getElementsAtEventForMode(evt, 'index', { intersect: false }, true);
+        if (!pts.length) return;
+        const idx   = pts[0].index;
+        const dsIdx = pts[0].datasetIndex;
+        const typeMap = ['ticket', 'food'];
+        const type    = typeMap[dsIdx] ?? 'all';
+        openModal(periods[idx] ?? labels[idx], type, labels[idx]);
+    };
+}
+
+const barChart = new Chart(document.getElementById('barChart'), {
     type: 'bar',
     data: {
         labels,
@@ -327,8 +375,9 @@ new Chart(document.getElementById('barChart'), {
         scales : { y: axisDefaults, x: { grid: { display: false }, ticks: { color: '#64748b' } } }
     }
 });
+document.getElementById('barChart').addEventListener('click', makeClickHandler(barChart));
 
-new Chart(document.getElementById('lineChart'), {
+const lineChart = new Chart(document.getElementById('lineChart'), {
     type: 'line',
     data: {
         labels,
@@ -343,8 +392,9 @@ new Chart(document.getElementById('lineChart'), {
         scales : { y: axisDefaults, x: { grid: { display: false }, ticks: { color: '#64748b' } } }
     }
 });
+document.getElementById('lineChart').addEventListener('click', makeClickHandler(lineChart));
 
-// ── FIX: hàm switchChart ──────────────────────────────────────────
+// ── switchChart ───────────────────────────────────────────────────
 function switchChart(type, btn) {
     document.querySelectorAll('.chart-panel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.chart-tab-btn').forEach(b => b.classList.remove('active'));
