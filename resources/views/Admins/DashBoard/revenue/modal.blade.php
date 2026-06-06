@@ -443,18 +443,18 @@
 
     // ── Render ────────────────────────────────────────────────────────
     function renderModal(container, data) {
-        const invoices  = data.invoices  ?? [];
+        const invoices = data.invoices ?? [];
         const movieList = data.movieList ?? [];
-        const foodList  = data.foodList  ?? [];
-        const type      = data.type      ?? 'all';
-        const period    = data.period    ?? _currentPeriod ?? '';
-        const isTicket  = type === 'ticket';
-        const isFood    = type === 'food';
-        const isAll     = type === 'all';
+        const foodList = data.foodList ?? [];
+        const type = data.type ?? 'all';
+        const period = data.period ?? _currentPeriod ?? '';
+        const isTicket = type === 'ticket';
+        const isFood = type === 'food';
+        const isAll = type === 'all';
 
         // Đếm hóa đơn vé trong danh sách (dùng để quyết định hiện section phim)
         const ticketInvoices = invoices.filter(i => i.type === 'ticket');
-        const foodInvoices   = invoices.filter(i => i.type === 'food');
+        const foodInvoices = invoices.filter(i => i.type === 'food');
 
         const periodLabel = _periodLabel(period);
 
@@ -469,9 +469,8 @@
         html += '</div>';
 
         // ── Phim nổi bật (tab Vé & Tất cả) ──────────────────────────
-        // Hiện section khi: có dữ liệu phim TỪ BACKEND, hoặc có vé nhưng backend không trả phim (hiện thông báo)
-        const hasMovieData   = data.topMovie || data.bottomMovie || movieList.length > 0;
-        const hasTicketInvs  = ticketInvoices.length > 0 || (data.ticketRevenue ?? 0) > 0;
+        const hasMovieData = data.topMovie || data.bottomMovie || movieList.length > 0;
+        const hasTicketInvs = ticketInvoices.length > 0 || (data.ticketRevenue ?? 0) > 0;
 
         if (isAll || isTicket) {
             html += `<div class="modal-hl-section">`;
@@ -487,7 +486,6 @@
             </div>`;
 
             if (hasMovieData) {
-                // Có dữ liệu phim từ backend → hiện bình thường
                 html += `<div class="d-flex gap-2 flex-wrap mb-2">`;
                 if (data.topMovie)
                     html += _hlCard('#eef2ff', '#6366f1', '🏆', 'DOANH THU CAO NHẤT',
@@ -518,20 +516,18 @@
                     html += `</tbody></table></div>`;
                 }
             } else if (hasTicketInvs) {
-                // Có vé nhưng backend không trả dữ liệu phim → thông báo rõ
                 html += `<div style="background:#fff7ed;border:1.5px dashed #fcd34d;border-radius:10px;padding:12px 16px;color:#92400e;font-size:.83rem">
                     <i class="bi bi-exclamation-triangle-fill"></i> Có doanh thu vé trong kỳ này nhưng chưa có dữ liệu phim. Vui lòng kiểm tra lại backend (query <code>topMovie/movieList</code> theo <code>period</code>).
                 </div>`;
             } else {
-                // Không có vé nào
                 html += `<p class="text-muted small mb-0" style="color:#94a3b8">Chưa có dữ liệu vé trong kỳ này.</p>`;
             }
             html += `</div>`;
         }
 
         // ── Món ăn nổi bật (tab Đồ ăn & Tất cả) ─────────────────────
-        const hasFoodData  = data.topFood || data.bottomFood || foodList.length > 0;
-        const hasFoodInvs  = foodInvoices.length > 0 || (data.foodRevenue ?? 0) > 0;
+        const hasFoodData = data.topFood || data.bottomFood || foodList.length > 0;
+        const hasFoodInvs = foodInvoices.length > 0 || (data.foodRevenue ?? 0) > 0;
 
         if (isAll || isFood) {
             html += `<div class="modal-hl-section">`;
@@ -610,10 +606,14 @@
                     const badge = isF
                         ? `<span style="background:#ecfeff;color:#06b6d4;border:1px solid #a5f3fc;font-size:.63rem;font-weight:700;padding:2px 7px;border-radius:5px">Đồ ăn</span>`
                         : `<span style="background:#eef2ff;color:#6366f1;border:1px solid #c7d2fe;font-size:.63rem;font-weight:700;padding:2px 7px;border-radius:5px">Vé</span>`;
-                    const action = !isF
-                        ? `<a href="/admins/invoices/${inv.invoiceID}" target="_blank" class="btn btn-sm fw-semibold"
-                              style="background:#eef2ff;color:#6366f1;border:1px solid #c7d2fe;border-radius:7px">Chi tiết</a>`
-                        : `<span style="color:#94a3b8;font-size:.8rem">—</span>`;
+
+                    // FIX: isF (đồ ăn) → /admins/foodInvoice/, !isF (vé) → /admins/invoices/
+                    const action = isF
+                        ? `<a href="/admins/foodInvoice/${inv.invoiceID}" target="_blank" class="btn btn-sm fw-semibold"
+                              style="background:#ecfeff;color:#06b6d4;border:1px solid #a5f3fc;border-radius:7px">Chi tiết</a>`
+                        : `<a href="/admins/invoices/${inv.invoiceID}" target="_blank" class="btn btn-sm fw-semibold"
+                              style="background:#eef2ff;color:#6366f1;border:1px solid #c7d2fe;border-radius:7px">Chi tiết</a>`;
+
                     return `<tr>
                         <td style="color:#94a3b8">${i+1}</td>
                         <td class="fw-semibold text-nowrap" style="color:${color}">${idStr}</td>
@@ -643,10 +643,13 @@
     }
 
     function _rankColors(i, isFood = false) {
-        const top  = isFood ? '#06b6d4' : '#6366f1';
+        const top = isFood ? '#06b6d4' : '#6366f1';
         const colors = [top, '#f59e0b', '#ef4444'];
-        const bgs    = [isFood ? '#ecfeff' : '#eef2ff', '#fef3c7', '#fee2e2'];
-        return { rc: colors[i] ?? '#94a3b8', rb: bgs[i] ?? '#f1f5f9' };
+        const bgs = [isFood ? '#ecfeff' : '#eef2ff', '#fef3c7', '#fee2e2'];
+        return {
+            rc: colors[i] ?? '#94a3b8',
+            rb: bgs[i] ?? '#f1f5f9'
+        };
     }
 
     // FIX: toggle text dùng data-attribute thay vì .replace() dễ bị lỗi
@@ -656,9 +659,9 @@
         const willShow = el.style.display === 'none';
         el.style.display = willShow ? 'block' : 'none';
         if (btn) {
-            btn.innerHTML = willShow
-                ? '<i class="bi bi-arrow-down-square"></i> Ẩn bảng xếp hạng'
-                : `<i class="bi bi-clipboard2-fill"></i> Xem bảng xếp hạng (${total ?? ''})`;
+            btn.innerHTML = willShow ?
+                '<i class="bi bi-arrow-down-square"></i> Ẩn bảng xếp hạng' :
+                `<i class="bi bi-clipboard2-fill"></i> Xem bảng xếp hạng (${total ?? ''})`;
         }
     }
 </script>

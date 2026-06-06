@@ -26,10 +26,8 @@
     /* ── Summary boxes ── */
     .summary-box {
         border-radius: 14px; padding: 22px 20px; height: 100%;
-        color: #fff; position: relative; overflow: hidden; cursor: pointer;
-        transition: transform .18s, box-shadow .18s;
+        color: #fff; position: relative; overflow: hidden;
     }
-    .summary-box:hover { transform: translateY(-3px); box-shadow: 0 8px 32px rgba(0,0,0,.18); }
     .summary-box::after {
         content: ''; position: absolute; width: 80px; height: 80px;
         border-radius: 50%; background: rgba(255,255,255,.12);
@@ -41,10 +39,6 @@
     .summary-box .s-icon  { font-size: 1.6rem; margin-bottom: 8px; }
     .summary-box .s-label { font-size: .8rem; opacity: .85; margin-bottom: 4px; }
     .summary-box .s-val   { font-size: 1.55rem; font-weight: 700; letter-spacing: -.5px; }
-    .summary-box .s-hint  {
-        font-size: .72rem; opacity: .75; margin-top: 8px;
-        display: flex; align-items: center; gap: 4px;
-    }
 
     /* ── Highlight row (top/bottom) on page ── */
     .highlight-row { display: flex; gap: 12px; flex-wrap: wrap; }
@@ -72,7 +66,6 @@
     .chart-tab-btn.active  { background: var(--primary); color: #fff; border-color: var(--primary); }
     .chart-tab-btn:hover:not(.active) { border-color: var(--primary); color: var(--primary); background: #eef2ff; }
 
-    /* FIX: chart-panel ẩn mặc định, chỉ hiện khi có class active */
     .chart-panel        { display: none; }
     .chart-panel.active { display: block; }
 
@@ -85,7 +78,6 @@
         border-bottom: 2px solid var(--border); padding: 12px 14px;
     }
     #revenueTable tbody tr { transition: background .12s; }
-    #revenueTable tbody tr:hover { background: #eef2ff; }
     #revenueTable tbody td { padding: 11px 14px; font-size: .9rem; color: var(--text); border-color: var(--border); }
 
     /* ── Pagination ── */
@@ -113,22 +105,15 @@
         background: #fff; cursor: pointer;
     }
 
-    #barChart, #lineChart { cursor: pointer; }
-
     /* ── Iconify sizing helpers ── */
     iconify-icon { display: inline-flex; vertical-align: middle; }
     .s-icon iconify-icon { font-size: 1.6rem; }
-    .s-hint iconify-icon { font-size: .7rem; }
 </style>
 
 @php
     $filterDisplay = $filterKey === 'year'
         ? (string) $filterValue
         : \Carbon\Carbon::createFromFormat('Y-m', $filterValue)->format('m/Y');
-
-    $firstPeriod = $rows->isNotEmpty() ? ($rows->first()['period'] ?? '') : '';
-
-    $summaryPeriod = $filterKey === 'year' ? (string) $filterValue : $firstPeriod;
 @endphp
 
 <div class="container-fluid px-0">
@@ -143,7 +128,7 @@
                 </div>
                 <form method="GET" class="d-flex align-items-center gap-2">
                     <label for="filterValue" class="fw-semibold mb-0"
-                           style="color:var(--text);white-space:nowrap">{{ $filterLabel }}</label>
+                        style="color:var(--text);white-space:nowrap">{{ $filterLabel }}</label>
                     @if($filterKey === 'year')
                         <select name="{{ $filterKey }}" id="filterValue"
                                 class="form-select" style="border-color:var(--border)">
@@ -156,8 +141,8 @@
                         </select>
                     @else
                         <input type="month" name="{{ $filterKey }}" id="filterValue"
-                               value="{{ $filterValue }}"
-                               class="form-control" style="border-color:var(--border)">
+                            value="{{ $filterValue }}"
+                            class="form-control" style="border-color:var(--border)">
                     @endif
                     <button type="submit" class="btn text-white fw-semibold px-4"
                             style="background:var(--primary);border:none;border-radius:8px">Lọc</button>
@@ -169,8 +154,7 @@
     {{-- ── Summary boxes ── --}}
     <div class="row g-3 mb-4">
         <div class="col-md-4">
-            <div class="summary-box ticket"
-                 onclick="openModal('{{ $summaryPeriod }}', 'ticket', 'Doanh thu vé – {{ $filterDisplay }}')">
+            <div class="summary-box ticket">
                 <div class="s-icon">
                     <iconify-icon icon="mdi:ticket-outline"></iconify-icon>
                 </div>
@@ -179,8 +163,7 @@
             </div>
         </div>
         <div class="col-md-4">
-            <div class="summary-box food"
-                 onclick="openModal('{{ $summaryPeriod }}', 'food', 'Doanh thu đồ ăn – {{ $filterDisplay }}')">
+            <div class="summary-box food">
                 <div class="s-icon">
                     <iconify-icon icon="mdi:food-outline"></iconify-icon>
                 </div>
@@ -189,8 +172,7 @@
             </div>
         </div>
         <div class="col-md-4">
-            <div class="summary-box total"
-                 onclick="openModal('{{ $summaryPeriod }}', 'all', 'Tổng doanh thu – {{ $filterDisplay }}')">
+            <div class="summary-box total">
                 <div class="s-icon">
                     <iconify-icon icon="mdi:bank-outline"></iconify-icon>
                 </div>
@@ -207,7 +189,7 @@
                 <h5 class="fw-bold mb-0" style="color:var(--text)">
                     Biểu đồ doanh thu
                     <span class="badge ms-2 align-middle"
-                          style="background:var(--primary);font-size:.75rem;border-radius:6px;padding:4px 10px;font-weight:600">
+                        style="background:var(--primary);font-size:.75rem;border-radius:6px;padding:4px 10px;font-weight:600">
                         {{ $filterDisplay }}
                     </span>
                 </h5>
@@ -221,7 +203,6 @@
                 <span><span class="legend-dot" style="background:#06b6d4"></span>Doanh thu đồ ăn</span>
             </div>
 
-            {{-- FIX: mỗi canvas PHẢI nằm trong div.chart-panel riêng với đúng id --}}
             <div class="chart-panel active" id="panel-bar">
                 <canvas id="barChart" style="max-height:360px"></canvas>
             </div>
@@ -238,7 +219,7 @@
                 <h5 class="fw-bold mb-0" style="color:var(--text)">
                     Chi tiết doanh thu
                     <span class="badge ms-2 align-middle"
-                          style="background:var(--primary);font-size:.75rem;border-radius:6px;padding:4px 10px;font-weight:600">
+                        style="background:var(--primary);font-size:.75rem;border-radius:6px;padding:4px 10px;font-weight:600">
                         {{ $filterDisplay }}
                     </span>
                 </h5>
@@ -259,40 +240,28 @@
                     <thead>
                         <tr>
                             <th>Mốc thời gian</th>
-                            <th>
-                                Doanh thu vé
-                                <small style="color:var(--primary);font-size:.7rem;font-weight:400">(nhấn hàng)</small>
-                            </th>
+                            <th>Doanh thu vé</th>
                             <th>Doanh thu đồ ăn</th>
                             <th>Tổng doanh thu</th>
                         </tr>
                     </thead>
                     <tbody id="tableBody">
                         @forelse($rows as $row)
-                            @php
-                                $rowPeriod = $row['period'] ?? $row['label'];
-                            @endphp
-                            <tr data-row data-period="{{ $rowPeriod }}" data-label="{{ $row['label'] }}">
+                            <tr data-row>
                                 <td class="fw-semibold">{{ $row['label'] }}</td>
                                 <td>
-                                    <span style="color:#6366f1;font-weight:600;cursor:pointer"
-                                          onclick="event.stopPropagation();openModal('{{ $rowPeriod }}','ticket','Hóa đơn vé – {{ $row['label'] }}')">
+                                    <span style="color:#6366f1;font-weight:600">
                                         {{ number_format($row['ticketRevenue'], 0, ',', '.') }} đ
-                                        <iconify-icon icon="mdi:arrow-top-right" style="font-size:.7rem;opacity:.6"></iconify-icon>
                                     </span>
                                 </td>
                                 <td>
-                                    <span style="color:#06b6d4;font-weight:600;cursor:pointer"
-                                          onclick="event.stopPropagation();openModal('{{ $rowPeriod }}','food','Hóa đơn đồ ăn – {{ $row['label'] }}')">
+                                    <span style="color:#06b6d4;font-weight:600">
                                         {{ number_format($row['foodRevenue'], 0, ',', '.') }} đ
-                                        <iconify-icon icon="mdi:arrow-top-right" style="font-size:.7rem;opacity:.6"></iconify-icon>
                                     </span>
                                 </td>
                                 <td>
-                                    <span style="color:#10b981;font-weight:700;cursor:pointer"
-                                          onclick="event.stopPropagation();openModal('{{ $rowPeriod }}','all','Tất cả hóa đơn – {{ $row['label'] }}')">
+                                    <span style="color:#10b981;font-weight:700">
                                         {{ number_format($row['totalRevenue'], 0, ',', '.') }} đ
-                                        <iconify-icon icon="mdi:arrow-top-right" style="font-size:.7rem;opacity:.6"></iconify-icon>
                                     </span>
                                 </td>
                             </tr>
@@ -316,41 +285,25 @@
     </div>
 </div>
 
-{{-- ── Nhúng dữ liệu phim (phải trước @include modal) ── --}}
-<script>
-const _pageMovieData = {
-    topMovie    : @json($topMovie    ?? null),
-    bottomMovie : @json($bottomMovie ?? null),
-    movieList   : @json($movieList   ?? []),
-};
-</script>
-
-{{-- ── Invoice Modal ── --}}
-@include('Admins.DashBoard.revenue.modal')
-
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script>
 // ── Data từ Laravel ──────────────────────────────────────────────
 const labels     = @json($rows->pluck('label'));
 const ticketData = @json($rows->pluck('ticketRevenue'));
 const foodData   = @json($rows->pluck('foodRevenue'));
-const totalData  = @json($rows->pluck('totalRevenue'));
-const periods    = @json($rows->pluck('period')->toArray());
-
-const summaryTicket = {{ $summary['ticketRevenue'] }};
-const summaryFood   = {{ $summary['foodRevenue'] }};
 
 // ── Chart helpers ─────────────────────────────────────────────────
 const C = {
     ticket : '#6366f1', ticketA : 'rgba(99,102,241,0.15)',
     food   : '#06b6d4', foodA   : 'rgba(6,182,212,0.12)',
 };
+
 const tooltipPlugin = {
     callbacks: {
-        label     : ctx => ' ' + fmt(ctx.parsed.y ?? ctx.parsed),
-        afterLabel: ()  => '  ← Nhấn để xem hóa đơn',
+        label: ctx => ' ' + new Intl.NumberFormat('vi-VN').format(Math.round(ctx.parsed.y ?? ctx.parsed)) + ' đ',
     }
 };
+
 const axisDefaults = {
     grid : { color: 'rgba(0,0,0,0.04)' },
     ticks: {
@@ -359,19 +312,7 @@ const axisDefaults = {
     }
 };
 
-function makeClickHandler(chart) {
-    return function (evt) {
-        const pts = chart.getElementsAtEventForMode(evt, 'index', { intersect: false }, true);
-        if (!pts.length) return;
-        const idx   = pts[0].index;
-        const dsIdx = pts[0].datasetIndex;
-        const typeMap = ['ticket', 'food'];
-        const type    = typeMap[dsIdx] ?? 'all';
-        openModal(periods[idx] ?? labels[idx], type, labels[idx]);
-    };
-}
-
-const barChart = new Chart(document.getElementById('barChart'), {
+new Chart(document.getElementById('barChart'), {
     type: 'bar',
     data: {
         labels,
@@ -386,9 +327,8 @@ const barChart = new Chart(document.getElementById('barChart'), {
         scales : { y: axisDefaults, x: { grid: { display: false }, ticks: { color: '#64748b' } } }
     }
 });
-document.getElementById('barChart').addEventListener('click', makeClickHandler(barChart));
 
-const lineChart = new Chart(document.getElementById('lineChart'), {
+new Chart(document.getElementById('lineChart'), {
     type: 'line',
     data: {
         labels,
@@ -403,9 +343,8 @@ const lineChart = new Chart(document.getElementById('lineChart'), {
         scales : { y: axisDefaults, x: { grid: { display: false }, ticks: { color: '#64748b' } } }
     }
 });
-document.getElementById('lineChart').addEventListener('click', makeClickHandler(lineChart));
 
-// ── FIX: hàm switchChart đúng — toggle class active trên panel và button ──
+// ── FIX: hàm switchChart ──────────────────────────────────────────
 function switchChart(type, btn) {
     document.querySelectorAll('.chart-panel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.chart-tab-btn').forEach(b => b.classList.remove('active'));

@@ -419,28 +419,45 @@
     </p>
 
     {{-- Panel thao tác GHẾ ĐƠN --}}
-    <div class="swap-info" id="swapPanel">
-        <div>
-            <div class="form-label" style="margin-bottom:4px;">Ghế đang chọn</div>
-            <div class="seat-badge" id="swapBadge">—</div>
-        </div>
-        <span style="color:var(--muted);font-size:18px;">⇄</span>
-        <div style="flex:1;min-width:150px;">
-            <div class="form-label" style="margin-bottom:4px;">Đổi sang loại</div>
-            <select id="swapTargetType" class="ctrl">
-                @foreach($seatTypes as $type)
-                    @if(strtolower($type->seatTypeName) !== 'bảo trì')
-                        <option value="{{ $type->seatTypeID }}">{{ $type->seatTypeName }}</option>
-                    @endif
-                @endforeach
-            </select>
-        </div>
-        <div class="d-flex gap-2 flex-wrap">
-            <button class="btn-c bs" id="btnSwap"  onclick="startSwapPicking()">⇄ Hoán đổi</button>
-            <button class="btn-c bw" id="btnMaint" onclick="toggleMaintenance()">⚙ Bảo trì</button>
-            <button class="btn-c bg"               onclick="resetMode()">✕ Huỷ</button>
-        </div>
+    {{-- Panel thao tác GHẾ ĐƠN --}}
+<div class="swap-info" id="swapPanel">
+    <div>
+        <div class="form-label" style="margin-bottom:4px;">Ghế đang chọn</div>
+        <div class="seat-badge" id="swapBadge">—</div>
     </div>
+    <span style="color:var(--muted);font-size:18px;">⇄</span>
+
+    {{-- Dropdown đổi loại (ẩn khi ghế đang bảo trì) --}}
+    <div style="flex:1;min-width:150px;" id="swapTypeWrap">
+        <div class="form-label" style="margin-bottom:4px;">Đổi sang loại</div>
+        <select id="swapTargetType" class="ctrl">
+            @foreach($seatTypes as $type)
+                @if(strtolower($type->seatTypeName) !== 'bảo trì')
+                    <option value="{{ $type->seatTypeID }}">{{ $type->seatTypeName }}</option>
+                @endif
+            @endforeach
+        </select>
+    </div>
+
+    {{-- Dropdown phục hồi (chỉ hiện khi ghế đang bảo trì) --}}
+    <div style="flex:1;min-width:150px;" id="restoreTypeWrap">
+        <div class="form-label" style="margin-bottom:4px;">Phục hồi về loại</div>
+        <select id="restoreTargetType" class="ctrl">
+            @foreach($seatTypes as $type)
+                @if(strtolower($type->seatTypeName) !== 'bảo trì')
+                    <option value="{{ $type->seatTypeID }}">{{ $type->seatTypeName }}</option>
+                @endif
+            @endforeach
+        </select>
+    </div>
+
+    <div class="d-flex gap-2 flex-wrap">
+        <button class="btn-c bs" id="btnSwap"    onclick="startSwapPicking()">⇄ Hoán đổi</button>
+        <button class="btn-c bw" id="btnMaint"   onclick="toggleMaintenance()">⚙ Bảo trì</button>
+        <button class="btn-c bs" id="btnRestore" onclick="restoreSeat()" style="display:none">✓ Phục hồi</button>
+        <button class="btn-c bg"                 onclick="resetMode()">✕ Huỷ</button>
+    </div>
+</div>
 
     <div class="mode-hint hint-swap" id="hintSwap"></div>
 
@@ -624,10 +641,8 @@ function renderGrid() {
     const seatMap = {};
     seatsData.forEach(s => { seatMap[`${s.rowSeat}-${s.colSeat}`] = s; });
 
-    const rows       = [...new Set(seatsData.map(s => s.rowSeat))].sort();
-    const maxCol     = seatsData.reduce((m, s) => Math.max(m, +s.colSeat), 0);
-
-    // FIX 1: renderCols = maxCol (không +1), hàng tiếp theo xử lý riêng bên dưới
+    const rows    = [...new Set(seatsData.map(s => s.rowSeat))].sort();
+    const maxCol  = seatsData.reduce((m, s) => Math.max(m, +s.colSeat), 0);
     const renderCols = maxCol;
 
     let html = '';
@@ -636,14 +651,29 @@ function renderGrid() {
         for (let col = 1; col <= renderCols; col++) {
             const seat = seatMap[`${row}-${col}`];
             if (!seat) {
-                // FIX 1: tất cả ô trống trong hàng hiện tại đều là empty-slot
                 html += `<div class="empty-slot" data-row="${row}" data-col="${col}">+</div>`;
                 continue;
             }
             const cls = TYPE_CLASS[seat.seatTypeID] || 't-normal';
+
+            /*
+            |------------------------------------------------------------------
+            | originalSeatTypeID: ưu tiên giá trị từ DB (đã lưu khi bảo trì).
+            | Nếu DB chưa có (null/undefined) thì fallback về seatTypeID hiện tại.
+            | Đảm bảo ghế mới tạo (chưa từng bảo trì) vẫn phục hồi đúng loại.
+            |------------------------------------------------------------------
+            */
+            const originalType = (seat.originalSeatTypeID != null && seat.originalSeatTypeID !== undefined)
+                ? seat.originalSeatTypeID
+                : seat.seatTypeID;
+
             html += `<div class="seat ${cls}"
-                          data-id="${seat.seatID}" data-row="${row}" data-col="${col}"
-                          data-type="${seat.seatTypeID}" data-name="${row}${col}">
+                          data-id="${seat.seatID}"
+                          data-row="${row}"
+                          data-col="${col}"
+                          data-type="${seat.seatTypeID}"
+                          data-original-type="${originalType}"
+                          data-name="${row}${col}">
                         ${row}${col}
                         <span class="del-btn" onmousedown="event.stopPropagation()" onclick="deleteSeat(${seat.seatID},event)">×</span>
                      </div>`;
@@ -651,14 +681,27 @@ function renderGrid() {
         html += `</div>`;
     });
 
-    // Hàng tiếp theo (disabled-slot để gợi ý thêm ghế hàng mới)
+    /*
+    |--------------------------------------------------------------------------
+    | Chỉ render hàng nextRow (disabled-slot) khi hàng cuối ĐẦY.
+    | Nếu hàng cuối chưa đầy → còn empty-slot trong hàng đó để dùng,
+    | không cần thêm hàng tiếp theo.
+    |--------------------------------------------------------------------------
+    */
     if (rows.length > 0) {
         const lastRow = rows[rows.length - 1];
-        const nextRow = lastRow < 'Z' ? String.fromCharCode(lastRow.charCodeAt(0) + 1) : null;
-        if (nextRow) {
+        let lastRowFull = true;
+        for (let col = 1; col <= renderCols; col++) {
+            if (!seatMap[`${lastRow}-${col}`]) { lastRowFull = false; break; }
+        }
+
+        if (lastRowFull && lastRow < 'Z') {
+            const nextRow = String.fromCharCode(lastRow.charCodeAt(0) + 1);
             html += `<div class="seat-row"><span class="row-label" style="color:#cbd5e1">${nextRow}</span>`;
             for (let col = 1; col <= renderCols; col++) {
-                html += `<div class="disabled-slot" data-row="${nextRow}" data-col="${col}" onclick="quickFill('${nextRow}',${col})" title="Thêm ghế ${nextRow}${col}">+</div>`;
+                html += `<div class="disabled-slot" data-row="${nextRow}" data-col="${col}"
+                              onclick="quickFill('${nextRow}',${col})"
+                              title="Thêm ghế ${nextRow}${col}">+</div>`;
             }
             html += `</div>`;
         }
@@ -669,12 +712,16 @@ function renderGrid() {
     reApplyStyles();
 }
 
+// ══════════════════════════════════════════════════════════
+// FIX 2: quickFill — chỉ điền form + scroll, KHÔNG toast
+// ══════════════════════════════════════════════════════════
 function quickFill(row, col) {
     if (appMode === 'multi_select') return;
     document.getElementById('addRow').value = row;
     document.getElementById('addCol').value = col;
-    showToast(`Điền ${row}${col} → form thêm ghế`, 'info');
-    document.getElementById('addRow').scrollIntoView({ behavior:'smooth', block:'center' });
+    document.getElementById('addRow').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // Focus vào select loại ghế để người dùng thao tác tiếp ngay
+    document.getElementById('addType').focus();
 }
 
 // ══════════════════════════════════════════════════════════
@@ -764,24 +811,31 @@ function selectSource(el) {
     document.getElementById('batchPanel').classList.remove('show');
     document.getElementById('hintSwap').classList.remove('show');
 
-    const badge = `<span style="color:${TYPE_COLOR[sourceSeat.typeID]}">■</span> ${sourceSeat.name}
-                   <span style="color:var(--muted);font-size:11px">(${TYPE_NAME[sourceSeat.typeID] || SEAT_TYPE_NAMES[sourceSeat.typeID] || ''})</span>`;
-    document.getElementById('swapBadge').innerHTML = badge;
+    const displayType = TYPE_NAME[sourceSeat.typeID] || SEAT_TYPE_NAMES[sourceSeat.typeID] || '';
+    document.getElementById('swapBadge').innerHTML =
+        `<span style="color:${TYPE_COLOR[sourceSeat.typeID]}">■</span> ${sourceSeat.name}
+         <span style="color:var(--muted);font-size:11px">(${displayType})</span>`;
 
-    const btnMaint = document.getElementById('btnMaint');
-    if (sourceSeat.typeID === MAINTENANCE_TYPE_ID) {
-        btnMaint.textContent = '✓ Phục hồi'; btnMaint.className = 'btn-c bs';
-    } else {
-        btnMaint.textContent = '⚙ Bảo trì';  btnMaint.className = 'btn-c bw';
-    }
+    const isMaint = sourceSeat.typeID === MAINTENANCE_TYPE_ID;
 
-    const sel = document.getElementById('swapTargetType');
-    for (const opt of sel.options) {
-        if (+opt.value !== sourceSeat.typeID) { opt.selected = true; break; }
+    // Ẩn/hiện đúng bộ controls tuỳ theo trạng thái ghế
+    document.getElementById('swapTypeWrap').style.display  = isMaint ? 'none' : '';
+    document.getElementById('restoreTypeWrap').style.display = isMaint ? '' : 'none';
+    document.getElementById('btnSwap').style.display       = isMaint ? 'none' : '';
+    document.getElementById('btnMaint').style.display      = isMaint ? 'none' : '';
+    document.getElementById('btnRestore').style.display    = isMaint ? ''     : 'none';
+
+    // Mặc định dropdown hoán đổi chọn loại khác với hiện tại
+    if (!isMaint) {
+        const sel = document.getElementById('swapTargetType');
+        for (const opt of sel.options) {
+            if (+opt.value !== sourceSeat.typeID) { opt.selected = true; break; }
+        }
     }
 
     reApplyStyles();
 }
+
 
 function clearStyles() {
     document.querySelectorAll('.seat').forEach(el =>
@@ -824,7 +878,6 @@ function startSwapPicking() {
     if (!sourceSeat) return;
     const tid = getSwapTarget();
     if (tid === sourceSeat.typeID) { showToast('Chọn loại khác với hiện tại', 'warning'); return; }
-    // FIX 2: đã xoá dòng chặn COUPLE_TYPE_ID — cho phép hoán đổi sang/từ ghế đôi
 
     const avail = seatsData.filter(s => Number(s.seatTypeID) === tid && String(s.seatID) !== sourceSeat.id);
     if (!avail.length) { showToast(`Không có ghế ${TYPE_NAME[tid] || ''} để hoán đổi`, 'warning'); return; }
@@ -848,24 +901,39 @@ function confirmSwap(el) {
     }).catch(err => showToast(err.message, 'error'));
 }
 
-// ══════════════════════════════════════════════════════════
-// MAINTENANCE
-// ══════════════════════════════════════════════════════════
 function toggleMaintenance() {
     if (!sourceSeat) return;
-    const isMaint  = sourceSeat.typeID === MAINTENANCE_TYPE_ID;
-    const nextType = isMaint ? NORMAL_TYPE_ID : MAINTENANCE_TYPE_ID;
-    const label    = isMaint ? 'Phục hồi thành ghế thường' : 'Chuyển sang bảo trì';
-    if (!confirm(`${label}: ghế ${sourceSeat.name}?`)) return;
+    const currentName = TYPE_NAME[sourceSeat.typeID] || SEAT_TYPE_NAMES[sourceSeat.typeID] || '';
+    if (!confirm(`Chuyển ghế ${sourceSeat.name} (${currentName}) sang bảo trì?`)) return;
+
     apiFetch('/admins/seat/ajax-update-type', 'POST', {
-        seatID: parseInt(sourceSeat.id), seatTypeID: nextType
+        seatID:     parseInt(sourceSeat.id),
+        seatTypeID: MAINTENANCE_TYPE_ID,
     }).then(res => {
         if (!res.success) { showToast(res.message, 'error'); return; }
-        showToast(`Ghế ${sourceSeat.name} → ${TYPE_NAME[nextType]}`, 'success');
-        resetMode(); loadSeats(true);
+        showToast(`Ghế ${sourceSeat.name} → Bảo trì`, 'success');
+        resetMode();
+        loadSeats(true);
     }).catch(err => showToast(err.message, 'error'));
 }
 
+function restoreSeat() {
+    if (!sourceSeat) return;
+    const restoreTypeID = parseInt(document.getElementById('restoreTargetType').value);
+    const restoreName   = TYPE_NAME[restoreTypeID] || SEAT_TYPE_NAMES[restoreTypeID] || '';
+
+    if (!confirm(`Phục hồi ghế ${sourceSeat.name} về loại: ${restoreName}?`)) return;
+
+    apiFetch('/admins/seat/ajax-update-type', 'POST', {
+        seatID:     parseInt(sourceSeat.id),
+        seatTypeID: restoreTypeID,
+    }).then(res => {
+        if (!res.success) { showToast(res.message, 'error'); return; }
+        showToast(`Ghế ${sourceSeat.name} → ${restoreName}`, 'success');
+        resetMode();
+        loadSeats(true);
+    }).catch(err => showToast(err.message, 'error'));
+}
 // ══════════════════════════════════════════════════════════
 // BATCH SWAP (nhiều ghế)
 // ══════════════════════════════════════════════════════════

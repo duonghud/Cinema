@@ -81,10 +81,10 @@ class SeatController extends Controller
             ->when($search, function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('seatID',  'like', "%{$search}%")
-                      ->orWhere('rowSeat', 'like', "%{$search}%")
-                      ->orWhere('colSeat', 'like', "%{$search}%")
-                      ->orWhereRaw("CONCAT(rowSeat, colSeat) LIKE ?", ["%{$search}%"])
-                      ->orWhereHas('seatType', fn($t) => $t->where('seatTypeName', 'like', "%{$search}%"));
+                        ->orWhere('rowSeat', 'like', "%{$search}%")
+                        ->orWhere('colSeat', 'like', "%{$search}%")
+                        ->orWhereRaw("CONCAT(rowSeat, colSeat) LIKE ?", ["%{$search}%"])
+                        ->orWhereHas('seatType', fn($t) => $t->where('seatTypeName', 'like', "%{$search}%"));
                 });
             })
             ->orderBy('rowSeat')
@@ -93,7 +93,13 @@ class SeatController extends Controller
             ->withQueryString();
 
         return view('admins.manageCinema.seat.index', compact(
-            'seats', 'room', 'rooms', 'seatTypes', 'roomID', 'specialTypeIds', 'seatTypeNames'
+            'seats',
+            'room',
+            'rooms',
+            'seatTypes',
+            'roomID',
+            'specialTypeIds',
+            'seatTypeNames'
         ));
     }
 
@@ -340,17 +346,20 @@ class SeatController extends Controller
             'seatTypeID' => 'required|integer|exists:seat_types,seatTypeID',
         ]);
 
-        $seat          = Seat::findOrFail($validated['seatID']);
-        $isMaintenance = (int) $validated['seatTypeID'] === $this->getMaintenanceTypeId();
+        $seat              = Seat::findOrFail($validated['seatID']);
+        $newTypeID         = (int) $validated['seatTypeID'];
+        $maintenanceTypeID = $this->getMaintenanceTypeId();
+        $isGoingMaint      = $newTypeID === $maintenanceTypeID;
 
-        if (!$isMaintenance && DB::table('tickets')->where('seatID', $seat->seatID)->exists()) {
+        // Chỉ chặn vé khi KHÔNG phải chuyển sang bảo trì
+        if (!$isGoingMaint && DB::table('tickets')->where('seatID', $seat->seatID)->exists()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Ghế đã có vé, không thể thay đổi loại.',
             ], 422);
         }
 
-        $seat->seatTypeID = $validated['seatTypeID'];
+        $seat->seatTypeID = $newTypeID;
         $seat->save();
 
         return response()->json([
@@ -412,7 +421,10 @@ class SeatController extends Controller
         $roomID    = $seats->first()?->roomID;
 
         return view('admins.manageCinema.seat.edit-multiple', compact(
-            'seats', 'seatTypes', 'rooms', 'roomID'
+            'seats',
+            'seatTypes',
+            'rooms',
+            'roomID'
         ));
     }
 

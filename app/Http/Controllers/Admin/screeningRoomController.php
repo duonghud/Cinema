@@ -48,9 +48,19 @@ class screeningRoomController extends Controller
         $screenTypes = screenType::all();
         $seatTypes   = seatType::all();
 
+        /*
+        |----------------------------------------------------------------------
+        | Tìm seatTypeID mặc định cho từng loại ghế dựa trên tên
+        | Trả về null nếu không tìm thấy → blade sẽ không pre-select gì cả
+        |----------------------------------------------------------------------
+        */
+        $defaultVipTypeID    = $seatTypes->first(fn($s) => $this->isVip($s->seatTypeName))?->seatTypeID;
+        $defaultNormalTypeID = $seatTypes->first(fn($s) => $this->isNormal($s->seatTypeName))?->seatTypeID;
+        $defaultDoubleTypeID = $seatTypes->first(fn($s) => $this->isDouble($s->seatTypeName))?->seatTypeID;
+
         return view(
             'admins.manageCinema.screeningRoom.create',
-            compact('screenTypes', 'seatTypes')
+            compact('screenTypes', 'seatTypes', 'defaultVipTypeID', 'defaultNormalTypeID', 'defaultDoubleTypeID')
         );
     }
 
@@ -148,8 +158,6 @@ class screeningRoomController extends Controller
         /*
         |----------------------------------------------------------------------
         | Tính rows/cols thực tế từ bảng seats
-        | - cols = MAX(colSeat) vì colSeat lưu dạng số (string "1","2",...)
-        | - rows = số lượng rowSeat unique (A, B, C...)
         |----------------------------------------------------------------------
         */
         $seats = Seat::where('roomID', $room->roomID)->get();
@@ -159,7 +167,8 @@ class screeningRoomController extends Controller
 
         /*
         |----------------------------------------------------------------------
-        | Đếm ghế theo từng seatTypeID, giữ nguyên seatTypeID để bind dropdown
+        | Đếm ghế theo từng seatTypeID
+        | Dùng seatTypeID thực tế lấy từ DB, không suy diễn từ tên
         |----------------------------------------------------------------------
         */
         $seatCounts = [
@@ -177,23 +186,42 @@ class screeningRoomController extends Controller
             $seatType = $seatTypes->firstWhere('seatTypeID', $typeID);
             if (!$seatType) continue;
 
-            $name = strtolower($seatType->seatTypeName);
+            $name = mb_strtolower($seatType->seatTypeName, 'UTF-8');
 
-            if (str_contains($name, 'vip')) {
-                $seatCounts['vipSeats']      = $group->count();
-                $seatCounts['vipSeatTypeID'] = $typeID;
-            } elseif (str_contains($name, 'đôi') || str_contains($name, 'double') || str_contains($name, 'couple')) {
+            if ($this->isDouble($name)) {
+                // Kiểm tra double TRƯỚC vip để tránh tên như "VIP đôi" rơi vào vip
                 $seatCounts['doubleSeats']      = $group->count();
                 $seatCounts['doubleSeatTypeID'] = $typeID;
+            } elseif ($this->isVip($name)) {
+                $seatCounts['vipSeats']      = $group->count();
+                $seatCounts['vipSeatTypeID'] = $typeID;
             } else {
+                // Còn lại → ghế thường
                 $seatCounts['normalSeats']      = $group->count();
                 $seatCounts['normalSeatTypeID'] = $typeID;
             }
         }
 
+        /*
+        |----------------------------------------------------------------------
+        | Fallback: nếu DB không có ghế loại nào, dùng seatTypeID đầu tiên
+        | tìm được theo tên để pre-select dropdown (tránh mặc định sai)
+        |----------------------------------------------------------------------
+        */
+        $defaultVipTypeID    = $seatCounts['vipSeatTypeID']
+            ?? $seatTypes->first(fn($s) => $this->isVip($s->seatTypeName))?->seatTypeID;
+        $defaultNormalTypeID = $seatCounts['normalSeatTypeID']
+            ?? $seatTypes->first(fn($s) => $this->isNormal($s->seatTypeName))?->seatTypeID;
+        $defaultDoubleTypeID = $seatCounts['doubleSeatTypeID']
+            ?? $seatTypes->first(fn($s) => $this->isDouble($s->seatTypeName))?->seatTypeID;
+
         return view(
             'admins.manageCinema.screeningRoom.edit',
-            compact('room', 'seatTypes', 'screenTypes', 'seatCounts', 'actualRows', 'actualCols')
+            compact(
+                'room', 'seatTypes', 'screenTypes',
+                'seatCounts', 'actualRows', 'actualCols',
+                'defaultVipTypeID', 'defaultNormalTypeID', 'defaultDoubleTypeID'
+            )
         );
     }
 
@@ -237,19 +265,12 @@ class screeningRoomController extends Controller
                 ->withErrors(['vipSeats' => 'Tổng số ghế vượt quá số ô trong lưới (' . $totalSlots . '/' . ($maxRows * $maxCols) . ')']);
         }
 
-        // Cập nhật thông tin phòng
         $room->update([
             'roomName'     => $validated['roomName'],
             'screenTypeID' => $validated['screenTypeID'],
             'capacity'     => $totalSlots,
         ]);
 
-        /*
-        |----------------------------------------------------------------------
-        | Rebuild ghế: xóa toàn bộ ghế cũ → tạo lại theo cấu hình mới
-        | Chỉ xóa/tạo lại khi tổng ghế > 0
-        |----------------------------------------------------------------------
-        */
         if ($totalSlots > 0) {
             Seat::where('roomID', $room->roomID)->delete();
 
@@ -306,5 +327,30 @@ class screeningRoomController extends Controller
         return redirect()
             ->route('screeningRoom.index')
             ->with('success', 'Xóa phòng thành công.');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Helper: phân loại tên ghế
+    | Dùng mb_strtolower + UTF-8 để so sánh đúng tiếng Việt có dấu
+    |--------------------------------------------------------------------------
+    */
+    private function isDouble(string $name): bool
+    {
+        $name = mb_strtolower($name, 'UTF-8');
+        return str_contains($name, 'đôi')
+            || str_contains($name, 'double')
+            || str_contains($name, 'couple');
+    }
+
+    private function isVip(string $name): bool
+    {
+        $name = mb_strtolower($name, 'UTF-8');
+        return str_contains($name, 'vip');
+    }
+
+    private function isNormal(string $name): bool
+    {
+        return !$this->isDouble($name) && !$this->isVip($name);
     }
 }

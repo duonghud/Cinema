@@ -32,7 +32,7 @@
                 <tbody>
                     @forelse($invoices as $foodInvoice)
                         <tr>
-                            <td class="text-muted">#{{ $foodInvoice->foodInvoiceID }}</td>
+                            <td class="text-muted">F-{{ $foodInvoice->foodInvoiceID }}</td>
                             <td>{{ $foodInvoice->customer->fullName ?? 'Khách vãng lai' }}</td>
                             <td>{{ \Illuminate\Support\Carbon::parse($foodInvoice->orderDate)->format('d/m/Y H:i') }}</td>
                             <td>
