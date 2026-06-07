@@ -16,12 +16,10 @@ class SeatController extends Controller
     private function findSeatTypeIdByKeywords(array $keywords): ?int
     {
         $query = SeatType::query();
-
         foreach ($keywords as $index => $keyword) {
             $method = $index === 0 ? 'where' : 'orWhere';
             $query->{$method}('seatTypeName', 'like', '%' . $keyword . '%');
         }
-
         return $query->value('seatTypeID');
     }
 
@@ -81,10 +79,10 @@ class SeatController extends Controller
             ->when($search, function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('seatID',  'like', "%{$search}%")
-                        ->orWhere('rowSeat', 'like', "%{$search}%")
-                        ->orWhere('colSeat', 'like', "%{$search}%")
-                        ->orWhereRaw("CONCAT(rowSeat, colSeat) LIKE ?", ["%{$search}%"])
-                        ->orWhereHas('seatType', fn($t) => $t->where('seatTypeName', 'like', "%{$search}%"));
+                      ->orWhere('rowSeat', 'like', "%{$search}%")
+                      ->orWhere('colSeat', 'like', "%{$search}%")
+                      ->orWhereRaw("CONCAT(rowSeat, colSeat) LIKE ?", ["%{$search}%"])
+                      ->orWhereHas('seatType', fn($t) => $t->where('seatTypeName', 'like', "%{$search}%"));
                 });
             })
             ->orderBy('rowSeat')
@@ -93,13 +91,7 @@ class SeatController extends Controller
             ->withQueryString();
 
         return view('admins.manageCinema.seat.index', compact(
-            'seats',
-            'room',
-            'rooms',
-            'seatTypes',
-            'roomID',
-            'specialTypeIds',
-            'seatTypeNames'
+            'seats', 'room', 'rooms', 'seatTypes', 'roomID', 'specialTypeIds', 'seatTypeNames'
         ));
     }
 
@@ -108,7 +100,6 @@ class SeatController extends Controller
     {
         $rooms     = ScreeningRoom::all();
         $seatTypes = SeatType::all();
-
         return view('admins.manageCinema.seat.create', compact('rooms', 'seatTypes'));
     }
 
@@ -136,7 +127,6 @@ class SeatController extends Controller
         }
 
         Seat::create($request->all());
-
         return redirect()->route('seat.index')->with('success', 'Tạo ghế thành công');
     }
 
@@ -164,7 +154,6 @@ class SeatController extends Controller
         }
 
         $seat = Seat::create($validated);
-
         return response()->json($seat);
     }
 
@@ -200,7 +189,6 @@ class SeatController extends Controller
         $seat      = Seat::findOrFail($id);
         $rooms     = ScreeningRoom::all();
         $seatTypes = SeatType::all();
-
         return view('admins.manageCinema.seat.edit', compact('seat', 'rooms', 'seatTypes'));
     }
 
@@ -221,7 +209,6 @@ class SeatController extends Controller
         }
 
         $seat->update($request->all());
-
         return redirect()->route('seat.index')->with('success', 'Cập nhật ghế thành công');
     }
 
@@ -239,7 +226,6 @@ class SeatController extends Controller
         }
 
         $seat->delete();
-
         return redirect()->route('seat.index')->with('success', 'Xóa ghế thành công');
     }
 
@@ -257,7 +243,6 @@ class SeatController extends Controller
         }
 
         $seat->delete();
-
         return response()->json(['success' => true]);
     }
 
@@ -266,6 +251,8 @@ class SeatController extends Controller
     {
         $seats = Seat::with('seatType')
             ->where('roomID', $roomID)
+            ->orderBy('rowSeat')
+            ->orderBy('colSeat')
             ->get();
 
         return response()->json($seats);
@@ -294,10 +281,8 @@ class SeatController extends Controller
         DB::transaction(function () use ($seatA, $seatB, $request) {
             $seatA->colSeat = 0;
             $seatA->save();
-
             $seatB->colSeat = $request->colSeat_a;
             $seatB->save();
-
             $seatA->colSeat = $request->colSeat_b;
             $seatA->save();
         });
@@ -349,14 +334,15 @@ class SeatController extends Controller
         $seat              = Seat::findOrFail($validated['seatID']);
         $newTypeID         = (int) $validated['seatTypeID'];
         $maintenanceTypeID = $this->getMaintenanceTypeId();
-        $isGoingMaint      = $newTypeID === $maintenanceTypeID;
 
-        // Chỉ chặn vé khi KHÔNG phải chuyển sang bảo trì
-        if (!$isGoingMaint && DB::table('tickets')->where('seatID', $seat->seatID)->exists()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Ghế đã có vé, không thể thay đổi loại.',
-            ], 422);
+        // Chỉ chặn vé khi không phải chuyển sang bảo trì
+        if ($newTypeID !== $maintenanceTypeID) {
+            if (DB::table('tickets')->where('seatID', $seat->seatID)->exists()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ghế đã có vé, không thể thay đổi loại.',
+                ], 422);
+            }
         }
 
         $seat->seatTypeID = $newTypeID;
@@ -378,10 +364,11 @@ class SeatController extends Controller
             'seatTypeID' => 'required|integer|exists:seat_types,seatTypeID',
         ]);
 
-        $newTypeID     = (int) $request->seatTypeID;
-        $ids           = array_map('intval', $request->seatIDs);
-        $isMaintenance = $newTypeID === $this->getMaintenanceTypeId();
-        $validSeatIds  = [];
+        $newTypeID         = (int) $request->seatTypeID;
+        $ids               = array_map('intval', $request->seatIDs);
+        $maintenanceTypeID = $this->getMaintenanceTypeId();
+        $isMaintenance     = $newTypeID === $maintenanceTypeID;
+        $validSeatIds      = [];
 
         $selectedSeats = Seat::whereIn('seatID', $ids)->get();
 
@@ -421,10 +408,7 @@ class SeatController extends Controller
         $roomID    = $seats->first()?->roomID;
 
         return view('admins.manageCinema.seat.edit-multiple', compact(
-            'seats',
-            'seatTypes',
-            'rooms',
-            'roomID'
+            'seats', 'seatTypes', 'rooms', 'roomID'
         ));
     }
 
