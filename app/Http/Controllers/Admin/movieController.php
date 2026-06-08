@@ -13,12 +13,17 @@ use Illuminate\Http\Request;
 
 class movieController extends Controller
 {
+    /**
+     * Hiển thị danh sách phim kèm thanh tìm kiếm tổng hợp và bộ lọc phân loại theo Thể loại.
+     */
     public function index(Request $request)
     {
         $search = trim((string) $request->input('search'));
         $genreId = trim((string) $request->input('genre_id'));
 
+        // Eager loading các thực thể liên quan (Giới hạn độ tuổi, Nhà sản xuất, Thể loại)
         $movies = movie::with(['ageRating', 'studio', 'genres'])
+            // Tìm kiếm đa trường: thông tin phim hoặc thông tin từ các bảng liên kết
             ->when($search, function ($query) use ($search) {
                 $query->where('movieID', 'like', "%{$search}%")
                     ->orWhere('movieTitle', 'like', "%{$search}%")
@@ -36,6 +41,7 @@ class movieController extends Controller
                         $genreQuery->where('name', 'like', "%{$search}%");
                     });
             })
+            // Lọc chính xác danh sách phim theo Thể loại được chọn
             ->when($genreId, function ($query) use ($genreId) {
                 $query->whereHas('genres', function ($genreQuery) use ($genreId) {
                     $genreQuery->where('genres.genreID', $genreId);
@@ -61,6 +67,9 @@ class movieController extends Controller
         ]);
     }
 
+    /**
+     * Xác thực dữ liệu, xử lý upload file ảnh/video và lưu thông tin phim mới.
+     */
     public function store(Request $request)
     {
         $request->validate([
@@ -94,12 +103,14 @@ class movieController extends Controller
         $today = Carbon::today();
         $releaseDate = Carbon::parse($request->releaseDate);
 
+        // Chặn không cho phép chọn ngày phát hành trong quá khứ
         if ($releaseDate->lt($today)) {
             return back()->withErrors([
                 'releaseDate' => 'Không được chọn ngày cũ.',
             ])->withInput();
         }
 
+        // Xử lý lưu file Poster vào thư mục public/posters
         if ($request->hasFile('poster')) {
             $file = $request->file('poster');
             $filename = time() . '_poster.' . $file->getClientOriginalExtension();
@@ -107,6 +118,7 @@ class movieController extends Controller
             $data['poster'] = $filename;
         }
 
+        // Xử lý lưu file Trailer vào thư mục public/uploads/trailers
         if ($request->hasFile('trailer')) {
             $trailerName = time() . '_trailer.' . $request->trailer->extension();
             $request->trailer->move(public_path('uploads/trailers'), $trailerName);
@@ -114,12 +126,17 @@ class movieController extends Controller
         }
 
         $movie = movie::create($data);
+        
+        // Gắn mối quan hệ nhiều-nhiều giữa Phim và các Thể loại được chọn vào bảng trung gian
         $movie->genres()->attach($request->genreID);
 
         return redirect()->route('admin.movies.index')
             ->with('success', 'Thêm phim thành công');
     }
 
+    /**
+     * Cập nhật thông tin phim (Có ràng buộc ngày phát hành và làm sạch file cũ).
+     */
     public function update(Request $request, $id)
     {
         $movie = movie::findOrFail($id);
@@ -166,12 +183,14 @@ class movieController extends Controller
             ])->withInput();
         }
 
+        // RÀNG BUỘC: Nếu phim đã được xếp lịch chiếu, cấm tuyệt đối việc thay đổi ngày phát hành
         if ($movie->showTimes()->exists() && $releaseDate->ne(Carbon::parse($movie->releaseDate))) {
             return back()->withErrors([
                 'releaseDate' => 'Phim đã có suất chiếu, không thể thay đổi ngày phát hành.',
             ])->withInput()->with('edit_id', $movie->movieID);
         }
 
+        // Cập nhật Poster mới (Ghi đè tên file trong DB, chưa xóa file cũ vật lý)
         if ($request->hasFile('poster')) {
             $file = $request->file('poster');
             $filename = time() . '.' . $file->getClientOriginalExtension();
@@ -179,6 +198,7 @@ class movieController extends Controller
             $data['poster'] = $filename;
         }
 
+        // Cập nhật Trailer mới và thực hiện xóa file Trailer cũ khỏi ổ đĩa để tránh rác hệ thống
         if ($request->hasFile('trailer')) {
             if ($movie->trailer && file_exists(public_path($movie->trailer))) {
                 unlink(public_path($movie->trailer));
@@ -190,11 +210,16 @@ class movieController extends Controller
         }
 
         $movie->update($data);
+        
+        // Làm mới và đồng bộ lại danh sách thể loại trong bảng trung gian (Xóa cũ, nạp mới)
         $movie->genres()->sync($request->genreID);
 
         return redirect()->route('admin.movies.index')->with('success', 'Cập nhật thành công');
     }
 
+    /**
+     * Hiển thị chi tiết phim và thông tin phòng chiếu dựa theo suất chiếu được chỉ định.
+     */
     public function show(Request $request, movie $movie)
     {
         $movie->load(['showTimes.room']);
@@ -202,6 +227,7 @@ class movieController extends Controller
         $selectedShowTime = null;
         $selectedShowTimeId = $request->integer('showtime');
 
+        // Tìm suất chiếu cụ thể được chọn từ request trong danh sách suất chiếu của phim
         if ($selectedShowTimeId) {
             $selectedShowTime = $movie->showTimes->firstWhere('showTimeID', $selectedShowTimeId);
         }
@@ -209,6 +235,9 @@ class movieController extends Controller
         return view('system.show', compact('movie', 'selectedShowTime'));
     }
 
+    /**
+     * Xóa phim khỏi hệ thống (Bắt lỗi khóa ngoại nếu phim đang ràng buộc với dữ liệu lịch chiếu).
+     */
     public function destroy($id)
     {
         try {
@@ -217,6 +246,7 @@ class movieController extends Controller
 
             return back()->with('success', 'Xóa thành công');
         } catch (QueryException $e) {
+            // Chặn xóa nếu dính lỗi Integrity constraint violation (Khóa ngoại ràng buộc với bảng show_times)
             return back()->with('error', 'Phim đang chiếu không thể xóa.');
         }
     }

@@ -10,7 +10,7 @@ use GuzzleHttp\Promise\Create;
 class foodController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Hiển thị danh sách món ăn kèm bộ tìm kiếm từ khóa và hai bộ lọc độc lập (Loại đồ ăn & Kích cỡ).
      */
     public function index(Request $request)
     {
@@ -19,6 +19,7 @@ class foodController extends Controller
         $size = trim((string) $request->input('size'));
 
         $foods = Food::query()
+            // Tìm kiếm chuỗi gần đúng trên tất cả các trường thông tin của món ăn
             ->when($search, function ($query) use ($search) {
                 $query->where('foodID', 'like', "%{$search}%")
                     ->orWhere('foodName', 'like', "%{$search}%")
@@ -26,15 +27,18 @@ class foodController extends Controller
                     ->orWhere('size', 'like', "%{$search}%")
                     ->orWhere('price', 'like', "%{$search}%");
             })
+            // Lọc chính xác theo loại món ăn (Ví dụ: Bắp rang, Nước ngọt)
             ->when($foodType, function ($query) use ($foodType) {
                 $query->where('foodType', $foodType);
             })
+            // Lọc chính xác theo kích cỡ (S, M, L)
             ->when($size, function ($query) use ($size) {
                 $query->where('size', $size);
             })
             ->paginate(5)
-            ->withQueryString();
+            ->withQueryString(); // Giữ lại trạng thái từ khóa và bộ lọc khi thực hiện chuyển trang phân trang
 
+        // Gộp nhóm và trích xuất danh sách các loại món ăn hiện có trong DB (loại bỏ giá trị rỗng/null) để làm menu lọc
         $foodTypes = Food::query()
             ->select('foodType')
             ->whereNotNull('foodType')
@@ -43,6 +47,7 @@ class foodController extends Controller
             ->orderBy('foodType')
             ->pluck('foodType', 'foodType');
 
+        // Gộp nhóm và trích xuất danh sách các kích cỡ hiện có trong DB để làm menu lọc
         $sizes = Food::query()
             ->select('size')
             ->whereNotNull('size')
@@ -69,7 +74,7 @@ class foodController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Hiển thị giao diện form thêm mới đồ ăn/thức uống.
      */
     public function create()
     {
@@ -77,11 +82,12 @@ class foodController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Kiểm tra ràng buộc dữ liệu đầu vào và tiến hành lưu bản ghi món ăn mới.
      */
     public function store(Request $request)
     {
-        $validated =$request->validate([
+        // Thực hiện xác thực (Giới hạn giá bán tối đa, ép kiểu size thuộc tập hợp cố định S, M, L)
+        $validated = $request->validate([
             'foodName' => 'required|string|max:255',
             'price' => 'required|numeric|min:0|max:100000',
             'foodType' => 'required|string',
@@ -90,16 +96,15 @@ class foodController extends Controller
             'foodName.required' => 'Tên món ăn không được để trống',
             'foodName.string' => 'Tên món ăn phải là chuỗi ký tự',
             'foodName.max' => 'Tên món ăn không được quá 255 ký tự',
-
             'price.required' => 'Giá món ăn không được để trống',
             'price.numeric' => 'Giá phải là số',
             'price.min' => 'Giá phải lớn hơn hoặc bằng 0',
             'price.max' => 'Giá bán không được vượt quá 100000 nghìn',
-
             'foodType.required' => 'Loại món ăn không được để trống',
             'foodType.string' => 'Loại món ăn phải là chuỗi ký tự',
         ]);
 
+        // Sử dụng mảng dữ liệu sạch đã qua kiểm tra để nạp an toàn vào DB (Mass Assignment)
         food::create($validated);   
 
         return redirect()->route('food.index')->with('success', 'Tạo thành công');
@@ -114,7 +119,7 @@ class foodController extends Controller
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Hiển thị giao diện cập nhật thông tin món ăn theo mã ID truyền vào.
      */
     public function edit(string $foodID)
     {
@@ -123,7 +128,7 @@ class foodController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Xác thực thông tin thay đổi và cập nhật trực tiếp vào đối tượng Model.
      */
     public function update(Request $request, string $foodID)
     {
@@ -138,9 +143,9 @@ class foodController extends Controller
             'foodName.required' => 'Tên món ăn không được để trống',
             'price.required' => 'Giá món ăn không được để trống',
             'foodType.required' => 'Loại món ăn không được để trống',
-            // Thêm các message khác nếu muốn
         ]);
 
+        // Gán thủ công từng thuộc tính từ request đầu vào và tiến hành lưu đè
         $foods->foodName = $request->input('foodName');
         $foods->price = $request->input('price');
         $foods->foodType = $request->input('foodType');
@@ -151,7 +156,7 @@ class foodController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Xóa món ăn khỏi danh mục hệ thống.
      */
     public function destroy(string $id)
     {

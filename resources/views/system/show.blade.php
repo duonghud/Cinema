@@ -163,7 +163,7 @@ $selectedShowTimeId = $selectedShowTime?->showTimeID;
 
                         <div class="flex gap-6 pt-3">
                             <button
-                                onclick="openTrailer('{{ $movie->trailer }}')"
+                                onclick="openTrailer('{{ asset($movie->trailer) }}')"
                                 class="border border-yellow-400 text-yellow-400 px-6 py-2 rounded-full hover:bg-yellow-400 hover:text-black transition">
                                 Xem trailer
                             </button>
@@ -212,7 +212,6 @@ $selectedShowTimeId = $selectedShowTime?->showTimeID;
         @endforeach
     </div>
 
-    {{-- ── Giờ chiếu + sơ đồ ghế (căn giữa) ── --}}
     <div class="booking-wrapper pt-3">
 
         {{-- Giờ chiếu --}}

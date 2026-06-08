@@ -1,11 +1,8 @@
 <!-- TRAILER MODAL -->
 <div class="modal fade" id="trailerModal" tabindex="-1">
-
     <div class="modal-dialog modal-xl modal-dialog-centered">
-
         <div class="modal-content bg-dark">
 
-            <!-- Header -->
             <div class="modal-header border-0">
                 <button type="button"
                         class="btn-close btn-close-white"
@@ -13,10 +10,9 @@
                 </button>
             </div>
 
-            <!-- Body -->
             <div class="modal-body p-0">
 
-                <!-- YouTube -->
+                <!-- YouTube iframe -->
                 <iframe
                     id="trailerFrame"
                     width="100%"
@@ -31,79 +27,69 @@
                 <video id="trailerVideo"
                        class="w-100 d-none"
                        height="500"
-                       controls>
-                    <source id="videoSource" src="">
-                    Trình duyệt không hỗ trợ video.
+                       controls
+                       preload="none">
                 </video>
 
             </div>
-
         </div>
-
     </div>
-
 </div>
 
 <script>
 function openTrailer(url) {
+    const frame = document.getElementById('trailerFrame')
+    const video = document.getElementById('trailerVideo')
 
-    const frame = document.getElementById("trailerFrame")
-    const video = document.getElementById("trailerVideo")
-    const source = document.getElementById("videoSource")
-
-    // Reset
-    frame.src = ""
-    source.src = ""
+    // ✅ Pause trước, rồi mới reset
     video.pause()
-    video.currentTime = 0
+    video.removeAttribute('src')
+    video.load()
 
-    frame.classList.add("d-none")
-    video.classList.add("d-none")
+    frame.src = ''
+    frame.classList.add('d-none')
+    video.classList.add('d-none')
 
-    // YouTube
-    if (url.includes("youtube.com") || url.includes("youtu.be")) {
+    if (url.includes('youtube.com') || url.includes('youtu.be')) {
 
-        let videoId = url
+        let videoId = ''
 
-        if (url.includes("watch?v=")) {
-            videoId = url.split("v=")[1].split("&")[0]
+        if (url.includes('watch?v=')) {
+            videoId = url.split('v=')[1].split('&')[0]
+        } else if (url.includes('youtu.be/')) {
+            videoId = url.split('youtu.be/')[1].split('?')[0]
         }
 
-        if (url.includes("youtu.be/")) {
-            videoId = url.split("youtu.be/")[1]
-        }
+        frame.src = 'https://www.youtube.com/embed/' + videoId + '?autoplay=1'
+        frame.classList.remove('d-none')
 
-        frame.src = "https://www.youtube.com/embed/" + videoId + "?autoplay=1"
-        frame.classList.remove("d-none")
+    } else {
 
-    } 
-    // video file
-    else {
+        // ✅ Set src trực tiếp trên <video>, KHÔNG dùng <source> tag
+        video.src = url
+        video.classList.remove('d-none')
 
-        source.src = url
+        // ✅ Gọi load() sau khi src đã được gán
         video.load()
-        video.classList.remove("d-none")
 
     }
 
-    const modal = new bootstrap.Modal(
-        document.getElementById("trailerModal")
-    )
-
+    const modal = new bootstrap.Modal(document.getElementById('trailerModal'))
     modal.show()
 }
 
+// ✅ Cleanup khi đóng modal
+document.getElementById('trailerModal')
+    .addEventListener('hidden.bs.modal', function () {
+        const frame = document.getElementById('trailerFrame')
+        const video = document.getElementById('trailerVideo')
 
-// Khi đóng modal
-document.getElementById("trailerModal")
-.addEventListener("hidden.bs.modal", function () {
+        video.pause()
+        video.removeAttribute('src')
+        video.load()
 
-    const frame = document.getElementById("trailerFrame")
-    const video = document.getElementById("trailerVideo")
-
-    frame.src = ""
-
-    video.pause()
-    video.currentTime = 0
-})
+        frame.src = ''
+        frame.classList.add('d-none')
+        video.classList.add('d-none')
+    })
 </script>

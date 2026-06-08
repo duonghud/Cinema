@@ -9,7 +9,7 @@ use App\Models\Admin\genre;
 class genreController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Hiển thị danh sách thể loại phim (Hỗ trợ tìm kiếm từ khóa, lọc theo tên và phân trang).
      */
     public function index(Request $request)
     {
@@ -17,16 +17,19 @@ class genreController extends Controller
         $genreName = trim((string) $request->input('genre_name'));
 
         $genres = genre::query()
+            // Tìm kiếm gần đúng theo ID hoặc Tên thể loại dựa trên từ khóa nhập vào
             ->when($search, function ($query) use ($search) {
                 $query->where('genreID', 'like', "%{$search}%")
                     ->orWhere('name', 'like', "%{$search}%");
             })
+            // Lọc chính xác theo tên thể loại được chọn từ danh sách dropdown
             ->when($genreName, function ($query) use ($genreName) {
                 $query->where('name', $genreName);
             })
             ->paginate(5)
-            ->withQueryString();
+            ->withQueryString(); // Duy trì các tham số tìm kiếm/lọc trên URL khi chuyển trang
 
+        // Lấy danh sách tên thể loại duy nhất (không trùng) để làm dữ liệu cho bộ lọc select
         $genreNames = genre::query()
             ->select('name')
             ->distinct()
@@ -44,7 +47,7 @@ class genreController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Hiển thị form thêm mới thể loại phim.
      */
     public function create()
     {
@@ -52,10 +55,11 @@ class genreController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Xác thực dữ liệu đầu vào và tiến hành lưu mới thể loại phim.
      */
     public function store(Request $request)
     {
+        // Bắt buộc phải nhập tên thể loại
         $request->validate([
             'name' => 'required'
         ]);
@@ -76,7 +80,7 @@ class genreController extends Controller
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Hiển thị form chỉnh sửa thể loại phim theo ID (Tự động trả về 404 nếu không tìm thấy).
      */
     public function edit(string $genreID)
     {
@@ -85,7 +89,7 @@ class genreController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Cập nhật thông tin sửa đổi của thể loại phim vào cơ sở dữ liệu.
      */
     public function update(Request $request, string $genreID)
     {
@@ -102,7 +106,7 @@ class genreController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Xóa thể loại phim ra khỏi hệ thống.
      */
     public function destroy(string $id)
     {

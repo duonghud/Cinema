@@ -10,15 +10,19 @@ use App\Models\Admin\food;
 
 class FoodInvoiceDetailController extends Controller
 {
-
-    // Danh sách
+    /**
+     * Hiển thị danh sách chi tiết hóa đơn đồ ăn.
+     */
     public function index()
     {
+        // dữ liệu liên kết bảng để tối ưu hóa truy vấn SQL
         $details = foodInvoiceDetail::with(['foodInvoice', 'food'])->get();
         return view('admins.manageFoods.foodInvoiceDetail.index', compact('details'));
     }
 
-    // Form thêm
+    /**
+     * Hiển thị form thêm mới đồ ăn vào hóa đơn.
+     */
     public function create()
     {
         $foodInvoices = foodInvoice::all();
@@ -27,13 +31,15 @@ class FoodInvoiceDetailController extends Controller
         return view('admins.manageFoods.foodInvoiceDetail.create', compact('foodInvoices', 'foods'));
     }
 
-    // Lưu dữ liệu
+    /**
+     * Xác thực và lưu mới một mục chi tiết hóa đơn.
+     */
     public function store(Request $request)
     {
         $request->validate([
             'foodInvoiceID' => 'required',
             'foodID' => 'required',
-            'quantity' => 'required|integer|min:1'
+            'quantity' => 'required|integer|min:1' // Số lượng bắt buộc phải là số nguyên và lớn hơn hoặc bằng 1
         ]);
 
         foodInvoiceDetail::create($request->all());
@@ -42,11 +48,13 @@ class FoodInvoiceDetailController extends Controller
             ->with('success', 'Created successfully');
     }
 
-    // Form sửa
+    /**
+     * Hiển thị form sửa đổi (Sử dụng đồng thời 2 tham số vì đây là bảng trung gian dùng khóa chính hợp thành).
+     */
     public function edit($foodInvoiceID, $foodID)
     {
+        // Khớp đồng thời cả mã hóa đơn và mã đồ ăn để tìm ra bản ghi duy nhất, trả về 404 nếu sai mã
         $detail = foodInvoiceDetail::where('foodInvoiceID', $foodInvoiceID)
-
             ->where('foodID', $foodID)
             ->firstOrFail();
 
@@ -56,7 +64,9 @@ class FoodInvoiceDetailController extends Controller
         return view('admins.manageFoods.foodInvoiceDetail.edit', compact('detail', 'foodInvoices', 'foods'));
     }
 
-    // Cập nhật
+    /**
+     * Cập nhật số lượng đồ ăn trong hóa đơn dựa theo bộ đôi khóa chính.
+     */
     public function update(Request $request, $foodInvoiceID, $foodID)
     {
         $detail = foodInvoiceDetail::where('foodInvoiceID', $foodInvoiceID)
@@ -67,6 +77,7 @@ class FoodInvoiceDetailController extends Controller
             'quantity' => 'required|integer|min:1'
         ]);
 
+        // Chỉ cập nhật lại số lượng mua
         $detail->update([
             'quantity' => $request->quantity
         ]);
@@ -75,7 +86,9 @@ class FoodInvoiceDetailController extends Controller
             ->with('success', 'Updated successfully');
     }
 
-    // Xóa
+    /**
+     * Xóa một mục món ăn ra khỏi hóa đơn dựa theo bộ đôi khóa chính.
+     */
     public function destroy($foodInvoiceID, $foodID)
     {
         $detail = foodInvoiceDetail::where('foodInvoiceID', $foodInvoiceID)

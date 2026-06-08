@@ -323,10 +323,6 @@
                     <div class="row">
                         <div class="col-6 mb-3">
                             <label class="form-label">Số hàng</label>
-                            {{--
-                                DB không lưu rows → tính ngược từ seats:
-                                $actualRows = số rowSeat unique (controller đã tính)
-                            --}}
                             <input type="number" name="rows" id="rowsInput"
                                    min="1" max="26"
                                    value="{{ old('rows', $actualRows) }}"
@@ -334,10 +330,6 @@
                         </div>
                         <div class="col-6 mb-3">
                             <label class="form-label">Số cột</label>
-                            {{--
-                                DB không lưu cols → tính ngược từ seats:
-                                $actualCols = MAX(colSeat) (controller đã tính)
-                            --}}
                             <input type="number" name="cols" id="colsInput"
                                    min="1" max="50"
                                    value="{{ old('cols', $actualCols) }}"
@@ -359,11 +351,13 @@
                         <label class="form-label">Loại ghế</label>
                         <select name="vipSeatTypeID" class="ctrl">
                             @foreach($seatTypes as $seatType)
+                            {{--
+                                Ưu tiên: old() (khi form lỗi) → $defaultVipTypeID (từ DB hoặc tìm theo tên)
+                                KHÔNG fallback firstWhere() trực tiếp trong blade để tránh mọi dropdown
+                                đều chọn cùng 1 loại ghế.
+                            --}}
                             <option value="{{ $seatType->seatTypeID }}"
-                                {{-- Ưu tiên: old() → seatCounts từ DB → fallback tìm theo tên --}}
-                                {{ old('vipSeatTypeID', $seatCounts['vipSeatTypeID']
-                                    ?? $seatTypes->firstWhere('seatTypeName','like','%VIP%')?->seatTypeID)
-                                    == $seatType->seatTypeID ? 'selected' : '' }}>
+                                {{ old('vipSeatTypeID', $defaultVipTypeID) == $seatType->seatTypeID ? 'selected' : '' }}>
                                 {{ $seatType->seatTypeName }} ({{ number_format($seatType->price) }}đ)
                             </option>
                             @endforeach
@@ -372,7 +366,7 @@
                     <div>
                         <label class="form-label">Số lượng ghế</label>
                         <input type="number" name="vipSeats" id="vipSeatsInput" min="0"
-                               value="{{ old('vipSeats', $seatCounts['vipSeats'] ?? 0) }}"
+                               value="{{ old('vipSeats', $seatCounts['vipSeats']) }}"
                                class="ctrl">
                     </div>
                 </div>
@@ -385,10 +379,7 @@
                         <select name="normalSeatTypeID" class="ctrl">
                             @foreach($seatTypes as $seatType)
                             <option value="{{ $seatType->seatTypeID }}"
-                                {{ old('normalSeatTypeID', $seatCounts['normalSeatTypeID']
-                                    ?? $seatTypes->firstWhere('seatTypeName','like','%thường%')?->seatTypeID
-                                    ?? $seatTypes->firstWhere('seatTypeName','like','%normal%')?->seatTypeID)
-                                    == $seatType->seatTypeID ? 'selected' : '' }}>
+                                {{ old('normalSeatTypeID', $defaultNormalTypeID) == $seatType->seatTypeID ? 'selected' : '' }}>
                                 {{ $seatType->seatTypeName }} ({{ number_format($seatType->price) }}đ)
                             </option>
                             @endforeach
@@ -397,7 +388,7 @@
                     <div>
                         <label class="form-label">Số lượng ghế</label>
                         <input type="number" name="normalSeats" id="normalSeatsInput" min="0"
-                               value="{{ old('normalSeats', $seatCounts['normalSeats'] ?? 0) }}"
+                               value="{{ old('normalSeats', $seatCounts['normalSeats']) }}"
                                class="ctrl">
                     </div>
                 </div>
@@ -410,10 +401,7 @@
                         <select name="doubleSeatTypeID" class="ctrl">
                             @foreach($seatTypes as $seatType)
                             <option value="{{ $seatType->seatTypeID }}"
-                                {{ old('doubleSeatTypeID', $seatCounts['doubleSeatTypeID']
-                                    ?? $seatTypes->firstWhere('seatTypeName','like','%đôi%')?->seatTypeID
-                                    ?? $seatTypes->firstWhere('seatTypeName','like','%couple%')?->seatTypeID)
-                                    == $seatType->seatTypeID ? 'selected' : '' }}>
+                                {{ old('doubleSeatTypeID', $defaultDoubleTypeID) == $seatType->seatTypeID ? 'selected' : '' }}>
                                 {{ $seatType->seatTypeName }} ({{ number_format($seatType->price) }}đ)
                             </option>
                             @endforeach
@@ -422,7 +410,7 @@
                     <div>
                         <label class="form-label">Số lượng ghế đôi <span style="color:#db2777;font-size:11px">(bắt buộc số chẵn)</span></label>
                         <input type="number" name="doubleSeats" min="0" step="2"
-                               value="{{ old('doubleSeats', $seatCounts['doubleSeats'] ?? 0) }}"
+                               value="{{ old('doubleSeats', $seatCounts['doubleSeats']) }}"
                                class="ctrl" id="doubleSeatsInput">
                         <div id="doubleSeatsError" style="color:#dc2626;font-size:12px;margin-top:4px;display:none">
                             Số ghế đôi phải là số chẵn

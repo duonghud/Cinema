@@ -13,18 +13,22 @@ use Illuminate\Support\Facades\DB;
 
 class FoodInvoiceController extends Controller
 {
-
+    /**
+     * Hiển thị danh sách hóa đơn đồ ăn kèm chức năng phân trang, tìm kiếm đa trường và các bộ lọc dropdown.
+     */
     public function index(Request $request)
     {
         $search = trim((string) $request->input('search'));
         $customerId = trim((string) $request->input('customer_id'));
         $paymentId = trim((string) $request->input('payment_id'));
 
+        // Eager loading dữ liệu Khách hàng, Phương thức thanh toán và lồng sâu (nested) dữ liệu Món ăn qua bảng chi tiết
         $invoices = FoodInvoice::with([
             'customer',
             'payment',
             'details.food'
         ])
+            // Khối xử lý tìm kiếm tổng hợp (Mã hóa đơn, ngày đặt, số tiền hoặc thông tin từ bảng liên kết)
             ->when($search, function ($query) use ($search) {
                 $query->where('foodInvoiceID', 'like', "%{$search}%")
                     ->orWhere('orderDate', 'like', "%{$search}%")
@@ -36,21 +40,26 @@ class FoodInvoiceController extends Controller
                     ->orWhereHas('payment', function ($paymentQuery) use ($search) {
                         $paymentQuery->where('name', 'like', "%{$search}%");
                     })
+                    // Tìm kiếm hóa đơn dựa trên việc có chứa món ăn khớp với tên từ khóa
                     ->orWhereHas('details.food', function ($foodQuery) use ($search) {
                         $foodQuery->where('foodName', 'like', "%{$search}%");
                     });
             })
+            // Lọc chính xác theo ID Khách hàng
             ->when($customerId, function ($query) use ($customerId) {
                 $query->where('customerID', $customerId);
             })
+            // Lọc chính xác theo ID Phương thức thanh toán
             ->when($paymentId, function ($query) use ($paymentId) {
                 $query->where('paymentID', $paymentId);
             })
+            // Sắp xếp ưu tiên theo ngày tạo (nếu có), nếu không có thì lấy ngày đặt và xếp giảm dần (mới nhất lên đầu)
             ->orderByRaw('COALESCE(created_at, orderDate) DESC')
             ->orderByDesc('foodInvoiceID')
             ->paginate(5)
             ->withQueryString();
 
+        // Lấy danh sách đổ vào thẻ select lọc trên giao diện
         $customers = Customer::query()
             ->orderBy('fullName')
             ->pluck('fullName', 'customerID');
@@ -79,6 +88,9 @@ class FoodInvoiceController extends Controller
         );
     }
 
+    /**
+     * Giao diện tạo hóa đơn mới (Chặn không cho tạo nếu hệ thống chưa có món ăn nào dữ liệu sẵn).
+     */
     public function create()
     {
         $customers = Customer::all();
@@ -97,14 +109,16 @@ class FoodInvoiceController extends Controller
         );
     }
 
+    /**
+     * Validate dữ liệu, tự động tính tổng tiền và tạo hóa đơn song song với chi tiết hóa đơn (Dùng Transaction).
+     */
     public function store(Request $request)
     {
-        // validation
         $validated = $request->validate([
             'customerID' => 'required|exists:customers,customerID',
             'paymentID' => 'required|exists:payment_methods,paymentID',
             'orderTime' => 'required|date',
-            'foods' => 'required|array',
+            'foods' => 'required|array', // Mảng có cấu trúc: [foodID => số lượng]
             'foods.*' => 'integer|min:0',
         ], [
             'customerID.required' => 'Vui lòng chọn khách hàng.',
@@ -116,9 +130,8 @@ class FoodInvoiceController extends Controller
             'foods.required' => 'Vui lòng chọn món ăn.',
         ]);
 
-
+        // Logic kiểm tra thủ công: Đảm bảo người dùng phải nhập số lượng > 0 cho ít nhất 1 món ăn
         $hasFood = false;
-
         foreach ($validated['foods'] as $quantity) {
             if ($quantity > 0) {
                 $hasFood = true;
@@ -134,31 +147,34 @@ class FoodInvoiceController extends Controller
                 ]);
         }
 
+        // Lọc bỏ các món ăn có số lượng bằng 0 và chuẩn hóa mảng dữ liệu [foodID => quantity]
         $selectedFoods = collect($validated['foods'])
-
             ->filter(fn($quantity) => (int) $quantity > 0)
             ->mapWithKeys(fn($quantity, $foodID) => [(int) $foodID => (int) $quantity]);
 
+        // Truy vấn nhanh toàn bộ món ăn được chọn dựa trên danh sách Key (foodID)
         $foods = Food::whereIn('foodID', $selectedFoods->keys()->all())->get()->keyBy('foodID');
         $total = 0;
 
+        // Tính tổng tiền dựa trên giá gốc lưu trong DB để tránh can thiệp client-side sửa giá
         foreach ($selectedFoods as $foodID => $quantity) {
             $food = $foods->get($foodID);
-
             if ($food) {
                 $total += $food->price * $quantity;
             }
         }
 
+        // Sử dụng Transaction để đảm bảo tính toàn vẹn: Hóa đơn lỗi thì không lưu Chi tiết và ngược lại
         DB::transaction(function () use ($validated, $selectedFoods, $total, $request) {
             $invoice = FoodInvoice::create([
                 'customerID' => $validated['customerID'],
                 'paymentID' => $validated['paymentID'],
-                'adminID' => $request->session()->get('admin_auth.adminID', 1),
+                'adminID' => $request->session()->get('admin_auth.adminID', 1), // Mặc định lấy từ Session, nếu trống lấy ID là 1
                 'orderDate' => $validated['orderTime'],
                 'total' => $total
             ]);
 
+            // Vòng lặp lưu thông tin vào bảng chi tiết hóa đơn đồ ăn
             foreach ($selectedFoods as $foodID => $quantity) {
                 FoodInvoiceDetail::create([
                     'foodInvoiceID' => $invoice->foodInvoiceID,
@@ -168,12 +184,14 @@ class FoodInvoiceController extends Controller
             }
         });
 
-
         return redirect()
             ->route('foodInvoice.index')
             ->with('success', 'Tạo hóa đơn thành công!');
     }
 
+    /**
+     * Tính toán động các chỉ số phụ (Thành tiền từng món, tổng số lượng) và hiển thị chi tiết hóa đơn.
+     */
     public function show($id)
     {
         $invoice = FoodInvoice::with([
@@ -182,6 +200,7 @@ class FoodInvoiceController extends Controller
             'details.food'
         ])->findOrFail($id);
 
+        // Map lại danh sách để tính toán giá trị thành tiền (subtotal) động phục vụ cho giao diện hiển thị
         $detailRows = $invoice->details->map(function ($detail) {
             $food = $detail->food;
             $unitPrice = (float) ($food->price ?? 0);
@@ -197,8 +216,8 @@ class FoodInvoiceController extends Controller
         $calculatedTotal = $detailRows->sum('subtotal');
         $displayTotal = (float) ($invoice->total ?? $calculatedTotal);
         $formattedOrderDate = \Illuminate\Support\Carbon::parse($invoice->orderDate)->format('d/m/Y H:i');
-        $detailCount = $detailRows->count();
-        $totalQuantity = $detailRows->sum('quantity');
+        $detailCount = $detailRows->count(); // Đếm xem có bao nhiêu món ăn khác nhau
+        $totalQuantity = $detailRows->sum('quantity'); // Tính tổng số lượng đồ ăn
 
         return view(
             'admins.manageFoods.foodInvoiceDetail.index',
@@ -213,10 +232,12 @@ class FoodInvoiceController extends Controller
         );
     }
 
+    /**
+     * Hiển thị giao diện sửa thông tin hóa đơn đồ ăn.
+     */
     public function edit($id)
     {
         $invoice = FoodInvoice::with('details')->findOrFail($id);
-
         $foods = Food::all();
         $customers = Customer::all();
         $payments = payment_method::all();
@@ -229,15 +250,13 @@ class FoodInvoiceController extends Controller
 
         return view(
             'admins.manageFoods.foodInvoice.edit',
-            compact(
-                'invoice',
-                'foods',
-                'customers',
-                'payments'
-            )
+            compact('invoice', 'foods', 'customers', 'payments')
         );
     }
 
+    /**
+     * Xử lý cập nhật: Làm sạch toàn bộ chi tiết cũ trước khi nạp lại mảng chi tiết mới nhằm tránh xung đột dữ liệu.
+     */
     public function update(Request $request, $id)
     {
         $invoice = FoodInvoice::findOrFail($id);
@@ -250,7 +269,6 @@ class FoodInvoiceController extends Controller
             'foods.*' => 'integer|min:0',
         ]);
 
-        // kiểm tra có món ăn nào được chọn không
         $hasFood = false;
         foreach ($validated['foods'] as $quantity) {
             if ($quantity > 0) {
@@ -267,10 +285,9 @@ class FoodInvoiceController extends Controller
                 ]);
         }
 
-        // xóa chi tiết cũ
+        // LÀM SẠCH: Xóa hết các bản ghi chi tiết cũ của hóa đơn này để chuẩn bị ghi đè dữ liệu mới
         FoodInvoiceDetail::where('foodInvoiceID', $id)->delete();
 
-        // tính total mới
         $total = 0;
         foreach ($validated['foods'] as $foodID => $qty) {
             if ($qty > 0) {
@@ -283,6 +300,7 @@ class FoodInvoiceController extends Controller
                         ]);
                 }
 
+                // Ghi mới chi tiết hóa đơn sau khi đã xóa cũ
                 FoodInvoiceDetail::create([
                     'foodInvoiceID' => $id,
                     'foodID' => $foodID,
@@ -293,6 +311,7 @@ class FoodInvoiceController extends Controller
             }
         }
 
+        // Cập nhật lại thông tin hóa đơn cha bao gồm tổng tiền mới tính toán
         $invoice->update([
             'customerID' => $validated['customerID'],
             'paymentID' => $validated['paymentID'],
@@ -305,7 +324,9 @@ class FoodInvoiceController extends Controller
             ->with('success', 'Cập nhật thành công');
     }
 
-
+    /**
+     * Xóa hóa đơn đồ ăn khỏi hệ thống.
+     */
     public function destroy($id)
     {
         FoodInvoice::findOrFail($id)->delete();

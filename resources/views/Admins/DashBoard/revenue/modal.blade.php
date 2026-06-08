@@ -269,6 +269,7 @@
         color: var(--muted);
         cursor: pointer;
         transition: all .15s;
+        white-space: nowrap;
     }
 
     .ranking-toggle:hover {
@@ -333,9 +334,9 @@
         </div>
 
         <div class="modal-tab-strip">
-            <button class="modal-tab-btn" id="tabAll" onclick="switchModalTab('all')">📊 Tất cả</button>
-            <button class="modal-tab-btn" id="tabTicket" onclick="switchModalTab('ticket')">🎟️ Hóa đơn vé</button>
-            <button class="modal-tab-btn" id="tabFood" onclick="switchModalTab('food')">🍿 Hóa đơn đồ ăn</button>
+            <button class="modal-tab-btn" id="tabAll" onclick="switchModalTab('all')"><i class="bi bi-bar-chart-line"></i> Tất cả</button>
+            <button class="modal-tab-btn" id="tabTicket" onclick="switchModalTab('ticket')"><i class="bi bi-ticket-perforated-fill"></i> Hóa đơn vé</button>
+            <button class="modal-tab-btn" id="tabFood" onclick="switchModalTab('food')"><i class="bi bi-cup-straw"></i> Hóa đơn đồ ăn</button>
         </div>
 
         <div class="invoice-modal-body" id="invoiceModalBody">
@@ -359,6 +360,17 @@
     let _cachedResponses = {};
 
     const fmt = v => new Intl.NumberFormat('vi-VN').format(Math.round(v)) + ' đ';
+
+    // ── Detect period type ────────────────────────────────────────────
+    // period formats: "2026" (year), "2026-05" (month), "2026-05-25" (day)
+    function _periodLabel(period) {
+        if (!period) return '';
+        const parts = String(period).split('-');
+        if (parts.length === 1) return 'năm ' + parts[0];
+        if (parts.length === 2) return 'tháng ' + parts[1] + '/' + parts[0];
+        if (parts.length === 3) return 'ngày ' + parts[2] + '/' + parts[1] + '/' + parts[0];
+        return period;
+    }
 
     // ── Open / close ──────────────────────────────────────────────────
     function openModal(period, type, label) {
@@ -422,7 +434,7 @@
             .catch(err => {
                 body.innerHTML = `
             <div class="text-center py-5">
-                <div style="font-size:2.4rem">⚠️</div>
+                <div style="font-size:2.4rem"><i class="bi bi-exclamation-triangle-fill"></i></div>
                 <div class="mt-2 fw-semibold" style="color:#ef4444">Không thể tải dữ liệu hóa đơn.</div>
                 <small style="color:#94a3b8">${err.message}</small>
             </div>`;
@@ -435,116 +447,137 @@
         const movieList = data.movieList ?? [];
         const foodList = data.foodList ?? [];
         const type = data.type ?? 'all';
+        const period = data.period ?? _currentPeriod ?? '';
         const isTicket = type === 'ticket';
         const isFood = type === 'food';
         const isAll = type === 'all';
 
+        // Đếm hóa đơn vé trong danh sách (dùng để quyết định hiện section phim)
+        const ticketInvoices = invoices.filter(i => i.type === 'ticket');
+        const foodInvoices = invoices.filter(i => i.type === 'food');
+
+        const periodLabel = _periodLabel(period);
+
         // ── Stat boxes ────────────────────────────────────────────────
         let html = '<div class="inv-stat-row">';
         if (isAll || isTicket)
-            html += `<div class="inv-stat"><div class="s-label"> Doanh thu vé</div><div class="s-val" style="color:#6366f1">${fmt(data.ticketRevenue ?? 0)}</div></div>`;
+            html += `<div class="inv-stat"><div class="s-label"><i class="bi bi-ticket-perforated-fill"></i> Doanh thu vé</div><div class="s-val" style="color:#6366f1">${fmt(data.ticketRevenue ?? 0)}</div></div>`;
         if (isAll || isFood)
-            html += `<div class="inv-stat food"><div class="s-label"> Doanh thu đồ ăn</div><div class="s-val" style="color:#06b6d4">${fmt(data.foodRevenue ?? 0)}</div></div>`;
+            html += `<div class="inv-stat food"><div class="s-label"><i class="bi bi-cup-straw"></i> Doanh thu đồ ăn</div><div class="s-val" style="color:#06b6d4">${fmt(data.foodRevenue ?? 0)}</div></div>`;
         if (isAll)
-            html += `<div class="inv-stat total"><div class="s-label"> Tổng</div><div class="s-val" style="color:#10b981">${fmt(data.totalRevenue ?? 0)}</div></div>`;
+            html += `<div class="inv-stat total"><div class="s-label"><i class="bi bi-bank"></i> Tổng</div><div class="s-val" style="color:#10b981">${fmt(data.totalRevenue ?? 0)}</div></div>`;
         html += '</div>';
 
-        // ── Phim nổi bật (chỉ tab Vé & Tất cả) ──────────────────────
-        if ((isAll || isTicket) && (data.topMovie || data.bottomMovie || movieList.length)) {
+        // ── Phim nổi bật (tab Vé & Tất cả) ──────────────────────────
+        const hasMovieData = data.topMovie || data.bottomMovie || movieList.length > 0;
+        const hasTicketInvs = ticketInvoices.length > 0 || (data.ticketRevenue ?? 0) > 0;
+
+        if (isAll || isTicket) {
             html += `<div class="modal-hl-section">`;
             html += `<div class="d-flex align-items-center justify-content-between mb-2">
-            <div class="modal-hl-title">
-                <i class="bi bi-film" style="color:#6366f1"></i> Phim nổi bật theo doanh thu vé
-            </div>
-            ${movieList.length > 2
-                ? `<button class="ranking-toggle" onclick="toggleRanking('movieRankList',this)">📋 Xem bảng xếp hạng (${movieList.length})</button>`
-                : ''}
-        </div>`;
+                <div class="modal-hl-title">
+                    <i class="bi bi-film" style="color:#6366f1"></i>
+                    Phim nổi bật theo doanh thu vé
+                    <span style="font-size:.7rem;font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0">(${periodLabel})</span>
+                </div>
+                ${movieList.length > 2
+                    ? `<button class="ranking-toggle" id="btnMovieRank" onclick="toggleRanking('movieRankList', this, ${movieList.length})"><i class="bi bi-clipboard2-fill"></i> Xem bảng xếp hạng (${movieList.length})</button>`
+                    : ''}
+            </div>`;
 
-            // Top / Bottom cards
-            html += `<div class="d-flex gap-2 flex-wrap mb-2">`;
-            if (data.topMovie)
-                html += _hlCard('#eef2ff', '#6366f1', '🏆', 'DOANH THU CAO NHẤT',
-                    data.topMovie.movieName, fmt(data.topMovie.revenue), data.topMovie.count + ' vé đã bán');
-            if (data.bottomMovie)
-                html += _hlCard('#fff7ed', '#f59e0b', '📉', 'DOANH THU THẤP NHẤT',
-                    data.bottomMovie.movieName, fmt(data.bottomMovie.revenue), data.bottomMovie.count + ' vé đã bán');
-            if (!data.topMovie && !data.bottomMovie)
-                html += `<p class="text-muted small mb-0">Chưa có dữ liệu vé trong kỳ này.</p>`;
-            html += `</div>`;
+            if (hasMovieData) {
+                html += `<div class="d-flex gap-2 flex-wrap mb-2">`;
+                if (data.topMovie)
+                    html += _hlCard('#eef2ff', '#6366f1', '🏆', 'DOANH THU CAO NHẤT',
+                        data.topMovie.movieName, fmt(data.topMovie.revenue), data.topMovie.count + ' vé đã bán');
+                if (data.bottomMovie)
+                    html += _hlCard('#fff7ed', '#f59e0b', '<i class="bi bi-graph-down-arrow"></i>', 'DOANH THU THẤP NHẤT',
+                        data.bottomMovie.movieName, fmt(data.bottomMovie.revenue), data.bottomMovie.count + ' vé đã bán');
+                html += `</div>`;
 
-            // Ranking list (ẩn mặc định)
-            if (movieList.length) {
-                html += `<div id="movieRankList" style="display:none">
-                <table class="rank-table">
-                    <thead><tr>
-                        <th style="width:42px">#</th>
-                        <th>Tên phim</th>
-                        <th style="text-align:right">Số vé</th>
-                        <th style="text-align:right">Doanh thu</th>
-                    </tr></thead><tbody>`;
-                movieList.forEach((m, i) => {
-                    const {
-                        rc,
-                        rb
-                    } = _rankColors(i);
-                    html += `<tr>
-                    <td><span class="rank-badge" style="background:${rb};color:${rc}">${i+1}</span></td>
-                    <td class="fw-semibold">${m.movieName ?? 'Không rõ'}</td>
-                    <td style="text-align:right;color:#64748b">${m.count ?? 0}</td>
-                    <td style="text-align:right;font-weight:700;color:#6366f1">${fmt(m.revenue ?? 0)}</td>
-                </tr>`;
-                });
-                html += `</tbody></table></div>`;
+                if (movieList.length) {
+                    html += `<div id="movieRankList" style="display:none">
+                        <table class="rank-table">
+                            <thead><tr>
+                                <th style="width:42px">#</th>
+                                <th>Tên phim</th>
+                                <th style="text-align:right">Số vé</th>
+                                <th style="text-align:right">Doanh thu</th>
+                            </tr></thead><tbody>`;
+                    movieList.forEach((m, i) => {
+                        const { rc, rb } = _rankColors(i);
+                        html += `<tr>
+                            <td><span class="rank-badge" style="background:${rb};color:${rc}">${i+1}</span></td>
+                            <td class="fw-semibold">${m.movieName ?? 'Không rõ'}</td>
+                            <td style="text-align:right;color:#64748b">${m.count ?? 0}</td>
+                            <td style="text-align:right;font-weight:700;color:#6366f1">${fmt(m.revenue ?? 0)}</td>
+                        </tr>`;
+                    });
+                    html += `</tbody></table></div>`;
+                }
+            } else if (hasTicketInvs) {
+                html += `<div style="background:#fff7ed;border:1.5px dashed #fcd34d;border-radius:10px;padding:12px 16px;color:#92400e;font-size:.83rem">
+                    <i class="bi bi-exclamation-triangle-fill"></i> Có doanh thu vé trong kỳ này nhưng chưa có dữ liệu phim. Vui lòng kiểm tra lại backend (query <code>topMovie/movieList</code> theo <code>period</code>).
+                </div>`;
+            } else {
+                html += `<p class="text-muted small mb-0" style="color:#94a3b8">Chưa có dữ liệu vé trong kỳ này.</p>`;
             }
             html += `</div>`;
         }
 
-        // ── Món ăn nổi bật (chỉ tab Đồ ăn & Tất cả) ─────────────────
-        if ((isAll || isFood) && (data.topFood || data.bottomFood || foodList.length)) {
+        // ── Món ăn nổi bật (tab Đồ ăn & Tất cả) ─────────────────────
+        const hasFoodData = data.topFood || data.bottomFood || foodList.length > 0;
+        const hasFoodInvs = foodInvoices.length > 0 || (data.foodRevenue ?? 0) > 0;
+
+        if (isAll || isFood) {
             html += `<div class="modal-hl-section">`;
             html += `<div class="d-flex align-items-center justify-content-between mb-2">
-            <div class="modal-hl-title">
-                <i class="bi bi-cup-hot-fill" style="color:#06b6d4"></i> Món ăn nổi bật theo doanh thu
-            </div>
-            ${foodList.length > 2
-                ? `<button class="ranking-toggle" onclick="toggleRanking('foodRankList',this)">📋 Xem bảng xếp hạng (${foodList.length})</button>`
-                : ''}
-        </div>`;
+                <div class="modal-hl-title">
+                    <i class="bi bi-cup-hot-fill" style="color:#06b6d4"></i>
+                    Món ăn nổi bật theo doanh thu
+                    <span style="font-size:.7rem;font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0">(${periodLabel})</span>
+                </div>
+                ${foodList.length > 2
+                    ? `<button class="ranking-toggle" id="btnFoodRank" onclick="toggleRanking('foodRankList', this, ${foodList.length})"><i class="bi bi-clipboard2-fill"></i> Xem bảng xếp hạng (${foodList.length})</button>`
+                    : ''}
+            </div>`;
 
-            html += `<div class="d-flex gap-2 flex-wrap mb-2">`;
-            if (data.topFood)
-                html += _hlCard('#ecfeff', '#06b6d4', '🏆', 'DOANH THU CAO NHẤT',
-                    data.topFood.foodName, fmt(data.topFood.revenue), data.topFood.quantity + ' phần đã bán');
-            if (data.bottomFood)
-                html += _hlCard('#fdf4ff', '#a855f7', '📉', 'DOANH THU THẤP NHẤT',
-                    data.bottomFood.foodName, fmt(data.bottomFood.revenue), data.bottomFood.quantity + ' phần đã bán');
-            if (!data.topFood && !data.bottomFood)
-                html += `<p class="text-muted small mb-0">Chưa có dữ liệu đồ ăn trong kỳ này.</p>`;
-            html += `</div>`;
+            if (hasFoodData) {
+                html += `<div class="d-flex gap-2 flex-wrap mb-2">`;
+                if (data.topFood)
+                    html += _hlCard('#ecfeff', '#06b6d4', '🏆', 'DOANH THU CAO NHẤT',
+                        data.topFood.foodName, fmt(data.topFood.revenue), data.topFood.quantity + ' phần đã bán');
+                if (data.bottomFood)
+                    html += _hlCard('#fdf4ff', '#a855f7', '<i class="bi bi-graph-down-arrow"></i>', 'DOANH THU THẤP NHẤT',
+                        data.bottomFood.foodName, fmt(data.bottomFood.revenue), data.bottomFood.quantity + ' phần đã bán');
+                html += `</div>`;
 
-            if (foodList.length) {
-                html += `<div id="foodRankList" style="display:none">
-                <table class="rank-table">
-                    <thead><tr>
-                        <th style="width:42px">#</th>
-                        <th>Tên món</th>
-                        <th style="text-align:right">Số phần</th>
-                        <th style="text-align:right">Doanh thu</th>
-                    </tr></thead><tbody>`;
-                foodList.forEach((f, i) => {
-                    const {
-                        rc,
-                        rb
-                    } = _rankColors(i, true);
-                    html += `<tr>
-                    <td><span class="rank-badge" style="background:${rb};color:${rc}">${i+1}</span></td>
-                    <td class="fw-semibold">${f.foodName ?? 'Không rõ'}</td>
-                    <td style="text-align:right;color:#64748b">${f.quantity ?? 0}</td>
-                    <td style="text-align:right;font-weight:700;color:#06b6d4">${fmt(f.revenue ?? 0)}</td>
-                </tr>`;
-                });
-                html += `</tbody></table></div>`;
+                if (foodList.length) {
+                    html += `<div id="foodRankList" style="display:none">
+                        <table class="rank-table">
+                            <thead><tr>
+                                <th style="width:42px">#</th>
+                                <th>Tên món</th>
+                                <th style="text-align:right">Số phần</th>
+                                <th style="text-align:right">Doanh thu</th>
+                            </tr></thead><tbody>`;
+                    foodList.forEach((f, i) => {
+                        const { rc, rb } = _rankColors(i, true);
+                        html += `<tr>
+                            <td><span class="rank-badge" style="background:${rb};color:${rc}">${i+1}</span></td>
+                            <td class="fw-semibold">${f.foodName ?? 'Không rõ'}</td>
+                            <td style="text-align:right;color:#64748b">${f.quantity ?? 0}</td>
+                            <td style="text-align:right;font-weight:700;color:#06b6d4">${fmt(f.revenue ?? 0)}</td>
+                        </tr>`;
+                    });
+                    html += `</tbody></table></div>`;
+                }
+            } else if (hasFoodInvs) {
+                html += `<div style="background:#fff7ed;border:1.5px dashed #fcd34d;border-radius:10px;padding:12px 16px;color:#92400e;font-size:.83rem">
+                    <i class="bi bi-exclamation-triangle"></i> Có doanh thu đồ ăn trong kỳ này nhưng chưa có dữ liệu món. Vui lòng kiểm tra lại backend (query <code>topFood/foodList</code> theo <code>period</code>).
+                </div>`;
+            } else {
+                html += `<p class="text-muted small mb-0" style="color:#94a3b8">Chưa có dữ liệu đồ ăn trong kỳ này.</p>`;
             }
             html += `</div>`;
         }
@@ -552,58 +585,61 @@
         // ── Danh sách hóa đơn ────────────────────────────────────────
         if (!invoices.length) {
             html += `<div class="text-center py-5" style="color:#94a3b8">
-            <div style="font-size:2rem"></div>
-            <div class="mt-2">Không có hóa đơn nào trong kỳ này.</div>
-        </div>`;
+                <div style="font-size:2rem">🧾</div>
+                <div class="mt-2">Không có hóa đơn nào trong kỳ này.</div>
+            </div>`;
         } else {
             html += `<div style="font-size:.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">
-            📋 Danh sách hóa đơn (${invoices.length})
-        </div>
-        <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0 modal-table">
-            <thead><tr>
-                <th>#</th><th>Mã HĐ</th><th>Loại</th><th>Khách hàng</th>
-                <th>Thanh toán</th><th>Ngày</th><th>Tổng tiền</th><th></th>
-            </tr></thead>
-            <tbody>
-            ${invoices.map((inv, i) => {
-                const isF   = inv.type === 'food';
-                const color = isF ? '#06b6d4' : '#6366f1';
-                const idStr = isF ? `F-${inv.invoiceID}` : `INV-${inv.invoiceID}`;
-                const badge = isF
-                    ? `<span style="background:#ecfeff;color:#06b6d4;border:1px solid #a5f3fc;font-size:.63rem;font-weight:700;padding:2px 7px;border-radius:5px">Đồ ăn</span>`
-                    : `<span style="background:#eef2ff;color:#6366f1;border:1px solid #c7d2fe;font-size:.63rem;font-weight:700;padding:2px 7px;border-radius:5px">Vé</span>`;
-                const action = !isF
-                    ? `<a href="/admins/invoices/${inv.invoiceID}" target="_blank" class="btn btn-sm fw-semibold"
-                          style="background:#eef2ff;color:#6366f1;border:1px solid #c7d2fe;border-radius:7px">Chi tiết</a>`
-                    : `<span style="color:#94a3b8;font-size:.8rem">—</span>`;
-                return `<tr>
-                    <td style="color:#94a3b8">${i+1}</td>
-                    <td class="fw-semibold text-nowrap" style="color:${color}">${idStr}</td>
-                    <td>${badge}</td>
-                    <td>${inv.customer ?? 'Khách vãng lai'}</td>
-                    <td><span class="badge fw-semibold" style="background:#ecfdf5;color:#10b981;border:1px solid #a7f3d0;border-radius:6px;padding:4px 10px">${inv.paymentMethod ?? '---'}</span></td>
-                    <td class="text-nowrap" style="color:#64748b">${inv.createDate ?? ''}</td>
-                    <td class="fw-bold text-nowrap" style="color:#ef4444">${fmt(inv.totalAmount ?? 0)}</td>
-                    <td>${action}</td>
-                </tr>`;
-            }).join('')}
-            </tbody>
-        </table></div>`;
+                <i class="bi bi-clipboard2-fill"></i> Danh sách hóa đơn (${invoices.length})
+            </div>
+            <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 modal-table">
+                <thead><tr>
+                    <th>#</th><th>Mã HĐ</th><th>Loại</th><th>Khách hàng</th>
+                    <th>Thanh toán</th><th>Ngày</th><th>Tổng tiền</th><th></th>
+                </tr></thead>
+                <tbody>
+                ${invoices.map((inv, i) => {
+                    const isF   = inv.type === 'food';
+                    const color = isF ? '#06b6d4' : '#6366f1';
+                    const idStr = isF ? `F-${inv.invoiceID}` : `INV-${inv.invoiceID}`;
+                    const badge = isF
+                        ? `<span style="background:#ecfeff;color:#06b6d4;border:1px solid #a5f3fc;font-size:.63rem;font-weight:700;padding:2px 7px;border-radius:5px">Đồ ăn</span>`
+                        : `<span style="background:#eef2ff;color:#6366f1;border:1px solid #c7d2fe;font-size:.63rem;font-weight:700;padding:2px 7px;border-radius:5px">Vé</span>`;
+
+                    // FIX: isF (đồ ăn) → /admins/foodInvoice/, !isF (vé) → /admins/invoices/
+                    const action = isF
+                        ? `<a href="/admins/foodInvoice/${inv.invoiceID}" target="_blank" class="btn btn-sm fw-semibold"
+                              style="background:#ecfeff;color:#06b6d4;border:1px solid #a5f3fc;border-radius:7px">Chi tiết</a>`
+                        : `<a href="/admins/invoices/${inv.invoiceID}" target="_blank" class="btn btn-sm fw-semibold"
+                              style="background:#eef2ff;color:#6366f1;border:1px solid #c7d2fe;border-radius:7px">Chi tiết</a>`;
+
+                    return `<tr>
+                        <td style="color:#94a3b8">${i+1}</td>
+                        <td class="fw-semibold text-nowrap" style="color:${color}">${idStr}</td>
+                        <td>${badge}</td>
+                        <td>${inv.customer ?? 'Khách vãng lai'}</td>
+                        <td><span class="badge fw-semibold" style="background:#ecfdf5;color:#10b981;border:1px solid #a7f3d0;border-radius:6px;padding:4px 10px">${inv.paymentMethod ?? '---'}</span></td>
+                        <td class="text-nowrap" style="color:#64748b">${inv.createDate ?? ''}</td>
+                        <td class="fw-bold text-nowrap" style="color:#ef4444">${fmt(inv.totalAmount ?? 0)}</td>
+                        <td>${action}</td>
+                    </tr>`;
+                }).join('')}
+                </tbody>
+            </table></div>`;
         }
 
         container.innerHTML = html;
     }
-    
 
     // ── Helpers ───────────────────────────────────────────────────────
     function _hlCard(bg, color, icon, badge, name, rev, sub) {
         return `<div class="modal-hl-card" style="background:${bg};border-left:4px solid ${color}">
-        <span class="hc-badge" style="color:${color}">${icon} ${badge}</span>
-        <div class="hc-name">${name}</div>
-        <div class="hc-rev" style="color:${color}">${rev}</div>
-        <div class="hc-sub">${sub}</div>
-    </div>`;
+            <span class="hc-badge" style="color:${color}">${icon} ${badge}</span>
+            <div class="hc-name">${name}</div>
+            <div class="hc-rev" style="color:${color}">${rev}</div>
+            <div class="hc-sub">${sub}</div>
+        </div>`;
     }
 
     function _rankColors(i, isFood = false) {
@@ -616,11 +652,16 @@
         };
     }
 
-    function toggleRanking(id, btn) {
+    // FIX: toggle text dùng data-attribute thay vì .replace() dễ bị lỗi
+    function toggleRanking(id, btn, total) {
         const el = document.getElementById(id);
         if (!el) return;
-        const show = el.style.display === 'none';
-        el.style.display = show ? 'block' : 'none';
-        if (btn) btn.textContent = show ? '🔼 Ẩn bảng xếp hạng' : btn.textContent.replace('🔼 Ẩn bảng xếp hạng', `📋 Xem bảng xếp hạng`);
+        const willShow = el.style.display === 'none';
+        el.style.display = willShow ? 'block' : 'none';
+        if (btn) {
+            btn.innerHTML = willShow ?
+                '<i class="bi bi-arrow-down-square"></i> Ẩn bảng xếp hạng' :
+                `<i class="bi bi-clipboard2-fill"></i> Xem bảng xếp hạng (${total ?? ''})`;
+        }
     }
 </script>

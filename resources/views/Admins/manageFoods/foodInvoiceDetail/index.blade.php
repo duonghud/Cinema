@@ -7,7 +7,7 @@
     <div class="container-fluid">
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
             <div>
-                <h4 class="fw-semibold mb-1">Hóa đơn #{{ $invoice->foodInvoiceID }}</h4>
+                <h4 class="fw-semibold mb-1">Hóa đơn F-{{ $invoice->foodInvoiceID }}</h4>
                 <p class="text-muted mb-0">Xem chi tiết món ăn, số lượng và tổng thanh toán của hóa đơn.</p>
             </div>
 
@@ -76,7 +76,7 @@
 
                         <div class="d-flex justify-content-between py-2 border-bottom">
                             <span class="text-muted">Mã hóa đơn</span>
-                            <strong>#{{ $invoice->foodInvoiceID }}</strong>
+                            <strong>F-{{ $invoice->foodInvoiceID }}</strong>
                         </div>
                         <div class="d-flex justify-content-between py-2 border-bottom">
                             <span class="text-muted">Khách hàng</span>

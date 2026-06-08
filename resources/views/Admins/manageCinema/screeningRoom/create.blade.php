@@ -214,7 +214,6 @@
         flex-shrink: 0;
     }
 
-    /* Tất cả ghế đều chiếm 1 ô như nhau */
     .preview-seat {
         width: 28px;
         height: 28px;
@@ -298,7 +297,7 @@
         @csrf
 
         <div class="action-bar">
-            <div class="room-title-preview">Tạo phòng mới</div>
+            <div class="room-title-preview">Tạo phòng mới: <span id="barRoomName">—</span></div>
             <div class="d-flex align-items-center gap-2">
                 <div class="small" id="barSeatSummary" style="color:var(--text-sub)"></div>
                 <a href="{{ route('screeningRoom.index') }}" class="btn-back" style="padding:7px 14px;font-size:13px">← Quay lại</a>
@@ -316,20 +315,21 @@
 
                     <div class="mb-3">
                         <label class="form-label">Tên phòng</label>
-                        <input type="text" name="roomName" value="{{ old('roomName') }}"
+                        <input type="text" name="roomName" id="roomNameInput"
+                               value="{{ old('roomName') }}"
                                class="ctrl @error('roomName') is-invalid @enderror">
                     </div>
 
                     <div class="row">
                         <div class="col-6 mb-3">
                             <label class="form-label">Số hàng</label>
-                            <input type="number" name="rows" min="1" max="26"
-                                   value="{{ old('rows',5) }}" class="ctrl">
+                            <input type="number" name="rows" id="rowsInput" min="1" max="26"
+                                   value="{{ old('rows', 5) }}" class="ctrl">
                         </div>
                         <div class="col-6 mb-3">
                             <label class="form-label">Số cột</label>
-                            <input type="number" name="cols" min="1" max="50"
-                                   value="{{ old('cols',10) }}" class="ctrl">
+                            <input type="number" name="cols" id="colsInput" min="1" max="50"
+                                   value="{{ old('cols', 10) }}" class="ctrl">
                         </div>
                     </div>
 
@@ -340,14 +340,19 @@
                     </div>
                 </div>
 
+                {{-- GHẾ VIP --}}
                 <div class="type-card">
                     <div class="type-title type-vip">Ghế VIP</div>
                     <div class="mb-3">
                         <label class="form-label">Loại ghế</label>
                         <select name="vipSeatTypeID" class="ctrl">
                             @foreach($seatTypes as $seatType)
+                            {{--
+                                Controller truyền $defaultVipTypeID đã tìm đúng theo tên.
+                                Mỗi dropdown dùng biến riêng → không bị chọn cùng 1 loại.
+                            --}}
                             <option value="{{ $seatType->seatTypeID }}"
-                                {{ old('vipSeatTypeID', $seatTypes->firstWhere('seatTypeName','like','%VIP%')?->seatTypeID) == $seatType->seatTypeID ? 'selected' : '' }}>
+                                {{ old('vipSeatTypeID', $defaultVipTypeID) == $seatType->seatTypeID ? 'selected' : '' }}>
                                 {{ $seatType->seatTypeName }} ({{ number_format($seatType->price) }}đ)
                             </option>
                             @endforeach
@@ -355,11 +360,12 @@
                     </div>
                     <div>
                         <label class="form-label">Số lượng ghế</label>
-                        <input type="number" name="vipSeats" min="0"
-                               value="{{ old('vipSeats',0) }}" class="ctrl">
+                        <input type="number" name="vipSeats" id="vipSeatsInput" min="0"
+                               value="{{ old('vipSeats', 0) }}" class="ctrl">
                     </div>
                 </div>
 
+                {{-- GHẾ THƯỜNG --}}
                 <div class="type-card">
                     <div class="type-title type-normal">Ghế thường</div>
                     <div class="mb-3">
@@ -367,7 +373,7 @@
                         <select name="normalSeatTypeID" class="ctrl">
                             @foreach($seatTypes as $seatType)
                             <option value="{{ $seatType->seatTypeID }}"
-                                {{ old('normalSeatTypeID', $seatTypes->firstWhere('seatTypeName','like','%thường%')?->seatTypeID ?? $seatTypes->firstWhere('seatTypeName','like','%normal%')?->seatTypeID) == $seatType->seatTypeID ? 'selected' : '' }}>
+                                {{ old('normalSeatTypeID', $defaultNormalTypeID) == $seatType->seatTypeID ? 'selected' : '' }}>
                                 {{ $seatType->seatTypeName }} ({{ number_format($seatType->price) }}đ)
                             </option>
                             @endforeach
@@ -375,11 +381,12 @@
                     </div>
                     <div>
                         <label class="form-label">Số lượng ghế</label>
-                        <input type="number" name="normalSeats" min="0"
-                               value="{{ old('normalSeats',0) }}" class="ctrl">
+                        <input type="number" name="normalSeats" id="normalSeatsInput" min="0"
+                               value="{{ old('normalSeats', 0) }}" class="ctrl">
                     </div>
                 </div>
 
+                {{-- GHẾ ĐÔI --}}
                 <div class="type-card">
                     <div class="type-title type-double">Ghế đôi</div>
                     <div class="mb-3">
@@ -387,7 +394,7 @@
                         <select name="doubleSeatTypeID" class="ctrl">
                             @foreach($seatTypes as $seatType)
                             <option value="{{ $seatType->seatTypeID }}"
-                                {{ old('doubleSeatTypeID', $seatTypes->firstWhere('seatTypeName','like','%đôi%')?->seatTypeID ?? $seatTypes->firstWhere('seatTypeName','like','%couple%')?->seatTypeID) == $seatType->seatTypeID ? 'selected' : '' }}>
+                                {{ old('doubleSeatTypeID', $defaultDoubleTypeID) == $seatType->seatTypeID ? 'selected' : '' }}>
                                 {{ $seatType->seatTypeName }} ({{ number_format($seatType->price) }}đ)
                             </option>
                             @endforeach
@@ -396,19 +403,23 @@
                     <div>
                         <label class="form-label">Số lượng ghế đôi <span style="color:#db2777;font-size:11px">(bắt buộc số chẵn)</span></label>
                         <input type="number" name="doubleSeats" min="0" step="2"
-                               value="{{ old('doubleSeats',0) }}" class="ctrl" id="doubleSeatsInput">
+                               value="{{ old('doubleSeats', 0) }}" class="ctrl" id="doubleSeatsInput">
                         <div id="doubleSeatsError" style="color:#dc2626;font-size:12px;margin-top:4px;display:none">
                             Số ghế đôi phải là số chẵn
                         </div>
                     </div>
                 </div>
 
+                {{-- LOẠI PHÒNG --}}
                 <div class="panel-card">
                     <div class="panel-title">Loại phòng chiếu</div>
                     <select name="screenTypeID" class="ctrl">
                         <option value="">-- Chọn loại phòng --</option>
                         @foreach($screenTypes as $type)
-                        <option value="{{ $type->screenTypeID }}">{{ $type->name }}</option>
+                        <option value="{{ $type->screenTypeID }}"
+                            {{ old('screenTypeID') == $type->screenTypeID ? 'selected' : '' }}>
+                            {{ $type->name }}
+                        </option>
                         @endforeach
                     </select>
                 </div>
@@ -471,25 +482,24 @@
 </div>
 
 <script>
-    const rowsInput        = document.querySelector('input[name="rows"]');
-    const colsInput        = document.querySelector('input[name="cols"]');
-    const vipSeatsInput    = document.querySelector('input[name="vipSeats"]');
-    const normalSeatsInput = document.querySelector('input[name="normalSeats"]');
+    const rowsInput        = document.getElementById('rowsInput');
+    const colsInput        = document.getElementById('colsInput');
+    const vipSeatsInput    = document.getElementById('vipSeatsInput');
+    const normalSeatsInput = document.getElementById('normalSeatsInput');
     const doubleSeatsInput = document.getElementById('doubleSeatsInput');
     const doubleSeatsError = document.getElementById('doubleSeatsError');
     const previewGrid      = document.getElementById('previewGrid');
     const submitBtn        = document.getElementById('submitBtn');
 
-    // Kiểm tra ghế đôi số chẵn
     function validateDoubleSeats() {
         const val = parseInt(doubleSeatsInput.value || 0);
         if (val > 0 && val % 2 !== 0) {
-            doubleSeatsError.style.display = 'block';
+            doubleSeatsError.style.display    = 'block';
             doubleSeatsInput.style.borderColor = '#dc2626';
             doubleSeatsInput.style.boxShadow   = '0 0 0 3px rgba(220,38,38,.12)';
             return false;
         }
-        doubleSeatsError.style.display = 'none';
+        doubleSeatsError.style.display    = 'none';
         doubleSeatsInput.style.borderColor = '';
         doubleSeatsInput.style.boxShadow   = '';
         return true;
@@ -498,13 +508,12 @@
     function generatePreview() {
         previewGrid.innerHTML = '';
 
-        const rows        = parseInt(rowsInput.value   || 0);
-        const cols        = parseInt(colsInput.value   || 0);
+        const rows        = parseInt(rowsInput.value        || 0);
+        const cols        = parseInt(colsInput.value        || 0);
         const vipSeats    = parseInt(vipSeatsInput.value    || 0);
         const normalSeats = parseInt(normalSeatsInput.value || 0);
         const doubleSeats = parseInt(doubleSeatsInput.value || 0);
 
-        // Ghế đôi = 1 ô, cộng thẳng
         const totalUsed = vipSeats + normalSeats + doubleSeats;
         const maxSeats  = rows * cols;
 
@@ -515,7 +524,7 @@
         document.getElementById('maxSeatsText').innerText       = maxSeats;
         document.getElementById('usedSeatsText').innerText      = totalUsed;
 
-        const warning = document.getElementById('seatWarning');
+        const warning       = document.getElementById('seatWarning');
         const isDoubleValid = validateDoubleSeats();
 
         if (totalUsed > maxSeats || !isDoubleValid) {
@@ -543,7 +552,6 @@
                 : '';
         }
 
-        // Build queue — ghế đôi giờ như ghế bình thường, chỉ khác class CSS
         const queue = [];
         for (let i = 0; i < vipSeats;    i++) queue.push('vip');
         for (let i = 0; i < normalSeats; i++) queue.push('normal');
@@ -581,13 +589,10 @@
     [rowsInput, colsInput, vipSeatsInput, normalSeatsInput, doubleSeatsInput]
         .forEach(el => el.addEventListener('input', generatePreview));
 
-    const roomNameInput = document.querySelector('input[name="roomName"]');
-    if (roomNameInput) {
-        roomNameInput.addEventListener('input', function () {
-            const barName = document.getElementById('barRoomName');
-            if (barName) barName.textContent = this.value.trim() || '—';
-        });
-    }
+    document.getElementById('roomNameInput').addEventListener('input', function () {
+        const el = document.getElementById('barRoomName');
+        if (el) el.textContent = this.value.trim() || '—';
+    });
 
     generatePreview();
 
@@ -600,7 +605,6 @@
         const total       = vipSeats + normalSeats + doubleSeats;
         const maxSeats    = rows * cols;
 
-        // Chặn nếu ghế đôi là số lẻ
         if (doubleSeats > 0 && doubleSeats % 2 !== 0) {
             e.preventDefault();
             doubleSeatsError.style.display = 'block';

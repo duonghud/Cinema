@@ -15,6 +15,7 @@ class foodInvoice extends Model
     public $timestamps = false;
 
     protected $fillable = [
+        'adminID',
         'customerID',
         'paymentID',
         'orderDate',
