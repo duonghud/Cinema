@@ -11,10 +11,37 @@ class ageRatingController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $ageRatings = ageRating::all();
-        return view('admins.manageMovies.ageRating.index', compact('ageRatings'));
+        $search = trim((string) $request->input('search'));
+        $code = trim((string) $request->input('code'));
+
+        $ageRatings = ageRating::query()
+            ->when($search, function ($query) use ($search) {
+                $query->where('ageRatingID', 'like', "%{$search}%")
+                    ->orWhere('code', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
+            })
+            ->when($code, function ($query) use ($code) {
+                $query->where('code', $code);
+            })
+            ->paginate(5)
+            ->withQueryString();
+
+        $codes = ageRating::query()
+            ->select('code')
+            ->distinct()
+            ->orderBy('code')
+            ->pluck('code', 'code');
+
+        return view('admins.manageMovies.ageRating.index', [
+            'ageRatings' => $ageRatings,
+            'filters' => [[
+                'name' => 'code',
+                'all_label' => 'Tất cả độ tuổi',
+                'options' => $codes->toArray(),
+            ]],
+        ]);
     }
 
     /**

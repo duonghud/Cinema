@@ -11,10 +11,36 @@ class studioController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $studios = studio::all();
-        return view('admins.manageMovies.studio.index', ['studios' => $studios]);
+        $search = trim((string) $request->input('search'));
+        $studioName = trim((string) $request->input('studio_name'));
+
+        $studios = studio::query()
+            ->when($search, function ($query) use ($search) {
+                $query->where('studioID', 'like', "%{$search}%")
+                    ->orWhere('name', 'like', "%{$search}%");
+            })
+            ->when($studioName, function ($query) use ($studioName) {
+                $query->where('name', $studioName);
+            })
+            ->paginate(5)
+            ->withQueryString();
+
+        $studioNames = studio::query()
+            ->select('name')
+            ->distinct()
+            ->orderBy('name')
+            ->pluck('name', 'name');
+
+        return view('admins.manageMovies.studio.index', [
+            'studios' => $studios,
+            'filters' => [[
+                'name' => 'studio_name',
+                'all_label' => 'Tất cả nhà sản xuất',
+                'options' => $studioNames->toArray(),
+            ]],
+        ]);
     }
 
     /**

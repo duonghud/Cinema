@@ -1,82 +1,260 @@
+<style>
+    .btn-buy-ticket {
+        display: inline-flex;
+        align-items: center;
+        padding: 10px 26px;
+        position: relative;
+        overflow: hidden;
+        background: linear-gradient(135deg, #f55454, #ec4899);
+        color: white;
+        border-radius: 999px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        transform: translateY(0) scale(1);
+        box-shadow: 0 6px 18px rgba(255, 80, 85, 0.5);
+    }
+
+    .btn-buy-ticket::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -80%;
+        width: 10%;
+        height: 100%;
+        background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+        transform: skewX(-25deg);
+        transition: 0.8s;
+    }
+
+    .btn-buy-ticket:hover {
+        transform: translateY(-4px) scale(1.05);
+        box-shadow: 0 12px 30px rgba(255, 0, 0, 0.6);
+    }
+
+    .btn-buy-ticket:hover::before {
+        left: 120%;
+    }
+
+    .btn-buy-ticket .icon {
+        width: 20px;
+        height: 20px;
+        margin-right: 8px;
+    }
+
+    .movie-card {
+        position: relative;
+        display: block;
+        overflow: hidden;
+        border-radius: 12px;
+    }
+
+    .movie-img {
+        width: 100%;
+        height: 320px;
+        object-fit: cover;
+        transition: transform 0.5s ease, filter 0.5s ease;
+    }
+
+    .movie-card:hover .movie-img {
+        transform: scale(1.08);
+        filter: brightness(0.8);
+    }
+
+    .movie-card::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent);
+        opacity: 0;
+        transition: 0.4s;
+    }
+
+    .movie-card:hover::after {
+        opacity: 1;
+    }
+
+    .movie-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -80%;
+        width: 50%;
+        height: 100%;
+        background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.18), transparent);
+        transform: skewX(-25deg);
+        transition: 0.7s;
+        z-index: 2;
+    }
+
+    .movie-card:hover::before {
+        left: 120%;
+    }
+
+    .movie-card:hover {
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+    }
+</style>
+
 @extends('layouts.app')
 @section('content')
 
+<div class="relative w-full h-[520px] overflow-hidden">
+    @foreach($banners as $index => $movie)
+    <div class="slide absolute inset-0 transition-all duration-700 {{ $index == 0 ? 'opacity-100 scale-100' : 'opacity-0 scale-105' }}">
+        <div class="w-full h-full">
+            @if($movie->trailer)
+            <video class="w-full h-full object-cover" autoplay muted loop playsinline>
+                <source src="{{ asset($movie->trailer) }}" type="video/mp4">
+            </video>
+            @else
+            <img src="{{ asset('posters/' . $movie->poster) }}" class="w-full h-full object-cover">
+            @endif
+        </div>
+
+        <div class="absolute inset-0 bg-gradient-to-r from-black via-black/70 to-transparent"></div>
+
+        <div class="absolute left-20 bottom-20 text-white max-w-2xl">
+            <h1 class="text-4xl md:text-5xl font-extrabold mb-4 uppercase">
+                {{ $movie->movieTitle }}
+            </h1>
+
+            <div class="flex flex-wrap gap-4 text-gray-300 text-sm mb-3">
+                <span>{{ $movie->genres->pluck('name')->join(', ') }}</span>
+                <p>
+                    Thời lượng:
+                    @if($movie->duration)
+                    {{ $movie->duration }} phút
+                    @else
+                    Chưa có thông tin
+                    @endif
+                </p>
+                <p>Đạo diễn: {{ $movie->director }}</p>
+            </div>
+
+            <p class="text-gray-300 mb-4 line-clamp-3">
+                {{ $movie->description ?? 'Đang chiếu tại rạp' }}
+            </p>
+
+            <p class="text-red-500 text-sm mb-3">
+                Kiểm duyệt: {{ $movie->ageRating->description }}
+            </p>
+
+            <p class="text-gray-300 mb-2">
+                Khởi chiếu: {{ $movie->releaseDate->format('d/m/Y') }}
+            </p>
+
+            <a href="{{ route('movies.show', $movie) }}" class="btn-buy-ticket">
+                <svg xmlns="http://www.w3.org/2000/svg"
+                    class="w-5 h-5 mr-2"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 010 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 010-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375z" />
+                </svg>
+                <span>Mua vé ngay</span>
+            </a>
+        </div>
+    </div>
+    @endforeach
+
+    <button onclick="prevSlide()" class="absolute left-5 top-1/2 text-white text-4xl">‹</button>
+    <button onclick="nextSlide()" class="absolute right-5 top-1/2 text-white text-4xl">›</button>
+</div>
+
 <div class="min-h-screen py-10">
-
     <div class="container mx-auto px-10 max-w-7xl">
-
         <div class="flex items-center gap-2 mb-6">
-            <div class="rounded-full bg-red-500 w-4 h-4"></div>
-            <h3 class="font-bold md:text-2xl text-light">Phim đang chiếu</h3>
+            <div class="w-4 h-4 bg-red-500 rounded-full"></div>
+            <h3 class="text-2xl font-bold text-white">Phim đang chiếu</h3>
         </div>
 
         <div class="grid grid-cols-4 gap-8">
+            @foreach($nowShowing as $movie)
+            <div class="group bg-[#10141B]/60 rounded-xl overflow-hidden hover:shadow-2xl transition">
+                <a href="{{ route('movies.show', $movie) }}" class="movie-card">
+                    <img src="{{ asset('posters/' . $movie->poster) }}" class="movie-img">
+                </a>
 
-            @foreach($movies as $movie)
+                <div class="p-4">
+                    <p class="text-gray-400 text-sm">
+                        {{ $movie->genres->pluck('name')->join(', ') }} |
+                        {{ $movie->releaseDate->format('d/m/Y') }}
+                        @if($movie->duration)
+                        | {{ $movie->duration }} phút
+                        @endif
+                    </p>
 
-            @php
-                $videoID = '';
-
-                if(str_contains($movie->trailer,'watch?v=')){
-                    $videoID = explode('watch?v=',$movie->trailer)[1];
-                }
-                elseif(str_contains($movie->trailer,'youtu.be/')){
-                    $videoID = explode('youtu.be/',$movie->trailer)[1];
-                }
-                else{
-                    $videoID = $movie->trailer;
-                }
-            @endphp
-
-            <div class="group relative rounded-xl overflow-hidden bg-[#10141B]/60 backdrop-blur hover:shadow-2xl transition">
-
-                <!-- Poster -->
-                <div class="relative overflow-hidden">
-                    <a href="{{ route('movies.show', $movie) }}">
-                        <img src="{{ asset('posters/'.$movie->poster) }}" 
-                             class="w-full h-80 object-cover group-hover:scale-105 transition duration-300">
-                    </a>
+                    <h2 class="text-white font-semibold mt-2 group-hover:text-red-400">
+                        {{ $movie->movieTitle }}
+                    </h2>
                 </div>
+            </div>
+            @endforeach
+        </div>
 
-                <!-- Info -->
-                <div class="p-4 space-y-2">
+        <div class="flex items-center gap-2 mt-12 mb-6">
+            <div class="w-4 h-4 bg-red-500 rounded-full"></div>
+            <h3 class="text-2xl font-bold text-white">Phim sắp chiếu</h3>
+        </div>
 
-                    <div class="text-xs text-gray-500 space-y-1">
+        <div class="grid grid-cols-4 gap-8">
+            @foreach($comingSoon as $movie)
+            <div class="group bg-[#10141B]/60 rounded-xl overflow-hidden hover:shadow-2xl transition">
+                <a href="{{ route('movies.show', $movie) }}" class="movie-card">
+                    <img src="{{ asset('posters/' . $movie->poster) }}" class="movie-img">
+                </a>
 
-                        <!-- Genre + Release Date -->
-                        <p>
-                            <span class="text-gray-400">
-                                {{ $movie->genres->pluck('name')->join(', ') }}
-                                |
-                                {{ $movie->releaseDate->format('d/m/Y') }}
-                            </span>
-                        </p>
+                <div class="p-4">
+                    <p class="text-gray-400 text-sm">
+                        {{ $movie->genres->pluck('name')->join(', ') }}
+                        @if($movie->duration)
+                        | {{ $movie->duration }} phút
+                        @endif
+                    </p>
 
-                    </div>
-
-
-                    <!-- Title -->
-                    <h2 class="text-base font-semibold text-white leading-tight line-clamp-2 group-hover:text-red-400 transition">
-                        {{ $movie->movieTitle }} - {{ $movie->ageRating->code ?? 'N/A' }}
+                    <h2 class="text-white font-semibold mt-2">
+                        {{ $movie->movieTitle }}
                     </h2>
 
+                    <p class="text-gray-500 text-sm">
+                        Khởi chiếu: {{ $movie->releaseDate->format('d/m/Y') }}
+                    </p>
                 </div>
-
             </div>
-
             @endforeach
-
         </div>
-
-        <div class="flex items-center gap-2 mb-6">
-            <div class="rounded-full bg-red-500 w-4 h-4"></div>
-            <h3 class="font-bold md:text-2xl text-light">Phim sắp chiếu</h3>
-        </div>
-
     </div>
-
 </div>
 
 @include('layouts.trailer')
+
+<script>
+    let current = 0;
+    const slides = document.querySelectorAll('.slide');
+
+    function showSlide(index) {
+        slides.forEach(s => {
+            s.classList.remove('opacity-100', 'scale-100');
+            s.classList.add('opacity-0', 'scale-105');
+        });
+
+        slides[index].classList.remove('opacity-0', 'scale-105');
+        slides[index].classList.add('opacity-100', 'scale-100');
+    }
+
+    function nextSlide() {
+        current = (current + 1) % slides.length;
+        showSlide(current);
+    }
+
+    function prevSlide() {
+        current = (current - 1 + slides.length) % slides.length;
+        showSlide(current);
+    }
+
+    setInterval(nextSlide, 5000);
+</script>
 
 @endsection

@@ -1,7 +1,7 @@
 <style>
     .navbar {
         transition: all .35s ease;
-        background: #0B0D13;
+        background: #10141b;
         padding: 14px 0;
     }
 
@@ -10,14 +10,14 @@
         backdrop-filter: blur(14px) saturate(180%);
         box-shadow: 0 4px 20px rgba(0, 0, 0, .35);
         padding: 10px 0;
-
     }
 
     .navbar-brand {
         font-weight: 700;
         font-size: 1.5rem;
         letter-spacing: 1px;
-        color: #fff !important;
+        color: #f4f2f2 !important;
+        font-family: 'Julee', cursive;
     }
 
     .navbar-nav .nav-link {
@@ -39,7 +39,7 @@
         height: 2px;
         left: 50%;
         bottom: -6px;
-        background: #D93F40;
+        background: linear-gradient(135deg, #FB5C5C, #C7ABAC);
         transition: .3s;
         transform: translateX(-50%);
     }
@@ -50,36 +50,86 @@
     }
 
     .nav-btn {
-        padding: 10px 26px;
-        border-radius: 50px;
+        position: relative;
+        overflow: hidden;
+        padding: 10px 28px;
+        border-radius: 999px;
         font-weight: 600;
         font-size: 15px;
         letter-spacing: .3px;
-        transition: all .25s ease;
+        transition: all .3s ease;
     }
 
     .btn-register {
-        background: transparent;
-        border: 1px solid #ffffff;
+        background: linear-gradient(180deg,
+                rgba(255, 255, 255, 0.07),
+                rgba(255, 255, 255, 0.02));
+        border: 1px solid rgba(255, 255, 255, 0.15);
         color: #fff;
+        box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1),
+            0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+
+    .btn-register::before {
+        content: "";
+        position: absolute;
+        opacity: 1;
+        top: 0;
+        left: -80%;
+        width: 10%;
+        height: 100%;
+        background: linear-gradient(120deg,
+                transparent,
+                rgba(255, 255, 255, 0.5),
+                transparent);
+        transform: skewX(-25deg);
+        transition: 0.7s;
     }
 
     .btn-register:hover {
-        background: #1E293B;
-        color: #ffffff;
-        border: 1px solid #ffffff;
-        transform: translateY(1px) scale(1.03);
+        background: rgba(255, 255, 255, 0.06);
+        color: #fff;
+        border-color: rgba(255, 255, 255, 0.2);
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.14),
+            0 10px 24px rgba(255, 255, 255, 0.04);
+        transform: translateY(-4px);
+    }
+
+    .btn-register:hover::before {
+        left: 120%;
     }
 
     .btn-login {
-        background: linear-gradient(135deg, #86171C, #EC2931);
+        background: linear-gradient(135deg, #FF5055, #FF5B6E, #FF7265);
         color: #fff;
         border: none;
+        box-shadow: 0 6px 18px rgba(255, 80, 85, 0.5);
+    }
+
+    .btn-login::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -80%;
+        width: 20%;
+        height: 100%;
+        background: linear-gradient(120deg,
+                transparent,
+                rgba(255, 255, 255, 0.3),
+                transparent);
+        transform: skewX(-25deg);
+        transition: 0.8s;
     }
 
     .btn-login:hover {
-        transform: translateY(1px) scale(1.03);
+        transform: translateY(-4px);
         color: #fff;
+        box-shadow: 0 10px 25px rgba(255, 80, 85, 0.7);
+    }
+
+    .btn-login:hover::before {
+        left: 120%;
     }
 
     .navbar-toggler {
@@ -94,98 +144,111 @@
         filter: invert(1);
     }
 
-    .navbar-brand {
-        font-family: 'Julee', cursive;
-    }
-
     .dropdown-menu {
         background-color: #ffffff;
         opacity: 80%;
+    }
+
+    .customer-dropdown {
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: white;
+        padding: 8px 14px;
+        border-radius: 50px;
+        transition: 0.3s;
+    }
+
+    .customer-dropdown:hover {
+        background: rgba(255, 255, 255, 0.15);
+        color: #ffc107;
+    }
+
+    .customer-avatar {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #ffc107, #ff9800);
+        color: #111;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        box-shadow: 0 2px 8px rgba(255, 193, 7, 0.3);
+    }
+
+    .customer-name {
+        max-width: 140px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .vai{
+        background: linear-gradient(135deg, #ffc107, #ff9800);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
     }
 </style>
 
 <nav class="navbar navbar-expand-lg sticky-top">
     <div class="container">
-
-        <a href="{{ route('home') }}" class="navbar-brand">VAI cinema</a>
+        <a href="{{ route('home') }}" class="navbar-brand">VAI <span class="vai">CINEMA</span></a>
 
         <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#menu">
             <span class="navbar-toggler-icon"></span>
         </button>
 
         <ul class="navbar-nav mx-auto">
-            <li class="nav-item"><a href="{{ route('home') }}" class="nav-link ">Trang chủ</a></li>
-            <li class="nav-item"><a href="{{ route('system.movie')}}" class="nav-link">Lịch chiếu</a></li>
-            <li class="nav-item"><a href="#" class="nav-link">Giá vé</a></li>
+            <li class="nav-item"><a href="{{ route('home') }}" class="nav-link">Trang chủ</a></li>
+            <li class="nav-item"><a href="{{ route('show') }}" class="nav-link">Lịch chiếu</a></li>
+            <li class="nav-item"><a href="{{ route('ticket.price') }}" class="nav-link">Giá vé</a></li>
             <li class="nav-item"><a href="#" class="nav-link">Tin tức</a></li>
             <li class="nav-item"><a href="{{ route('contact') }}" class="nav-link">Liên hệ</a></li>
-            <li class="nav-item"><a href="" class="nav-link">Giới thiệu</a></li>
+            <li class="nav-item"><a href="#" class="nav-link">Giới thiệu</a></li>
         </ul>
 
         <div class="d-flex gap-2">
-
             @if(session('customer'))
-
             <div class="dropdown">
-
-                <a class="btn nav-btn dropdown-toggle d-flex align-items-center gap-2"
+                <a class="btn nav-btn dropdown-toggle customer-dropdown d-flex align-items-center gap-2"
                     data-bs-toggle="dropdown">
-                    <!-- Avatar/Icon -->
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
-                        viewBox="0 0 16 16" fill="currentColor">
-                        <path d="M8 16A8 8 0 1 1 8 0a8 8 0 0 1 0 16m.847-8.145a2.502 2.502 0 1 0-1.694 0C5.471 8.261 4 9.775 4 11c0 .395.145.995 1 .995h6c.855 0 1-.6 1-.995c0-1.224-1.47-2.74-3.153-3.145" />
-                    </svg>
+                    <div class="customer-avatar">
+                        {{ strtoupper(substr(session('customer')->fullName, 0, 2)) }}
+                    </div>
 
-                    <!-- Font Awesome icon -->
-                    <i class="fa fa-user-circle"></i>
-
-                    <!-- Tên khách hàng -->
-                    <span class="fw-semibold">
+                    <span class="fw-semibold customer-name">
                         {{ session('customer')->fullName }}
                     </span>
                 </a>
 
-
                 <ul class="dropdown-menu dropdown-menu-end">
-
                     <li>
-                        <a class="dropdown-item"
-                            href="#">
+                        <a class="dropdown-item" href="{{ route('customer.profile') }}">
                             Thông tin cá nhân
                         </a>
                     </li>
-
                     <li>
-                        <a class="dropdown-item text-danger"
-                            href="#">
-                            Đăng xuất
-                        </a>
+                        <form action="{{ route('customer.logout') }}" method="POST">
+                            @csrf
+                            <button type="submit" class="dropdown-item text-danger">
+                                Đăng xuất
+                            </button>
+                        </form>
                     </li>
-
                 </ul>
-
             </div>
-
             @else
-
-            <a href="{{ route('customer.register.form') }}"
-                class="btn nav-btn btn-register">
+            <a href="{{ route('customer.register.form') }}" class="btn nav-btn btn-register">
                 Đăng ký
             </a>
 
-            <a href="{{ route('auth.login') }}"
-                class="btn nav-btn btn-login">
+            <a href="{{ route('auth.customerLogin') }}" class="btn nav-btn btn-login">
                 Đăng nhập
             </a>
-
             @endif
-
         </div>
     </div>
 </nav>
-
-
-
 
 <script>
     window.addEventListener("scroll", () => {

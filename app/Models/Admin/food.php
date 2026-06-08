@@ -11,7 +11,7 @@ class food extends Model
     public $timestamps = false;
 
 
-    protected $fillable = ['foodName', 'price', 'foodType'];
+    protected $fillable = ['foodName', 'price', 'foodType', 'size'];
     public function foodInvoices()
     {
         return $this->belongsToMany(

@@ -54,43 +54,50 @@ class CustomerAuthController extends Controller
     // Form login
     public function showLogin()
     {
-        return view('auth.login');
+        return view('auth.customerLogin');
     }
 
     // Xử lý login
-    public function login(Request $request)
+    public function customerLogin(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
-            'password' => 'required'
+            'email' => 'required|email|exists:customers,email',
+            'password' => 'required|min:6'
         ], [
             'email.required' => 'Email không được để trống',
+            'email.email' => 'Email không đúng định dạng',
+            'email.exists' => 'Email chưa được đăng ký',
+
             'password.required' => 'Mật khẩu không được để trống',
+            'password.min' => 'Mật khẩu phải có ít nhất 6 ký tự',
         ]);
 
         $customer = Customer::where('email', $request->email)->first();
 
-        if (!$customer) {
-            return back()->with('error', 'Email không tồn tại');
-        }
-
+        // Sai mật khẩu
         if (!Hash::check($request->password, $customer->password)) {
-            return back()->with('error', 'Sai mật khẩu');
+            return back()
+                ->withInput($request->only('email'))
+                ->withErrors([
+                    'password' => 'Mật khẩu không đúng'
+                ]);
         }
 
-        // lưu session
-        session([
-            'customer' => $customer
-        ]);
+        // Đăng nhập thành công
+        $request->session()->put('customer', $customer);
 
-        return redirect('/')->with('success', 'Đăng nhập thành công!');
+        return redirect()->route('home')
+            ->with('success', 'Đăng nhập thành công!');
     }
 
     // logout
-    public function logout()
+    public function logout(Request $request)
     {
-        session()->forget('customer');
+        // Xoa trang thai dang nhap customer va reset session khi logout.
+        $request->session()->forget('customer');
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
 
         return redirect('/')->with('success', 'Đã đăng xuất');
     }
-}   
+}

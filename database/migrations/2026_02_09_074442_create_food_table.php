@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id('foodID');
             $table->string('foodName');
             $table->string('foodType');
+            $table->string('size');
             $table->decimal('price', 10, 2);
         });
     }

@@ -4,322 +4,380 @@
         font-family: Arial, sans-serif;
     }
 
-    /* header */
+    /* ── TOP BAR ── */
     .top-bar {
         display: flex;
         justify-content: space-between;
         align-items: center;
         margin-bottom: 20px;
-        font-size: 16px;
+        font-size: 15px;
     }
 
     .timer {
-        border: 1px solid red;
-        padding: 8px 18px;
-        border-radius: 12px;
+        border: 1.5px solid #ef4444;
+        padding: 7px 16px;
+        border-radius: 10px;
         color: white;
+        font-size: 14px;
         font-weight: bold;
+        white-space: nowrap;
     }
 
-    /* screen */
+    /* ── SCREEN ── */
     .screen-wrapper {
-        width: 60%;
-        margin: 20px auto 50px;
-        position: relative;
+        width: 75%;
+        margin: 0 auto 10px;
+        text-align: center;
     }
 
     .screen {
-        position: relative;
-        height: 70px;
+        height: 64px;
         width: 100%;
         background: linear-gradient(to bottom, #fbbf24, #f59e0b);
         clip-path: ellipse(90% 100% at 50% 100%);
-        overflow: hidden;
     }
 
-    .screen::before {
-        content: "";
-        position: absolute;
-        bottom: -30px;
-        left: 0;
-        width: 100%;
-        height: 60px;
-        background: #10141B;
-        border-radius: 50% / 100%;
+    .screen-label {
+        color: #9ca3af;
+        font-size: 12px;
+        letter-spacing: .1em;
+        text-transform: uppercase;
+        margin-top: 8px;
     }
 
-
-    /* seat */
+    /* ── SEAT GRID ── */
     .seat-row {
         display: flex;
         justify-content: center;
-        margin-bottom: 8px;
+        gap: 5px;
+        margin-bottom: 5px;
     }
 
     .seat {
-        width: 36px;
-        height: 36px;
-        margin: 5px;
+        width: 34px;
+        height: 32px;
         border-radius: 6px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 12px;
+        font-size: 10px;
+        font-weight: 600;
         cursor: pointer;
-        transition: 0.3s;
+        transition: transform .15s;
+        color: rgba(255, 255, 255, 0.85);
         position: relative;
     }
 
     .seat:hover {
-        transform: scale(1.1);
+        transform: scale(1.08);
     }
 
-    /* types */
     .normal {
         background: #1f2937;
-        /* xám đậm */
+        border: 1px solid #374151;
     }
 
     .vip {
         background: #fb923c;
-        /* cam nổi bật */
     }
 
     .couple {
         background: #ef4444;
-        /* đỏ tươi */
     }
 
-    .selected {
-        background: #3b82f6;
-        /* xanh dương */
-    }
-
-    .booked {
-        background: #1f2937;
-        /* giữ màu xám nhưng thêm icon đỏ */
+    .maintenance {
+        background: #7f1d1d;
         cursor: not-allowed;
     }
 
-    .booked::after {
-        content: "";
-        width: 12px;
-        height: 12px;
-        background: #ef4444;
-        border-radius: 50%;
-        position: absolute;
-        top: 4px;
-        right: 4px;
+    .selected {
+        background: #3b82f6 !important;
     }
 
-    /* legend */
+    /* ── Ghế đã đặt ── */
+    .booked {
+        background: #1a1f2a;
+        border: 1px solid #2d3748;
+        cursor: not-allowed;
+        pointer-events: none;
+        opacity: .65;
+        font-size: 0;
+        user-select: none;
+    }
+
+    .booked::after {
+        content: "✕";
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 900;
+        color: #ef4444;
+    }
+
+    /* ── LEGEND ── */
     .legend {
         display: flex;
         justify-content: center;
-        gap: 30px;
-        margin-top: 30px;
-        font-size: 14px;
+        gap: 24px;
+        margin-top: 24px;
+        font-size: 12px;
+        flex-wrap: wrap;
     }
 
     .legend-item {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 7px;
+        color: #d1d5db;
     }
 
     .box {
-        width: 20px;
-        height: 20px;
-        border-radius: 5px;
+        width: 18px;
+        height: 17px;
+        border-radius: 4px;
+        flex-shrink: 0;
+        position: relative;
     }
 
-    /* bottom */
+    .box.booked {
+        background: #1a1f2a;
+        border: 1px solid #374151;
+        opacity: .7;
+        font-size: 0;
+    }
+
+    .box.booked::after {
+        content: "✕";
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        font-weight: 900;
+        color: #ef4444;
+    }
+
+    .box.selected {
+        background: #3b82f6;
+    }
+
+    .box.normal {
+        background: #1f2937;
+        border: 1px solid #374151;
+    }
+
+    .box.vip {
+        background: #fb923c;
+    }
+
+    .box.couple {
+        background: #ef4444;
+    }
+
+    /* ── BOTTOM BAR ── */
     .bottom {
         display: flex;
         justify-content: space-between;
-        margin-top: 30px;
-        font-size: 15px;
+        align-items: center;
+        margin-top: 24px;
+        padding-top: 18px;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        font-size: 14px;
+    }
+
+    .summary {
+        line-height: 1.9;
+    }
+
+    .summary .label {
+        color: #9ca3af;
+    }
+
+    .summary .val {
+        font-weight: 700;
+        color: #fff;
+    }
+
+    .btn-row {
+        display: flex;
+        gap: 10px;
     }
 
     .btn-back {
-        padding: 10px 20px;
+        padding: 9px 22px;
         border: 1px solid #334155;
         border-radius: 20px;
         background: transparent;
-        color: white;
+        color: #d1d5db;
         cursor: pointer;
+        font-size: 14px;
+    }
+
+    .btn-back:hover {
+        border-color: #64748b;
+        color: #fff;
     }
 
     .btn-pay {
-        padding: 10px 30px;
+        padding: 9px 26px;
         border: none;
         border-radius: 20px;
         background: #7f1d1d;
         color: white;
         cursor: pointer;
+        font-size: 14px;
         font-weight: bold;
+        text-decoration: none;
+    }
+
+    .btn-pay:hover {
+        background: #991b1b;
     }
 </style>
 
 
 <div class="container">
 
-    <!-- top -->
+    <!-- TOP -->
     <div class="top-bar">
-
-        <div class="">
-            Giờ chiếu: <b>{{ $showtime->startTime }}</b>
+        <div>
+            Giờ chiếu:
+            <b>{{ substr($showtime->startTime,0,5) }}</b>
         </div>
 
         <div class="timer">
-            Thời gian chọn ghế: <span id="timer"></span>
+            Thời gian chọn ghế:
+            <span id="timer">05:00</span>
+        </div>
+    </div>
+
+    <!-- SCREEN -->
+    <div class="screen-wrapper">
+        <img src="{{ asset('posters/screen.webp') }}" alt="Screen">
+    </div>
+
+    <h2 class="text-center mb-5">
+        Phòng chiếu {{ $showtime->room->roomName }}
+    </h2>
+
+    @php
+    $groupedSeats = $seats->groupBy('rowSeat');
+    @endphp
+
+    @foreach($groupedSeats as $row => $rowSeats)
+    <div class="seat-row">
+
+        @foreach($rowSeats->sortBy('colSeat') as $seat)
+        <div class="seat
+            @if(in_array($seat->seatID, $bookedSeats))
+                booked
+            @elseif($seat->seatTypeID == 2)
+                normal
+            @elseif($seat->seatTypeID == 1)
+                vip
+            @elseif($seat->seatTypeID == 3)
+                couple
+            @else
+                maintenance
+            @endif
+        "
+            data-price="{{ $seat->seatType->price ?? 0 }}"
+            data-seat="{{ $seat->rowSeat }}{{ $seat->colSeat }}"
+            data-seat-id="{{ $seat->seatID }}">
+
+            {{ $seat->rowSeat }}{{ $seat->colSeat }}
+        </div>
+        @endforeach
+
+    </div>
+    @endforeach
+
+    <!-- LEGEND -->
+    <div class="legend">
+
+        <div class="legend-item">
+            <span class="box booked"></span>
+            Đã đặt
+        </div>
+
+        <div class="legend-item">
+            <span class="box selected"></span>
+            Đang chọn
+        </div>
+
+        <div class="legend-item">
+            <span class="box normal"></span>
+            Thường
+        </div>
+
+        <div class="legend-item">
+            <span class="box vip"></span>
+            VIP
+        </div>
+
+        <div class="legend-item">
+            <span class="box couple"></span>
+            Đôi
         </div>
 
     </div>
 
+    <!-- BOTTOM -->
+    <div class="bottom">
+        <div class="summary">
+            <div>
+                <span class="label">Ghế đã chọn: </span>
+                <span class="val" id="selectedSeats">Chưa chọn</span>
+            </div>
+            <div>
+                <span class="label">Tổng tiền: </span>
+                <span class="val" id="totalPrice">0 đ</span>
+            </div>
+        </div>
 
-    <!-- screen -->
-
-    <div class="screen-wrapper">
-
-        <div class="screen"></div>
-
-        <div class="screen-shadow"></div>
-
-    </div>
-
-    <h2 class="text-center mb-4">
-        Phòng chiếu số {{ $showtime->room->roomName }}
-    </h2>
-
-
-    @php $currentRow=null; @endphp
-
-    @foreach($seats as $seat)
-
-    @if($currentRow!=$seat->rowSeat)
-
-    @if($currentRow!==null)
-</div>
-@endif
-
-<div class="seat-row">
-
-    @php $currentRow=$seat->rowSeat; @endphp
-
-    @endif
-
-    <div class="seat
-
-            @if(in_array($seat->seatID,$bookedSeats))
-                booked
-            @elseif($seat->seatTypeID==1)
-                normal
-            @elseif($seat->seatTypeID==2)
-                vip
-            @else
-                couple
-            @endif
-
-        ">
-
-        {{ $seat->rowSeat }}{{ $seat->colSeat }}
-
-    </div>
-
-    @endforeach
-
-</div>
-
-
-<!-- legend -->
-
-<div class="legend">
-
-    <div class="legend-item">
-        <div class="box booked"></div>
-        Đã đặt
-    </div>
-
-    <div class="legend-item">
-        <div class="box selected"></div>
-        Ghế bạn chọn
-    </div>
-
-    <div class="legend-item">
-        <div class="box normal"></div>
-        Ghế thường
-    </div>
-
-    <div class="legend-item">
-        <div class="box vip"></div>
-        Ghế VIP
-    </div>
-
-    <div class="legend-item">
-        <div class="box couple"></div>
-        Ghế đôi
+        <form action="{{ route('invoice.confirm') }}" method="POST">
+            @csrf
+            <input type="hidden" name="showtime_id" value="{{ $showtime->showTimeID }}">
+            <input type="hidden" name="seats" id="seatInput">
+            <div class="btn-row">
+                <button type="button" class="btn-back" onclick="history.back()">Quay lại</button>
+                <button type="submit" class="btn-pay">Thanh toán</button>
+            </div>
+        </form>
     </div>
 
 </div>
 
-
-<!-- bottom -->
-
-<div class="bottom">
-
-    <div>
-        Ghế đã chọn:<br>
-        Tổng tiền: 0đ
-    </div>
-
-    <div>
-
-        <button class="btn-back">
-            Quay lại
-        </button>
-
-        <button class="btn-pay">
-            Thanh toán
-        </button>
-
-    </div>
-
-</div>
 <script>
-    document.querySelectorAll('.seat').forEach(seat => {
+    let selectedSeats = [];
+    let totalPrice = 0;
 
+    document.querySelectorAll('.seat:not(.booked)').forEach(seat => {
         seat.addEventListener('click', function() {
+            const code = seat.textContent.trim();
+            const price = parseInt(seat.dataset.price || 0);
 
-            if (this.classList.contains('booked')) return;
+            if (seat.classList.contains('selected')) {
+                seat.classList.remove('selected');
+                selectedSeats = selectedSeats.filter(s => s !== code);
+                totalPrice -= price;
+            } else {
+                seat.classList.add('selected');
+                selectedSeats.push(code);
+                totalPrice += price;
+            }
 
-            this.classList.toggle('selected');
+            document.getElementById('selectedSeats').innerText =
+                selectedSeats.length ? selectedSeats.join(', ') : 'Chưa chọn';
 
+            document.getElementById('seatInput').value = selectedSeats.join(',');
+
+            document.getElementById('totalPrice').innerText =
+                totalPrice.toLocaleString() + ' đ';
         });
-
     });
-
-
-    let time = 300;
-
-    let timer = setInterval(() => {
-
-        let m = Math.floor(time / 60);
-        let s = time % 60;
-
-        if (s < 10) s = "0" + s;
-
-        document.getElementById("timer").innerText = m + ":" + s;
-
-        if (time <= 0) {
-
-            clearInterval(timer);
-            window.location.href = "{{ route('home') }}";
-            return;
-        }
-
-        time--;
-
-    }, 1000);
 </script>
-</div>

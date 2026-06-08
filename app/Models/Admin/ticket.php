@@ -4,8 +4,9 @@ namespace App\Models\Admin;
 
 use Illuminate\Database\Eloquent\Model;
 
-class ticket extends Model
+class Ticket extends Model
 {
+    protected $table = 'tickets';
     protected $primaryKey = 'ticketID';
     public $timestamps = false;
 
@@ -13,8 +14,10 @@ class ticket extends Model
         'price',
         'status',
         'showTimeID',
-        'seatID'
+        'seatID',
+        'invoiceID',
     ];
+
     public function showTime()
     {
         return $this->belongsTo(ShowTime::class, 'showTimeID', 'showTimeID');
@@ -23,5 +26,10 @@ class ticket extends Model
     public function seat()
     {
         return $this->belongsTo(Seat::class, 'seatID', 'seatID');
+    }
+
+    public function invoice()
+    {
+        return $this->belongsTo(Invoice::class, 'invoiceID', 'invoiceID');
     }
 }

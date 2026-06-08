@@ -13,10 +13,46 @@ class adminController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $admins = admin::paginate(10);
-        return view('admins.manageUser.admin.index', ['admins' => $admins]);
+        $search = trim((string) $request->input('search'));
+        $role = trim((string) $request->input('role'));
+
+        $admins = admin::query()
+            ->when($search, function ($query) use ($search) {
+                $query->where('adminID', 'like', "%{$search}%")
+                    ->orWhere('fullName', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('role', 'like', "%{$search}%");
+            })
+            ->when($role, function ($query) use ($role) {
+                $query->where('role', $role);
+            })
+            ->paginate(5)
+            ->withQueryString();
+
+        $roles = admin::query()
+            ->select('role')
+            ->distinct()
+            ->orderBy('role')
+            ->pluck('role')
+            ->mapWithKeys(function ($item) {
+                return [$item => match ($item) {
+                    'admin' => 'Quản trị',
+                    'ticket_staff' => 'Bán vé',
+                    'food_staff' => 'Đồ ăn',
+                    default => $item,
+                }];
+            });
+
+        return view('admins.manageUser.admin.index', [
+            'admins' => $admins,
+            'filters' => [[
+                'name' => 'role',
+                'all_label' => 'Tất cả chức vụ',
+                'options' => $roles->toArray(),
+            ]],
+        ]);
     }
 
     /**

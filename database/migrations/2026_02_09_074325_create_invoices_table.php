@@ -15,9 +15,8 @@ return new class extends Migration
             $table->id('invoiceID');
             $table->dateTime('createDate');
             $table->decimal('totalAmount', 10, 2);
-
             $table->foreignId('customerID')->constrained('customers', 'customerID');
-            $table->foreignId('adminID')->constrained('admins', 'adminID')->nullable();
+            $table->foreignId('adminID')->nullable()->constrained('admins', 'adminID');
             $table->foreignId('paymentID')->constrained('payment_methods', 'paymentID');
         });
     }

@@ -7,12 +7,44 @@ use Illuminate\Http\Request;
 use App\Models\Admin\customer;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+
 class customerController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $customers = customer::all();
-        return view('admins.manageUser.customer.index', ['customers' => $customers]);
+        $search = trim((string) $request->input('search'));
+        $address = trim((string) $request->input('address'));
+
+        $customers = customer::query()
+            ->when($search, function ($query) use ($search) {
+                $query->where('customerID', 'like', "%{$search}%")
+                    ->orWhere('fullName', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phoneNumber', 'like', "%{$search}%")
+                    ->orWhere('address', 'like', "%{$search}%");
+            })
+            ->when($address, function ($query) use ($address) {
+                $query->where('address', $address);
+            })
+            ->paginate(5)
+            ->withQueryString();
+
+        $addresses = customer::query()
+            ->select('address')
+            ->whereNotNull('address')
+            ->where('address', '!=', '')
+            ->distinct()
+            ->orderBy('address')
+            ->pluck('address', 'address');
+
+        return view('admins.manageUser.customer.index', [
+            'customers' => $customers,
+            'filters' => [[
+                'name' => 'address',
+                'all_label' => 'Tất cả địa chỉ',
+                'options' => $addresses->toArray(),
+            ]],
+        ]);
     }
 
     public function create()

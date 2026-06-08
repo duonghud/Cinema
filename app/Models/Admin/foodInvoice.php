@@ -3,47 +3,56 @@
 namespace App\Models\Admin;
 
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Admin\Customer;
-use App\Models\Admin\Admin;
+use App\Models\Admin\customer;
 use App\Models\Admin\payment_method;
 
-class FoodInvoice extends Model
+class foodInvoice extends Model
 {
     protected $table = 'food_invoices';
 
     protected $primaryKey = 'foodInvoiceID';
 
-
     public $timestamps = false;
 
     protected $fillable = [
+        'adminID',
+        'customerID',
+        'paymentID',
         'orderDate',
         'total',
-        'customerID',
-        'adminID',
-        'paymentID'
     ];
 
-    // customer
+    // =========================================================
+    // CUSTOMER
+    // =========================================================
     public function customer()
     {
-        return $this->belongsTo(Customer::class,'customerID');
+        return $this->belongsTo(customer::class, 'customerID');
     }
 
-    // admin
-    public function admin()
+    // =========================================================
+    // PAYMENT METHOD
+    // =========================================================
+    public function paymentMethod()
     {
-        return $this->belongsTo(Admin::class,'adminID');
+        return $this->belongsTo(payment_method::class, 'paymentID');
     }
 
-    // payment
+    /**
+     * FIX TASK 1: Alias cho paymentMethod() — tránh lỗi khi code cũ gọi ->payment
+     * Trước đây controller gọi $fi->payment->name nhưng relation tên là paymentMethod()
+     * → thêm alias này để backward-compatible với code cũ nếu còn sót
+     */
     public function payment()
     {
-        return $this->belongsTo(payment_method::class,'paymentID');
+        return $this->belongsTo(payment_method::class, 'paymentID');
     }
 
+    // =========================================================
+    // DETAILS
+    // =========================================================
     public function details()
     {
-        return $this->hasMany(FoodInvoiceDetail::class, 'foodInvoiceID', 'foodInvoiceID');
+        return $this->hasMany(foodInvoiceDetail::class, 'foodInvoiceID');
     }
 }

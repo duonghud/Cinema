@@ -12,10 +12,60 @@ class foodController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $foods = Food::paginate(5);
-        return view('admins.manageFoods.food.index', ['foods' => $foods]);
+        $search = trim((string) $request->input('search'));
+        $foodType = trim((string) $request->input('food_type'));
+        $size = trim((string) $request->input('size'));
+
+        $foods = Food::query()
+            ->when($search, function ($query) use ($search) {
+                $query->where('foodID', 'like', "%{$search}%")
+                    ->orWhere('foodName', 'like', "%{$search}%")
+                    ->orWhere('foodType', 'like', "%{$search}%")
+                    ->orWhere('size', 'like', "%{$search}%")
+                    ->orWhere('price', 'like', "%{$search}%");
+            })
+            ->when($foodType, function ($query) use ($foodType) {
+                $query->where('foodType', $foodType);
+            })
+            ->when($size, function ($query) use ($size) {
+                $query->where('size', $size);
+            })
+            ->paginate(5)
+            ->withQueryString();
+
+        $foodTypes = Food::query()
+            ->select('foodType')
+            ->whereNotNull('foodType')
+            ->where('foodType', '!=', '')
+            ->distinct()
+            ->orderBy('foodType')
+            ->pluck('foodType', 'foodType');
+
+        $sizes = Food::query()
+            ->select('size')
+            ->whereNotNull('size')
+            ->where('size', '!=', '')
+            ->distinct()
+            ->orderBy('size')
+            ->pluck('size', 'size');
+
+        return view('admins.manageFoods.food.index', [
+            'foods' => $foods,
+            'filters' => [
+                [
+                    'name' => 'food_type',
+                    'all_label' => 'Tất cả loại',
+                    'options' => $foodTypes->toArray(),
+                ],
+                [
+                    'name' => 'size',
+                    'all_label' => 'Tất cả size',
+                    'options' => $sizes->toArray(),
+                ],
+            ],
+        ]);
     }
 
     /**
@@ -33,8 +83,9 @@ class foodController extends Controller
     {
         $validated =$request->validate([
             'foodName' => 'required|string|max:255',
-            'price' => 'required|numeric|min:0',
+            'price' => 'required|numeric|min:0|max:100000',
             'foodType' => 'required|string',
+            'size' => 'required|in:S,M,L',
         ], [
             'foodName.required' => 'Tên món ăn không được để trống',
             'foodName.string' => 'Tên món ăn phải là chuỗi ký tự',
@@ -43,6 +94,7 @@ class foodController extends Controller
             'price.required' => 'Giá món ăn không được để trống',
             'price.numeric' => 'Giá phải là số',
             'price.min' => 'Giá phải lớn hơn hoặc bằng 0',
+            'price.max' => 'Giá bán không được vượt quá 100000 nghìn',
 
             'foodType.required' => 'Loại món ăn không được để trống',
             'foodType.string' => 'Loại món ăn phải là chuỗi ký tự',
@@ -81,6 +133,7 @@ class foodController extends Controller
             'foodName' => 'required|string|max:255',
             'price' => 'required|numeric|min:0',
             'foodType' => 'required|string',
+            'size' => 'required|in:S,M,L',
         ], [
             'foodName.required' => 'Tên món ăn không được để trống',
             'price.required' => 'Giá món ăn không được để trống',
@@ -91,6 +144,7 @@ class foodController extends Controller
         $foods->foodName = $request->input('foodName');
         $foods->price = $request->input('price');
         $foods->foodType = $request->input('foodType');
+        $foods->size = $request->input('size');
         $foods->save();
 
         return redirect()->route('food.index')->with('success', 'Sửa thành công');

@@ -2,8 +2,6 @@
 
 @section('content')
 <div class="container mt-4">
-
-    <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h4 class="fw-semibold mb-0">Quản lý nhà sản xuất</h4>
 
@@ -12,10 +10,12 @@
         </a>
     </div>
 
-    <!-- Card -->
+    @include('admins.partials.page-search', [
+        'placeholder' => 'Tìm theo tên nhà sản xuất'
+    ])
+
     <div class="card shadow-sm border-0">
         <div class="card-body p-0">
-
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-light">
                     <tr>
@@ -26,45 +26,39 @@
                 </thead>
 
                 <tbody>
-                    @foreach ($studios as $studio)
-                    <tr>
-                        <td class="fw-semibold">{{ $studio->studioID }}</td>
-                        <td>{{ $studio->name }}</td>
+                    @forelse ($studios as $studio)
+                        <tr>
+                            <td class="fw-semibold">{{ $studio->studioID }}</td>
+                            <td>{{ $studio->name }}</td>
+                            <td class="text-end">
+                                <a href="{{ route('studio.edit', $studio->studioID) }}" class="btn btn-sm btn-outline-dark me-2">
+                                    Sửa
+                                </a>
 
-                        <!-- Actions -->
-                        <td class="text-end">
+                                <form action="{{ route('studio.destroy', $studio->studioID) }}" method="POST" class="d-inline">
+                                    @csrf
+                                    @method('DELETE')
 
-                            <a href="{{ route('studio.edit', $studio->studioID) }}"
-                                class="btn btn-sm btn-outline-dark me-2">
-                                Sửa
-                            </a>
-
-                            <form action="{{ route('studio.destroy', $studio->studioID) }}" method="POST" class="d-inline">
-                                @csrf
-                                @method('DELETE')
-
-                                <button type="submit"
-                                    class="btn btn-sm btn-outline-danger"
-                                    onclick="return confirm('Bạn có chắc muốn xóa?')">
-                                    Xóa
-                                </button>
-                            </form>
-
-                        </td>
-
-                    </tr>
-                    @endforeach
-                    @if ($studios -> isEmpty())
-                    <tr>
-                        <td colspan="4" class="text-center text-muted py-4">
-                            Chưa có dữ liệu hãng sản xuất
-                        </td>
-                    </tr>
-                    @endif
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Bạn có chắc muốn xóa?')">
+                                        Xóa
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="3" class="text-center text-muted py-4">
+                                Chưa có dữ liệu hãng sản xuất
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
             </table>
-
         </div>
     </div>
 
+    <div class="mt-3">
+        {{ $studios->links() }}
+    </div>
 </div>
 @endsection

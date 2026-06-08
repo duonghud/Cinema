@@ -17,6 +17,7 @@ class movie extends Model
         'poster',
         'trailer',
         'releaseDate',
+        'duration',
         'ageRatingID',
         'studioID',
     ];
