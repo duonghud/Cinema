@@ -541,6 +541,7 @@
 
 <div id="toast"><span id="t-ico"></span><span id="t-msg"></span></div>
 
+@push('scripts')
 <script>
 'use strict';
 
@@ -1169,4 +1170,5 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') resetMode();
 
 document.addEventListener('DOMContentLoaded', loadSeats);
 </script>
+@endpush
 @endsection
