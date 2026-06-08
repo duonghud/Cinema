@@ -424,11 +424,8 @@
             <div class="form-label" style="margin-bottom:4px;">Ghế đang chọn</div>
             <div class="seat-badge" id="swapBadge">—</div>
         </div>
-
         <span style="color:var(--muted);font-size:18px;">⇄</span>
-
-        {{-- Dropdown hoán đổi — hiện khi ghế KHÔNG phải bảo trì --}}
-        <div style="flex:1;min-width:150px;" id="swapTypeWrap">
+        <div style="flex:1;min-width:150px;">
             <div class="form-label" style="margin-bottom:4px;">Đổi sang loại</div>
             <select id="swapTargetType" class="ctrl">
                 @foreach($seatTypes as $type)
@@ -438,28 +435,10 @@
                 @endforeach
             </select>
         </div>
-
-        {{-- Dropdown phục hồi — hiện khi ghế ĐANG bảo trì --}}
-        <div style="flex:1;min-width:150px;display:none;" id="restoreTypeWrap">
-            <div class="form-label" style="margin-bottom:4px;">Phục hồi về loại</div>
-            <select id="restoreTargetType" class="ctrl">
-                @foreach($seatTypes as $type)
-                    @if(strtolower($type->seatTypeName) !== 'bảo trì')
-                        <option value="{{ $type->seatTypeID }}">{{ $type->seatTypeName }}</option>
-                    @endif
-                @endforeach
-            </select>
-        </div>
-
         <div class="d-flex gap-2 flex-wrap">
-            {{-- Nút khi ghế KHÔNG phải bảo trì --}}
             <button class="btn-c bs" id="btnSwap"  onclick="startSwapPicking()">⇄ Hoán đổi</button>
-            <button class="btn-c bw" id="btnMaint" onclick="goMaintenance()">⚙ Bảo trì</button>
-
-            {{-- Nút khi ghế ĐANG bảo trì --}}
-            <button class="btn-c bs" id="btnRestore" onclick="restoreSeat()" style="display:none;">✓ Phục hồi</button>
-
-            <button class="btn-c bg" onclick="resetMode()">✕ Huỷ</button>
+            <button class="btn-c bw" id="btnMaint" onclick="toggleMaintenance()">⚙ Bảo trì</button>
+            <button class="btn-c bg"               onclick="resetMode()">✕ Huỷ</button>
         </div>
     </div>
 
@@ -565,9 +544,17 @@
 <script>
 'use strict';
 
-const ROOM_ID  = parseInt("{{ (int)($roomID ?? 0) }}", 10);
-const CAPACITY = parseInt("{{ $room?->capacity ?? 0 }}", 10);
-const CSRF     = "{{ csrf_token() }}";
+const ROOM_ID   = parseInt("{{ (int)($roomID ?? 0) }}", 10);
+const CAPACITY  = parseInt("{{ $room?->capacity ?? 0 }}", 10);
+const CSRF      = "{{ csrf_token() }}";
+
+/*
+ * ROOM_ROWS / ROOM_COLS: số hàng và cột tối đa của phòng, tính từ seats trong DB.
+ * Controller tính và truyền xuống — không cần cột mới trong DB.
+ * renderGrid() dùng để hiển thị đủ lưới kể cả ô trống hoàn toàn.
+ */
+const ROOM_ROWS = parseInt("{{ (int)($roomActualRows ?? 0) }}", 10);
+const ROOM_COLS = parseInt("{{ (int)($roomActualCols ?? 0) }}", 10);
 
 const SPECIAL_TYPE_IDS = {{ Js::from($specialTypeIds ?? ['vip'=>1,'normal'=>2,'couple'=>3,'maintenance'=>4]) }};
 const SEAT_TYPE_NAMES  = {{ Js::from($seatTypeNames ?? []) }};
@@ -617,7 +604,12 @@ function loadSeats(silent = false) {
     if (!silent) showSpinner(true);
     fetch(`/admins/seat/ajax/${ROOM_ID}`)
         .then(r => { if (!r.ok) throw new Error(`Lỗi ${r.status}`); return r.json(); })
-        .then(data => { seatsData = Array.isArray(data) ? data : []; renderGrid(); updateStats(); })
+        .then(data => {
+            // API có thể trả array thuần hoặc object {seats, roomRows, roomCols}
+            seatsData = Array.isArray(data) ? data : (Array.isArray(data.seats) ? data.seats : []);
+            renderGrid();
+            updateStats();
+        })
         .catch(err => showToast(err.message, 'error'))
         .finally(() => showSpinner(false));
 }
@@ -645,25 +637,40 @@ function renderGrid() {
     const seatMap = {};
     seatsData.forEach(s => { seatMap[`${s.rowSeat}-${s.colSeat}`] = s; });
 
-    const rows       = [...new Set(seatsData.map(s => s.rowSeat))].sort();
-    const maxCol     = seatsData.reduce((m, s) => Math.max(m, +s.colSeat), 0);
-    const renderCols = maxCol;
+    /*
+     * totalRows / totalCols: ưu tiên ROOM_ROWS/ROOM_COLS (inject từ PHP/SeatController).
+     * Fallback về seatsData nếu biến PHP = 0 (phòng cũ).
+     * Đảm bảo render đủ hàng/cột kể cả hàng chưa có ghế (toàn empty-slot).
+     */
+    const dataRows   = [...new Set(seatsData.map(s => s.rowSeat))].sort();
+    const dataMaxCol = seatsData.reduce((m, s) => Math.max(m, +s.colSeat), 0);
+    const totalRows  = Math.max(ROOM_ROWS || 0, dataRows.length, 1);
+    const totalCols  = Math.max(ROOM_COLS || 0, dataMaxCol, 1);
+
+    // Tạo mảng nhãn hàng A, B, C... theo totalRows
+    const rowLabels = Array.from({ length: totalRows }, (_, i) => String.fromCharCode(65 + i));
 
     let html = '';
-    rows.forEach(row => {
+    rowLabels.forEach(row => {
         html += `<div class="seat-row"><span class="row-label">${row}</span>`;
-        for (let col = 1; col <= renderCols; col++) {
+        for (let col = 1; col <= totalCols; col++) {
             const seat = seatMap[`${row}-${col}`];
             if (!seat) {
+                // Ô trống: có thể click để điền vào form thêm ghế
                 html += `<div class="empty-slot" data-row="${row}" data-col="${col}">+</div>`;
                 continue;
             }
-            const cls = TYPE_CLASS[seat.seatTypeID] || 't-normal';
+            const cls          = TYPE_CLASS[seat.seatTypeID] || 't-normal';
+            const originalType = (seat.originalSeatTypeID != null)
+                ? seat.originalSeatTypeID
+                : seat.seatTypeID;
+
             html += `<div class="seat ${cls}"
                           data-id="${seat.seatID}"
                           data-row="${row}"
                           data-col="${col}"
                           data-type="${seat.seatTypeID}"
+                          data-original-type="${originalType}"
                           data-name="${row}${col}">
                         ${row}${col}
                         <span class="del-btn" onmousedown="event.stopPropagation()" onclick="deleteSeat(${seat.seatID},event)">×</span>
@@ -672,17 +679,21 @@ function renderGrid() {
         html += `</div>`;
     });
 
-    // Chỉ render hàng tiếp theo khi hàng cuối đã đầy
-    if (rows.length > 0) {
-        const lastRow = rows[rows.length - 1];
-        let lastRowFull = true;
-        for (let col = 1; col <= renderCols; col++) {
+    /*
+     * Hàng nextRow (disabled-slot gợi ý thêm hàng mới):
+     * Chỉ hiện khi hàng cuối ĐÃ ĐẦY hoàn toàn VÀ chưa đến Z.
+     * Nếu hàng cuối chưa đầy → có empty-slot để dùng, không cần thêm hàng.
+     */
+    if (rowLabels.length > 0 && rowLabels.length < 26) {
+        const lastRow    = rowLabels[rowLabels.length - 1];
+        let lastRowFull  = true;
+        for (let col = 1; col <= totalCols; col++) {
             if (!seatMap[`${lastRow}-${col}`]) { lastRowFull = false; break; }
         }
-        if (lastRowFull && lastRow < 'Z') {
+        if (lastRowFull) {
             const nextRow = String.fromCharCode(lastRow.charCodeAt(0) + 1);
             html += `<div class="seat-row"><span class="row-label" style="color:#cbd5e1">${nextRow}</span>`;
-            for (let col = 1; col <= renderCols; col++) {
+            for (let col = 1; col <= totalCols; col++) {
                 html += `<div class="disabled-slot" data-row="${nextRow}" data-col="${col}"
                               onclick="quickFill('${nextRow}',${col})"
                               title="Thêm ghế ${nextRow}${col}">+</div>`;
@@ -700,8 +711,8 @@ function quickFill(row, col) {
     if (appMode === 'multi_select') return;
     document.getElementById('addRow').value = row;
     document.getElementById('addCol').value = col;
-    document.getElementById('addRow').scrollIntoView({ behavior: 'smooth', block: 'center' });
-    document.getElementById('addType').focus();
+    showToast(`Điền ${row}${col} → form thêm ghế`, 'info');
+    document.getElementById('addRow').scrollIntoView({ behavior:'smooth', block:'center' });
 }
 
 // ══════════════════════════════════════════════════════════
@@ -774,15 +785,22 @@ document.addEventListener('mouseup', function () {
 });
 
 // ══════════════════════════════════════════════════════════
-// SELECT SOURCE
+// SELECT / STYLES
 // ══════════════════════════════════════════════════════════
 function selectSource(el) {
     sourceSeat = {
-        id:     el.dataset.id,
-        name:   el.dataset.name,
-        typeID: +el.dataset.type,
-        row:    el.dataset.row,
-        col:    +el.dataset.col,
+        id:           el.dataset.id,
+        name:         el.dataset.name,
+        typeID:       +el.dataset.type,
+        /*
+        |--------------------------------------------------------------
+        | FIX BUG 2: Đọc originalType từ data attribute.
+        | Dùng để phục hồi đúng loại ghế khi bỏ bảo trì.
+        |--------------------------------------------------------------
+        */
+        originalType: +el.dataset.originalType,
+        row:          el.dataset.row,
+        col:          +el.dataset.col,
     };
     appMode = 'selected';
 
@@ -792,25 +810,30 @@ function selectSource(el) {
     document.getElementById('hintSwap').classList.remove('show');
 
     const displayType = TYPE_NAME[sourceSeat.typeID] || SEAT_TYPE_NAMES[sourceSeat.typeID] || '';
-    document.getElementById('swapBadge').innerHTML =
-        `<span style="color:${TYPE_COLOR[sourceSeat.typeID]}">■</span> ${sourceSeat.name}
-         <span style="color:var(--muted);font-size:11px">(${displayType})</span>`;
+    const badge = `<span style="color:${TYPE_COLOR[sourceSeat.typeID]}">■</span> ${sourceSeat.name}
+                   <span style="color:var(--muted);font-size:11px">(${displayType})</span>`;
+    document.getElementById('swapBadge').innerHTML = badge;
 
-    const isMaint = sourceSeat.typeID === MAINTENANCE_TYPE_ID;
+    const btnMaint = document.getElementById('btnMaint');
+    if (sourceSeat.typeID === MAINTENANCE_TYPE_ID) {
+        /*
+        |--------------------------------------------------------------
+        | Ghế đang bảo trì → nút "Phục hồi", hiện loại gốc sẽ về
+        |--------------------------------------------------------------
+        */
+        const origName = TYPE_NAME[sourceSeat.originalType]
+            || SEAT_TYPE_NAMES[sourceSeat.originalType]
+            || '';
+        btnMaint.textContent = origName ? `✓ Phục hồi (${origName})` : '✓ Phục hồi';
+        btnMaint.className   = 'btn-c bs';
+    } else {
+        btnMaint.textContent = '⚙ Bảo trì';
+        btnMaint.className   = 'btn-c bw';
+    }
 
-    // Ẩn/hiện controls tuỳ trạng thái ghế
-    document.getElementById('swapTypeWrap').style.display    = isMaint ? 'none' : '';
-    document.getElementById('restoreTypeWrap').style.display  = isMaint ? ''     : 'none';
-    document.getElementById('btnSwap').style.display          = isMaint ? 'none' : '';
-    document.getElementById('btnMaint').style.display         = isMaint ? 'none' : '';
-    document.getElementById('btnRestore').style.display       = isMaint ? ''     : 'none';
-
-    // Dropdown hoán đổi mặc định chọn loại khác với hiện tại
-    if (!isMaint) {
-        const sel = document.getElementById('swapTargetType');
-        for (const opt of sel.options) {
-            if (+opt.value !== sourceSeat.typeID) { opt.selected = true; break; }
-        }
+    const sel = document.getElementById('swapTargetType');
+    for (const opt of sel.options) {
+        if (+opt.value !== sourceSeat.typeID) { opt.selected = true; break; }
     }
 
     reApplyStyles();
@@ -851,7 +874,7 @@ function reApplyStyles() {
 }
 
 // ══════════════════════════════════════════════════════════
-// SWAP ĐƠN LẺ
+// SWAP (đơn lẻ)
 // ══════════════════════════════════════════════════════════
 function startSwapPicking() {
     if (!sourceSeat) return;
@@ -870,59 +893,69 @@ function startSwapPicking() {
 }
 
 function confirmSwap(el) {
-    if (!confirm(`Hoán đổi:\n${sourceSeat.name} (${TYPE_NAME[sourceSeat.typeID]}) ⇄ ${el.dataset.name} (${TYPE_NAME[+el.dataset.type]})?`)) return;
+    if (!confirm(`Hoán đổi:\n${sourceSeat.name}(${TYPE_NAME[sourceSeat.typeID]}) ⇄ ${el.dataset.name}(${TYPE_NAME[+el.dataset.type]})?`)) return;
     apiFetch('/admins/seat/ajax-swap-type', 'POST', {
-        seatID_a: parseInt(sourceSeat.id),
-        seatID_b: parseInt(el.dataset.id),
+        seatID_a: parseInt(sourceSeat.id), seatID_b: parseInt(el.dataset.id)
     }).then(res => {
         if (!res.success) { showToast(res.message, 'error'); return; }
         showToast('Hoán đổi thành công', 'success');
-        resetMode();
-        loadSeats(true);
+        resetMode(); loadSeats(true);
     }).catch(err => showToast(err.message, 'error'));
 }
 
 // ══════════════════════════════════════════════════════════
-// BẢO TRÌ — chuyển ghế sang maintenance
+// MAINTENANCE
 // ══════════════════════════════════════════════════════════
-function goMaintenance() {
+function toggleMaintenance() {
     if (!sourceSeat) return;
-    const currentName = TYPE_NAME[sourceSeat.typeID] || SEAT_TYPE_NAMES[sourceSeat.typeID] || '';
-    if (!confirm(`Chuyển ghế ${sourceSeat.name} (${currentName}) sang bảo trì?`)) return;
 
-    apiFetch('/admins/seat/ajax-update-type', 'POST', {
-        seatID:     parseInt(sourceSeat.id),
-        seatTypeID: MAINTENANCE_TYPE_ID,
-    }).then(res => {
-        if (!res.success) { showToast(res.message, 'error'); return; }
-        showToast(`Ghế ${sourceSeat.name} → Bảo trì`, 'success');
-        resetMode();
-        loadSeats(true);
-    }).catch(err => showToast(err.message, 'error'));
+    const isMaint = sourceSeat.typeID === MAINTENANCE_TYPE_ID;
+
+    if (isMaint) {
+        /*
+        |--------------------------------------------------------------
+        | FIX BUG 2: PHỤC HỒI — dùng originalType thay vì NORMAL_TYPE_ID
+        | originalType được đọc từ data-original-type (đã lưu trong DB
+        | qua cột originalSeatTypeID).
+        |--------------------------------------------------------------
+        */
+        const restoreTypeID = sourceSeat.originalType || NORMAL_TYPE_ID;
+        const restoreName   = TYPE_NAME[restoreTypeID]
+            || SEAT_TYPE_NAMES[restoreTypeID]
+            || 'loại gốc';
+
+        if (!confirm(`Phục hồi ghế ${sourceSeat.name} về loại: ${restoreName}?`)) return;
+
+        apiFetch('/admins/seat/ajax-update-type', 'POST', {
+            seatID:     parseInt(sourceSeat.id),
+            seatTypeID: restoreTypeID,   // gửi type gốc để server set lại
+        }).then(res => {
+            if (!res.success) { showToast(res.message, 'error'); return; }
+            showToast(`Ghế ${sourceSeat.name} → ${restoreName}`, 'success');
+            resetMode(); loadSeats(true);
+        }).catch(err => showToast(err.message, 'error'));
+
+    } else {
+        /*
+        |--------------------------------------------------------------
+        | CHUYỂN SANG BẢO TRÌ — server sẽ tự lưu originalSeatTypeID
+        |--------------------------------------------------------------
+        */
+        if (!confirm(`Chuyển ghế ${sourceSeat.name} (${TYPE_NAME[sourceSeat.typeID] || ''}) sang bảo trì?`)) return;
+
+        apiFetch('/admins/seat/ajax-update-type', 'POST', {
+            seatID:     parseInt(sourceSeat.id),
+            seatTypeID: MAINTENANCE_TYPE_ID,
+        }).then(res => {
+            if (!res.success) { showToast(res.message, 'error'); return; }
+            showToast(`Ghế ${sourceSeat.name} → Bảo trì`, 'success');
+            resetMode(); loadSeats(true);
+        }).catch(err => showToast(err.message, 'error'));
+    }
 }
 
 // ══════════════════════════════════════════════════════════
-// PHỤC HỒI — admin chọn loại muốn trả về
-// ══════════════════════════════════════════════════════════
-function restoreSeat() {
-    if (!sourceSeat) return;
-    const restoreTypeID = parseInt(document.getElementById('restoreTargetType').value);
-    const restoreName   = TYPE_NAME[restoreTypeID] || SEAT_TYPE_NAMES[restoreTypeID] || '';
-    if (!confirm(`Phục hồi ghế ${sourceSeat.name} về loại: ${restoreName}?`)) return;
-
-    apiFetch('/admins/seat/ajax-update-type', 'POST', {
-        seatID:     parseInt(sourceSeat.id),
-        seatTypeID: restoreTypeID,
-    }).then(res => {
-        if (!res.success) { showToast(res.message, 'error'); return; }
-        showToast(`Ghế ${sourceSeat.name} → ${restoreName}`, 'success');
-        resetMode();
-        loadSeats(true);
-    }).catch(err => showToast(err.message, 'error'));
-}
-
-// ══════════════════════════════════════════════════════════
-// BATCH SWAP
+// BATCH SWAP (nhiều ghế)
 // ══════════════════════════════════════════════════════════
 function updateBatchSourceLabel() {
     const selectedSeats = seatsData.filter(s => selectedMulti.has(String(s.seatID)));
@@ -934,16 +967,16 @@ function updateBatchSourceLabel() {
 }
 
 function validateBatch() {
-    const el       = document.getElementById('batchValidation');
-    const btnApply = document.getElementById('btnApplyBatch');
-    const targetID = parseInt(document.getElementById('batchTargetType').value);
+    const el        = document.getElementById('batchValidation');
+    const btnApply  = document.getElementById('btnApplyBatch');
+    const targetID  = parseInt(document.getElementById('batchTargetType').value);
 
-    const selectedSeats = seatsData.filter(s => selectedMulti.has(String(s.seatID)));
-    const sourceTypes   = [...new Set(selectedSeats.map(s => Number(s.seatTypeID)))];
-    const count         = selectedSeats.length;
+    const selectedSeats  = seatsData.filter(s => selectedMulti.has(String(s.seatID)));
+    const sourceTypes    = [...new Set(selectedSeats.map(s => Number(s.seatTypeID)))];
+    const count          = selectedSeats.length;
 
     if (sourceTypes.length > 1) {
-        el.className  = 'batch-validation err';
+        el.className = 'batch-validation err';
         el.textContent = `❌ Các ghế được chọn không cùng loại (${sourceTypes.map(t => TYPE_NAME[t] || t).join(', ')}). Vui lòng chọn lại.`;
         btnApply.disabled = true;
         return false;
@@ -952,7 +985,7 @@ function validateBatch() {
     const sourceTypeID = sourceTypes[0];
 
     if (targetID === sourceTypeID) {
-        el.className  = 'batch-validation err';
+        el.className = 'batch-validation err';
         el.textContent = `❌ Loại đích phải khác loại nguồn (${TYPE_NAME[sourceTypeID] || ''}).`;
         btnApply.disabled = true;
         return false;
@@ -963,14 +996,17 @@ function validateBatch() {
     );
 
     if (availableTargets.length < count) {
-        el.className  = 'batch-validation err';
-        el.textContent = `❌ Không đủ ghế ${TYPE_NAME[targetID] || ''} để hoán đổi. Cần ${count}, hiện có ${availableTargets.length}.`;
+        el.className = 'batch-validation err';
+        el.textContent = `❌ Không đủ ghế ${TYPE_NAME[targetID] || ''} để hoán đổi. `
+            + `Cần ${count} ghế, hiện có ${availableTargets.length}.`;
         btnApply.disabled = true;
         return false;
     }
 
-    el.className  = 'batch-validation ok';
-    el.textContent = `✓ Hợp lệ: đổi ${count} ghế ${TYPE_NAME[sourceTypeID] || ''} → ${TYPE_NAME[targetID] || ''}, đồng thời ${count} ghế ${TYPE_NAME[targetID] || ''} → ${TYPE_NAME[sourceTypeID] || ''}.`;
+    el.className = 'batch-validation ok';
+    el.textContent = `✓ Hợp lệ: đổi ${count} ghế ${TYPE_NAME[sourceTypeID] || ''} `
+        + `→ ${TYPE_NAME[targetID] || ''}, `
+        + `đồng thời ${count} ghế ${TYPE_NAME[targetID] || ''} → ${TYPE_NAME[sourceTypeID] || ''}.`;
     btnApply.disabled = false;
     return true;
 }
@@ -988,8 +1024,9 @@ function applyBatch() {
         .filter(s => Number(s.seatTypeID) === targetID && !selectedMulti.has(String(s.seatID)))
         .slice(0, count);
 
-    const sourceIDs      = [...selectedMulti].map(Number);
-    const targetIDs      = targetsToSwap.map(s => s.seatID);
+    const sourceIDs = [...selectedMulti].map(Number);
+    const targetIDs = targetsToSwap.map(s => s.seatID);
+
     const sourceTypeName = TYPE_NAME[sourceTypeID] || '';
     const targetTypeName = TYPE_NAME[targetID] || '';
 
@@ -1004,12 +1041,12 @@ function applyBatch() {
     btnApply.disabled = true;
 
     apiFetch('/admins/seat/ajax-batch-update-type', 'POST', {
-        seatIDs: sourceIDs, seatTypeID: targetID,
+        seatIDs: sourceIDs, seatTypeID: targetID
     })
     .then(res1 => {
         if (!res1.success) throw new Error(res1.message || 'Lỗi bước 1');
         return apiFetch('/admins/seat/ajax-batch-update-type', 'POST', {
-            seatIDs: targetIDs, seatTypeID: sourceTypeID,
+            seatIDs: targetIDs, seatTypeID: sourceTypeID
         });
     })
     .then(res2 => {
@@ -1041,12 +1078,10 @@ function addSeat() {
     if (seatsData.some(s => s.rowSeat === row && +s.colSeat === col)) {
         showToast(`Ghế ${row}${col} đã tồn tại`, 'error'); return;
     }
-
     const btn = document.getElementById('btnAdd');
     btn.disabled = true;
-
     apiFetch('/admins/seat/ajax-add', 'POST', {
-        roomID: ROOM_ID, rowSeat: row, colSeat: col, seatTypeID: typeID,
+        roomID: ROOM_ID, rowSeat: row, colSeat: col, seatTypeID: typeID
     }).then(res => {
         if (res.error) { showToast(res.error, 'error'); return; }
         showToast(`Đã thêm ghế ${row}${col} (${TYPE_NAME[typeID] || ''})`, 'success');
@@ -1061,7 +1096,7 @@ function deleteSeat(id, event) {
     event.stopPropagation();
     if (!confirm('Xoá ghế này?')) return;
     fetch(`/admins/seat/ajax-delete/${id}`, {
-        method: 'DELETE', headers: { 'X-CSRF-TOKEN': CSRF },
+        method: 'DELETE', headers: { 'X-CSRF-TOKEN': CSRF }
     }).then(r => r.json()).then(res => {
         if (res.error) { showToast(res.error, 'error'); return; }
         if (sourceSeat && String(sourceSeat.id) === String(id)) resetMode();
@@ -1083,7 +1118,7 @@ function resetMode() {
     document.getElementById('swapPanel').classList.remove('show');
     document.getElementById('batchPanel').classList.remove('show');
     document.getElementById('hintSwap').classList.remove('show');
-    document.getElementById('batchValidation').className  = 'batch-validation';
+    document.getElementById('batchValidation').className = 'batch-validation';
     document.getElementById('batchValidation').textContent = '';
     document.getElementById('batchSourceType').textContent = '';
 }
@@ -1100,12 +1135,8 @@ function apiFetch(url, method, body) {
         body: JSON.stringify(body),
     }).then(r => {
         if (!r.ok) return r.text().then(t => {
-            try {
-                const j = JSON.parse(t);
-                throw new Error(j.message || j.error || `Lỗi ${r.status}`);
-            } catch(e) {
-                throw new Error(t.trim().startsWith('<') ? `Lỗi ${r.status}` : t);
-            }
+            try { const j = JSON.parse(t); throw new Error(j.message || j.error || `Lỗi ${r.status}`); }
+            catch(e) { throw new Error(t.trim().startsWith('<') ? `Lỗi ${r.status}` : t); }
         });
         return r.json();
     });

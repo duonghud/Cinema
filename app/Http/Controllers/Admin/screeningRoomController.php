@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 use App\Models\Admin\screeningRoom;
 use App\Models\Admin\screenType;
@@ -48,12 +49,6 @@ class screeningRoomController extends Controller
         $screenTypes = screenType::all();
         $seatTypes   = seatType::all();
 
-        /*
-        |----------------------------------------------------------------------
-        | Tìm seatTypeID mặc định cho từng loại ghế dựa trên tên
-        | Trả về null nếu không tìm thấy → blade sẽ không pre-select gì cả
-        |----------------------------------------------------------------------
-        */
         $defaultVipTypeID    = $seatTypes->first(fn($s) => $this->isVip($s->seatTypeName))?->seatTypeID;
         $defaultNormalTypeID = $seatTypes->first(fn($s) => $this->isNormal($s->seatTypeName))?->seatTypeID;
         $defaultDoubleTypeID = $seatTypes->first(fn($s) => $this->isDouble($s->seatTypeName))?->seatTypeID;
@@ -113,6 +108,12 @@ class screeningRoomController extends Controller
             'screenTypeID' => $validated['screenTypeID'],
         ]);
 
+        // Lưu cấu hình lưới vào Cache (persistent, không mất như session)
+        Cache::forever("room_grid_{$room->roomID}", [
+            'rows' => $maxRows,
+            'cols' => $maxCols,
+        ]);
+
         $seatQueue = [];
         for ($i = 0; $i < $vipCount;    $i++) $seatQueue[] = ['typeID' => (int) $validated['vipSeatTypeID']];
         for ($i = 0; $i < $normalCount; $i++) $seatQueue[] = ['typeID' => (int) $validated['normalSeatTypeID']];
@@ -155,22 +156,11 @@ class screeningRoomController extends Controller
         $seatTypes   = seatType::all();
         $screenTypes = screenType::all();
 
-        /*
-        |----------------------------------------------------------------------
-        | Tính rows/cols thực tế từ bảng seats
-        |----------------------------------------------------------------------
-        */
         $seats = Seat::where('roomID', $room->roomID)->get();
 
         $actualCols = $seats->max(fn($s) => (int) $s->colSeat) ?: 1;
         $actualRows = $seats->pluck('rowSeat')->unique()->count() ?: 1;
 
-        /*
-        |----------------------------------------------------------------------
-        | Đếm ghế theo từng seatTypeID
-        | Dùng seatTypeID thực tế lấy từ DB, không suy diễn từ tên
-        |----------------------------------------------------------------------
-        */
         $seatCounts = [
             'vipSeats'         => 0,
             'vipSeatTypeID'    => null,
@@ -189,25 +179,22 @@ class screeningRoomController extends Controller
             $name = mb_strtolower($seatType->seatTypeName, 'UTF-8');
 
             if ($this->isDouble($name)) {
-                // Kiểm tra double TRƯỚC vip để tránh tên như "VIP đôi" rơi vào vip
                 $seatCounts['doubleSeats']      = $group->count();
                 $seatCounts['doubleSeatTypeID'] = $typeID;
             } elseif ($this->isVip($name)) {
                 $seatCounts['vipSeats']      = $group->count();
                 $seatCounts['vipSeatTypeID'] = $typeID;
             } else {
-                // Còn lại → ghế thường
                 $seatCounts['normalSeats']      = $group->count();
                 $seatCounts['normalSeatTypeID'] = $typeID;
             }
         }
 
-        /*
-        |----------------------------------------------------------------------
-        | Fallback: nếu DB không có ghế loại nào, dùng seatTypeID đầu tiên
-        | tìm được theo tên để pre-select dropdown (tránh mặc định sai)
-        |----------------------------------------------------------------------
-        */
+        // Đọc gridRows/gridCols từ Cache để pre-fill form edit
+        $grid        = Cache::get("room_grid_{$room->roomID}");
+        $actualRows  = max($actualRows, (int) ($grid['rows'] ?? 0));
+        $actualCols  = max($actualCols, (int) ($grid['cols'] ?? 0));
+
         $defaultVipTypeID    = $seatCounts['vipSeatTypeID']
             ?? $seatTypes->first(fn($s) => $this->isVip($s->seatTypeName))?->seatTypeID;
         $defaultNormalTypeID = $seatCounts['normalSeatTypeID']
@@ -271,6 +258,12 @@ class screeningRoomController extends Controller
             'capacity'     => $totalSlots,
         ]);
 
+        // Cập nhật cấu hình lưới vào Cache (ghi đè, tồn tại vĩnh viễn)
+        Cache::forever("room_grid_{$room->roomID}", [
+            'rows' => $maxRows,
+            'cols' => $maxCols,
+        ]);
+
         if ($totalSlots > 0) {
             Seat::where('roomID', $room->roomID)->delete();
 
@@ -322,6 +315,10 @@ class screeningRoomController extends Controller
         }
 
         Seat::where('roomID', $room->roomID)->delete();
+
+        // Xoá cache lưới khi xoá phòng
+        Cache::forget("room_grid_{$room->roomID}");
+
         $room->delete();
 
         return redirect()
@@ -332,7 +329,6 @@ class screeningRoomController extends Controller
     /*
     |--------------------------------------------------------------------------
     | Helper: phân loại tên ghế
-    | Dùng mb_strtolower + UTF-8 để so sánh đúng tiếng Việt có dấu
     |--------------------------------------------------------------------------
     */
     private function isDouble(string $name): bool

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use App\Models\Admin\Seat;
 use App\Models\Admin\ScreeningRoom;
 use App\Models\Admin\SeatType;
@@ -69,6 +70,8 @@ class SeatController extends Controller
                 'roomID'         => 0,
                 'specialTypeIds' => $specialTypeIds,
                 'seatTypeNames'  => $seatTypeNames,
+                'roomActualRows' => 1,
+                'roomActualCols' => 1,
             ]);
         }
 
@@ -90,8 +93,43 @@ class SeatController extends Controller
             ->paginate(5)
             ->withQueryString();
 
+        /*
+         * Tính rows/cols thực tế từ tất cả ghế trong phòng (không dùng $seats đã paginate).
+         */
+        $allSeatsInRoom = Seat::where('roomID', $roomID)->get(['rowSeat', 'colSeat']);
+        $seatsRows      = $allSeatsInRoom->pluck('rowSeat')->unique()->count() ?: 1;
+        $seatsCols      = (int) ($allSeatsInRoom->max('colSeat') ?: 1);
+
+        /*
+         * Đọc gridRows/gridCols từ Cache (được lưu bởi screeningRoomController
+         * khi tạo/cập nhật phòng). Cache::forever → tồn tại vĩnh viễn, không mất
+         * như session.
+         *
+         * Fallback: nếu cache chưa có (phòng cũ tạo trước khi có tính năng này)
+         * → dùng số hàng/cột thực tế từ seats, đồng thời ghi vào cache luôn
+         *   để lần sau không cần tính lại.
+         */
+        $grid = Cache::get("room_grid_{$roomID}");
+
+        if ($grid && isset($grid['rows'], $grid['cols'])) {
+            $roomActualRows = max((int) $grid['rows'], $seatsRows);
+            $roomActualCols = max((int) $grid['cols'], $seatsCols);
+        } else {
+            // Phòng cũ chưa có cache → fallback về thực tế
+            $roomActualRows = $seatsRows;
+            $roomActualCols = $seatsCols;
+            // Ghi vào cache để persistent từ lần này trở đi
+            Cache::forever("room_grid_{$roomID}", [
+                'rows' => $roomActualRows,
+                'cols' => $roomActualCols,
+            ]);
+        }
+
         return view('admins.manageCinema.seat.index', compact(
-            'seats', 'room', 'rooms', 'seatTypes', 'roomID', 'specialTypeIds', 'seatTypeNames'
+            'seats', 'room', 'rooms', 'seatTypes', 'roomID',
+            'specialTypeIds', 'seatTypeNames',
+            'roomActualRows',
+            'roomActualCols'
         ));
     }
 
@@ -154,6 +192,31 @@ class SeatController extends Controller
         }
 
         $seat = Seat::create($validated);
+
+        /*
+         * Khi thêm ghế mới qua AJAX, cập nhật cache nếu ghế mới
+         * nằm ngoài grid hiện tại (hàng/cột mới lớn hơn cache).
+         */
+        $roomID   = (int) $validated['roomID'];
+        $newRow   = strtoupper($validated['rowSeat']);
+        $newCol   = (int) $validated['colSeat'];
+        $newRowIdx = ord($newRow) - 64; // A=1, B=2, ...
+
+        $grid = Cache::get("room_grid_{$roomID}") ?? ['rows' => 0, 'cols' => 0];
+        $updated = false;
+
+        if ($newRowIdx > (int) ($grid['rows'] ?? 0)) {
+            $grid['rows'] = $newRowIdx;
+            $updated = true;
+        }
+        if ($newCol > (int) ($grid['cols'] ?? 0)) {
+            $grid['cols'] = $newCol;
+            $updated = true;
+        }
+        if ($updated) {
+            Cache::forever("room_grid_{$roomID}", $grid);
+        }
+
         return response()->json($seat);
     }
 
@@ -249,8 +312,7 @@ class SeatController extends Controller
     // ================= LOAD SEAT AJAX =================
     public function getSeatsByRoom($roomID)
     {
-        $seats = Seat::with('seatType')
-            ->where('roomID', $roomID)
+        $seats = Seat::where('roomID', $roomID)
             ->orderBy('rowSeat')
             ->orderBy('colSeat')
             ->get();
@@ -335,7 +397,6 @@ class SeatController extends Controller
         $newTypeID         = (int) $validated['seatTypeID'];
         $maintenanceTypeID = $this->getMaintenanceTypeId();
 
-        // Chỉ chặn vé khi không phải chuyển sang bảo trì
         if ($newTypeID !== $maintenanceTypeID) {
             if (DB::table('tickets')->where('seatID', $seat->seatID)->exists()) {
                 return response()->json([
@@ -345,7 +406,18 @@ class SeatController extends Controller
             }
         }
 
-        $seat->seatTypeID = $newTypeID;
+        if ($newTypeID === $maintenanceTypeID) {
+            if ((int) $seat->seatTypeID !== $maintenanceTypeID) {
+                $seat->originalSeatTypeID = $seat->seatTypeID;
+            }
+            $seat->seatTypeID = $newTypeID;
+        } elseif ((int) $seat->seatTypeID === $maintenanceTypeID) {
+            $seat->seatTypeID         = $seat->originalSeatTypeID ?? $newTypeID;
+            $seat->originalSeatTypeID = null;
+        } else {
+            $seat->seatTypeID = $newTypeID;
+        }
+
         $seat->save();
 
         return response()->json([
@@ -389,7 +461,17 @@ class SeatController extends Controller
             ]);
         }
 
-        Seat::whereIn('seatID', $validSeatIds)->update(['seatTypeID' => $newTypeID]);
+        if ($isMaintenance) {
+            foreach ($selectedSeats->whereIn('seatID', $validSeatIds) as $seat) {
+                if ((int) $seat->seatTypeID !== $maintenanceTypeID) {
+                    $seat->originalSeatTypeID = $seat->seatTypeID;
+                }
+                $seat->seatTypeID = $newTypeID;
+                $seat->save();
+            }
+        } else {
+            Seat::whereIn('seatID', $validSeatIds)->update(['seatTypeID' => $newTypeID]);
+        }
 
         $typeName = SeatType::find($newTypeID)?->seatTypeName ?? 'loại mới';
         $msg      = "Đã cập nhật {$updated} ghế sang {$typeName}.";
