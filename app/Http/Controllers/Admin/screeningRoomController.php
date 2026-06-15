@@ -41,7 +41,7 @@ class screeningRoomController extends Controller
             ->when($screenType, function ($query) use ($screenType) {
                 $query->where('screenTypeID', $screenType);
             })
-            ->paginate(5)          // Phân trang: 5 bản ghi trên 1 trang
+            ->paginate(20)          // Phân trang: 5 bản ghi trên 1 trang
             ->withQueryString();   // Giữ lại các tham số trên URL khi chuyển trang
 
         // Lấy tất cả các loại màn hình để hiển thị lên thẻ <select> ở bộ lọc ngoài View

@@ -19,7 +19,9 @@
                                name="showDate"
                                class="form-control @error('showDate') is-invalid @enderror"
                                value="{{ old('showDate', $showTime->showDate) }}"
-                               min="{{ now()->addDay()->format('Y-m-d') }}">
+                               min="{{ now()->addDay()->format('Y-m-d') }}"
+                               max="{{ now()->addDays(14)->format('Y-m-d') }}">
+
                         @error('showDate')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror

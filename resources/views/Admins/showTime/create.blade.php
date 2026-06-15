@@ -15,31 +15,32 @@
                     <div class="col-md-4 mb-3">
                         <label class="form-label fw-medium">Ngày chiếu</label>
                         <input type="date" name="showDate"
-                               class="form-control @error('showDate') is-invalid @enderror"
-                               value="{{ old('showDate') }}"
-                               min="{{ now()->addDay()->format('Y-m-d') }}">
+                            class="form-control @error('showDate') is-invalid @enderror"
+                            value="{{ old('showDate') }}"
+                            min="{{ now()->addDay()->format('Y-m-d') }}"
+                            max="{{ now()->addDays(14)->format('Y-m-d') }}">
                         @error('showDate')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
 
                     <div class="col-md-4 mb-3">
                         <label class="form-label fw-medium">Giờ bắt đầu</label>
                         <input type="time" name="startTime" id="startTime"
-                               class="form-control @error('startTime') is-invalid @enderror"
-                               value="{{ old('startTime') }}">
+                            class="form-control @error('startTime') is-invalid @enderror"
+                            value="{{ old('startTime') }}">
                         @error('startTime')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
 
                     <div class="col-md-4 mb-3">
                         <label class="form-label fw-medium">Giờ kết thúc</label>
                         <input type="time" name="endTime" id="endTime"
-                               class="form-control @error('endTime') is-invalid @enderror"
-                               value="{{ old('endTime') }} " readonly>
+                            class="form-control @error('endTime') is-invalid @enderror"
+                            value="{{ old('endTime') }} " readonly>
                         @error('endTime')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
                 </div>
@@ -48,34 +49,34 @@
                     <div class="col-md-6 mb-3">
                         <label class="form-label fw-medium">Phim</label>
                         <select name="movieID" id="movieID"
-                                class="form-select @error('movieID') is-invalid @enderror">
+                            class="form-select @error('movieID') is-invalid @enderror">
                             <option value="">-- Chọn phim --</option>
                             @foreach($movies as $m)
-                                <option value="{{ $m->movieID }}" data-duration="{{ $m->duration }}"
-                                    {{ old('movieID') == $m->movieID ? 'selected' : '' }}>
-                                    {{ $m->movieTitle }}{{ $m->duration ? ' (' . $m->duration . ' phút)' : '' }}
-                                </option>
+                            <option value="{{ $m->movieID }}" data-duration="{{ $m->duration }}"
+                                {{ old('movieID') == $m->movieID ? 'selected' : '' }}>
+                                {{ $m->movieTitle }}{{ $m->duration ? ' (' . $m->duration . ' phút)' : '' }}
+                            </option>
                             @endforeach
                         </select>
                         @error('movieID')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
 
                     <div class="col-md-6 mb-4">
                         <label class="form-label fw-medium">Phòng</label>
                         <select name="roomID"
-                                class="form-select @error('roomID') is-invalid @enderror">
+                            class="form-select @error('roomID') is-invalid @enderror">
                             <option value="">-- Chọn phòng --</option>
                             @foreach($rooms as $r)
-                                <option value="{{ $r->roomID }}"
-                                    {{ old('roomID') == $r->roomID ? 'selected' : '' }}>
-                                    {{ $r->roomName }}
-                                </option>
+                            <option value="{{ $r->roomID }}"
+                                {{ old('roomID') == $r->roomID ? 'selected' : '' }}>
+                                {{ $r->roomName }}
+                            </option>
                             @endforeach
                         </select>
                         @error('roomID')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
                 </div>
@@ -95,7 +96,7 @@
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function() {
         const movieSelect = document.getElementById('movieID');
         const startTimeInput = document.getElementById('startTime');
         const endTimeInput = document.getElementById('endTime');

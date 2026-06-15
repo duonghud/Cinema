@@ -55,7 +55,7 @@ class ShowTimeController extends Controller
         // Lấy danh sách phục vụ cho các ô Select Filter ngoài giao diện
         $movies = Movie::query()->orderBy('movieTitle')->pluck('movieTitle', 'movieID');
         $rooms = ScreeningRoom::query()->orderBy('roomName')->pluck('roomName', 'roomID');
-        
+
         // Lấy danh sách các ngày chiếu duy nhất (distinct) và định dạng lại chuỗi d/m/Y
         $dates = ShowTime::query()
             ->select('showDate')
@@ -133,6 +133,12 @@ class ShowTimeController extends Controller
         if ($showDate->lt($today->copy()->addDay())) {
             return back()->withErrors([
                 'showDate' => 'Suất chiếu tạo trước ít nhất 1 ngày.',
+            ])->withInput();
+        }
+
+        if ($showDate->gt($today->copy()->addDays(14))) {
+            return back()->withErrors([
+                'showDate' => 'Chỉ được tạo suất chiếu trong vòng 2 tuần (14 ngày) từ hôm nay.',
             ])->withInput();
         }
 
@@ -218,6 +224,12 @@ class ShowTimeController extends Controller
         if ($showDate->lt($today->copy()->addDay())) {
             return back()->withErrors([
                 'showDate' => 'Suất chiếu tạo trước ít nhất 1 ngày.',
+            ])->withInput();
+        }
+
+        if ($showDate->gt($today->copy()->addDays(14))) {
+            return back()->withErrors([
+                'showDate' => 'Chỉ được tạo suất chiếu trong vòng 2 tuần (14 ngày) từ hôm nay.',
             ])->withInput();
         }
 

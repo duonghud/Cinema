@@ -1,4 +1,4 @@
-@extends('layouts.app')
+=@extends('layouts.app')
 
 @section('content')
 <style>
@@ -7,7 +7,7 @@
         font-family: Arial, sans-serif;
     }
 
-    /* Layout */
+    /* ─── Layout ─────────────────────────────────────── */
     .invoice-wrapper {
         min-height: 100vh;
         padding: 12px 24px;
@@ -27,7 +27,7 @@
         gap: 20px;
     }
 
-    /* Card */
+    /* ─── Card ───────────────────────────────────────── */
     .card {
         background: #111827;
         border: 1px solid #1e293b;
@@ -40,10 +40,10 @@
         font-size: 28px;
         font-weight: 700;
         margin-bottom: 24px;
-        color: #fff
+        color: #fff;
     }
 
-    /* Movie info */
+    /* ─── Movie info grid ────────────────────────────── */
     .movie-grid {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
@@ -70,7 +70,7 @@
         color: #fb923c;
     }
 
-    /* Table */
+    /* ─── Table ──────────────────────────────────────── */
     .table-wrapper {
         border: 1px solid #475569;
         border-radius: 18px;
@@ -85,7 +85,7 @@
 
     .payment-table th,
     .payment-table td {
-        padding: 18px 20px;
+        padding: 16px 20px;
         text-align: left;
     }
 
@@ -95,22 +95,124 @@
 
     .payment-table th {
         font-weight: 700;
-        color: #fff
+        color: #94a3b8;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .payment-table tbody tr {
+        border-bottom: 1px solid #1e293b;
+        transition: background 0.2s ease;
+    }
+
+    .payment-table tbody tr:last-child {
+        border-bottom: none;
+    }
+
+    .payment-table tbody tr:hover {
+        background: rgba(255, 255, 255, 0.02);
     }
 
     .payment-table td {
         font-weight: 600;
-        color: #fff
+        color: #fff;
+        vertical-align: middle;
     }
 
-    /* Sidebar */
+    .payment-table tfoot tr {
+        border-top: 1px solid #475569;
+        background: rgba(255, 255, 255, 0.02);
+    }
+
+    .payment-table tfoot td {
+        font-weight: 700;
+        color: #fff;
+        font-size: 15px;
+        padding: 18px 20px;
+    }
+
+    /* ─── Seat codes ─────────────────────────────────── */
+    .seat-codes {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .seat-code-chip {
+        display: inline-block;
+        padding: 2px 8px;
+        background: rgba(148, 163, 184, 0.1);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #cbd5e1;
+        letter-spacing: 0.5px;
+    }
+
+    /* ─── Seat type badges ───────────────────────────── */
+    .seat-type-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 12px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .seat-type-badge .badge-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .badge-normal {
+        background: rgba(99, 102, 241, 0.12);
+        color: #818cf8;
+        border: 1px solid rgba(99, 102, 241, 0.3);
+    }
+    .badge-normal .badge-dot { background: #818cf8; }
+
+    .badge-vip {
+        background: rgba(251, 146, 60, 0.12);
+        color: #fb923c;
+        border: 1px solid rgba(251, 146, 60, 0.3);
+    }
+    .badge-vip .badge-dot { background: #fb923c; }
+
+    .badge-couple {
+        background: rgba(236, 72, 153, 0.12);
+        color: #f472b6;
+        border: 1px solid rgba(236, 72, 153, 0.3);
+    }
+    .badge-couple .badge-dot { background: #f472b6; }
+
+    .badge-default {
+        background: rgba(148, 163, 184, 0.1);
+        color: #94a3b8;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+    }
+    .badge-default .badge-dot { background: #94a3b8; }
+
+    /* ─── Price cells ────────────────────────────────── */
+    .price-unit     { color: #94a3b8; font-weight: 600; font-size: 14px; }
+    .price-subtotal { color: #fb923c; font-weight: 700; font-size: 15px; }
+    .price-total-cell { color: #fb923c; font-weight: 800; font-size: 18px; }
+
+    /* ─── Sidebar ─────────────────────────────────────── */
     .sidebar {
         position: sticky;
         top: 16px;
         height: fit-content;
     }
 
-    /* Payment Methods */
+    /* ─── Payment Methods ─────────────────────────────── */
     .payment-methods {
         display: flex;
         flex-direction: column;
@@ -118,9 +220,7 @@
         margin-bottom: 28px;
     }
 
-    .payment-option input[type="radio"] {
-        display: none;
-    }
+    .payment-option input[type="radio"] { display: none; }
 
     .payment-card {
         position: relative;
@@ -146,9 +246,7 @@
         position: absolute;
         inset: 0;
         border-radius: 18px;
-        background: radial-gradient(circle at right,
-                rgba(239, 68, 68, 0.12),
-                transparent 55%);
+        background: radial-gradient(circle at right, rgba(239, 68, 68, 0.12), transparent 55%);
         opacity: 0;
         transition: opacity 0.3s ease;
     }
@@ -159,11 +257,8 @@
         box-shadow: 0 0 40px rgba(239, 68, 68, 0.15);
     }
 
-    .payment-option input:checked + .payment-card::after {
-        opacity: 1;
-    }
+    .payment-option input:checked + .payment-card::after { opacity: 1; }
 
-    /* Radio circle */
     .payment-radio {
         position: relative;
         z-index: 2;
@@ -183,7 +278,6 @@
         background: rgba(239, 68, 68, 0.12);
     }
 
-    /* Check mark */
     .payment-check {
         width: 6px;
         height: 12px;
@@ -200,7 +294,6 @@
         opacity: 1;
     }
 
-    /* Logo */
     .payment-logo {
         position: relative;
         z-index: 2;
@@ -209,30 +302,12 @@
         white-space: nowrap;
     }
 
-    .logo-vnpay .blue {
-        color: #3b82f6;
-    }
-
-    .logo-vnpay .red {
-        color: #ef4444;
-    }
-
-    .logo-momo {
-        color: #ec4899;
-        text-transform: lowercase;
-    }
-
-    .logo-vietqr .red {
-        color: #ef4444;
-    }
-
-    .logo-vietqr .cyan {
-        color: #22d3ee;
-    }
-
-    .logo-visa {
-        color: #d1d5db;
-    }
+    .logo-vnpay .blue { color: #3b82f6; }
+    .logo-vnpay .red  { color: #ef4444; }
+    .logo-momo        { color: #ec4899; text-transform: lowercase; }
+    .logo-vietqr .red  { color: #ef4444; }
+    .logo-vietqr .cyan { color: #22d3ee; }
+    .logo-visa        { color: #d1d5db; }
 
     .payment-name {
         position: relative;
@@ -242,41 +317,66 @@
         color: #ffffff;
     }
 
-    /* Cost */
+    /* ─── Cost summary ───────────────────────────────── */
     .cost-title {
-        font-size: 24px;
+        font-size: 20px;
         font-weight: 700;
-        margin-bottom: 16px;
-        color: #fff
+        margin-bottom: 14px;
+        color: #fff;
     }
 
-    .cost-row {
+    .cost-divider {
+        border: none;
+        border-top: 1px dashed #334155;
+        margin: 12px 0;
+    }
+
+    .cost-type-row {
         display: flex;
         justify-content: space-between;
-        font-size: 14px;
-        margin-bottom: 6px;
-        color: #fff
+        align-items: center;
+        padding: 6px 0;
+        font-size: 13px;
+        color: #cbd5e1;
     }
 
-    .cost-row span:last-child {
-        font-weight: 700;
+    .cost-type-left {
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
+
+    .cost-type-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .dot-normal  { background: #818cf8; }
+    .dot-vip     { background: #fb923c; }
+    .dot-couple  { background: #f472b6; }
+    .dot-default { background: #94a3b8; }
+
+    .cost-type-name { font-weight: 600; font-size: 13px; }
+    .cost-type-qty  { color: #64748b; font-size: 12px; margin-left: 2px; }
+    .cost-type-amount { font-weight: 700; color: #e2e8f0; font-size: 13px; }
 
     .cost-total {
-        border-top: 1px dashed #64748b;
-        margin-top: 12px;
-        padding-top: 12px;
-        font-size: 14px;
-        font-weight: 700;
         display: flex;
         justify-content: space-between;
-        color: #fff
+        align-items: center;
+        margin-top: 4px;
+        padding-top: 4px;
     }
 
-    /* Buttons */
+    .cost-total-label  { font-size: 14px; font-weight: 700; color: #fff; }
+    .cost-total-amount { font-size: 22px; font-weight: 800; color: #fb923c; }
+
+    /* ─── Buttons ────────────────────────────────────── */
     .btn-submit {
         width: 100%;
-        padding: 8px 32px;
+        padding: 14px 32px;
         border: none;
         border-radius: 999px;
         background: linear-gradient(90deg, #ff4458, #ff7a67);
@@ -286,6 +386,7 @@
         cursor: pointer;
         box-shadow: 0 0 35px rgba(239, 68, 68, 0.25);
         transition: all 0.3s ease;
+        margin-top: 4px;
     }
 
     .btn-submit:hover {
@@ -295,63 +396,39 @@
 
     .btn-back {
         width: 100%;
-        margin-top: 20px;
+        margin-top: 16px;
         background: none;
         border: none;
         color: #ffffff;
-        font-size: 18px;
+        font-size: 16px;
         font-weight: 600;
         cursor: pointer;
         transition: color 0.3s ease;
+        padding: 8px;
     }
 
-    .btn-back:hover {
-        color: #f87171;
-    }
+    .btn-back:hover { color: #f87171; }
 
-    /* Responsive */
+    /* ─── Responsive ─────────────────────────────────── */
     @media (max-width: 1280px) {
-        .invoice-container {
-            grid-template-columns: 1fr;
-        }
-
-        .sidebar {
-            position: static;
-        }
+        .invoice-container { grid-template-columns: 1fr; }
+        .sidebar { position: static; }
     }
 
     @media (max-width: 768px) {
-        .invoice-wrapper {
-            padding: 12px;
-        }
-
-        .card {
-            padding: 20px;
-        }
-
-        .card-title {
-            font-size: 24px;
-        }
-
-        .movie-grid {
-            grid-template-columns: 1fr;
-            gap: 24px;
-        }
-
-        .value {
-            font-size: 18px;
-        }
-
-        .cost-total {
-            font-size: 24px;
-        }
+        .invoice-wrapper { padding: 12px; }
+        .card { padding: 20px; }
+        .card-title { font-size: 24px; }
+        .movie-grid { grid-template-columns: 1fr; gap: 24px; }
+        .value { font-size: 18px; }
+        .col-unit-price { display: none; }
     }
 </style>
 
 <div class="invoice-wrapper">
     <div class="invoice-container">
 
-        {{-- LEFT CONTENT --}}
+        {{-- ── LEFT CONTENT ─────────────────────────── --}}
         <div class="left-content">
 
             {{-- THÔNG TIN PHIM --}}
@@ -382,7 +459,7 @@
                     </div>
 
                     <div>
-                        <div class="label">Định dạng</div>
+                        <div class="label">Định dạng phòng</div>
                         <div class="value">{{ $invoice['format'] }}</div>
                     </div>
                 </div>
@@ -396,24 +473,73 @@
                     <table class="payment-table">
                         <thead>
                             <tr>
-                                <th>Danh mục</th>
+                                <th>Loại ghế</th>
+                                <th>Ghế</th>
+                                <th class="col-unit-price">Đơn giá</th>
                                 <th>Số lượng</th>
-                                <th>Tổng tiền</th>
+                                <th>Thành tiền</th>
                             </tr>
                         </thead>
+
                         <tbody>
-                            <tr>
-                                <td>Ghế ({{ implode(', ', $invoice['seats']) }})</td>
-                                <td>{{ count($invoice['seats']) }}</td>
-                                <td>{{ number_format($invoice['total']) }}đ</td>
-                            </tr>
+                            {{-- seat_details đã được đảm bảo tồn tại từ controller --}}
+                            @foreach($invoice['seat_details'] as $detail)
+                                @php
+                                    $typeLower = mb_strtolower($detail['type_name']);
+
+                                    if (str_contains($typeLower, 'vip')) {
+                                        $badgeClass = 'badge-vip';
+                                        $dotClass   = 'dot-vip';
+                                    } elseif (str_contains($typeLower, 'couple') || str_contains($typeLower, 'đôi')) {
+                                        $badgeClass = 'badge-couple';
+                                        $dotClass   = 'dot-couple';
+                                    } elseif (str_contains($typeLower, 'normal') || str_contains($typeLower, 'thường')) {
+                                        $badgeClass = 'badge-normal';
+                                        $dotClass   = 'dot-normal';
+                                    } else {
+                                        $badgeClass = 'badge-default';
+                                        $dotClass   = 'dot-default';
+                                    }
+                                @endphp
+                                <tr>
+                                    <td>
+                                        <span class="seat-type-badge {{ $badgeClass }}">
+                                            <span class="badge-dot"></span>
+                                            {{ $detail['type_name'] }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="seat-codes">
+                                            @foreach($detail['codes'] as $code)
+                                                <span class="seat-code-chip">{{ $code }}</span>
+                                            @endforeach
+                                        </div>
+                                    </td>
+                                    <td class="col-unit-price price-unit">
+                                        {{ number_format($detail['price']) }}đ
+                                    </td>
+                                    <td style="color:#94a3b8; font-weight:700;">
+                                        {{ $detail['quantity'] }}
+                                    </td>
+                                    <td class="price-subtotal">
+                                        {{ number_format($detail['subtotal']) }}đ
+                                    </td>
+                                </tr>
+                            @endforeach
                         </tbody>
+
+                        <tfoot>
+                            <tr>
+                                <td colspan="4">Tổng cộng</td>
+                                <td class="price-total-cell">{{ number_format($invoice['total']) }}đ</td>
+                            </tr>
+                        </tfoot>
                     </table>
                 </div>
             </div>
         </div>
 
-        {{-- RIGHT SIDEBAR --}}
+        {{-- ── RIGHT SIDEBAR ────────────────────────── --}}
         <div class="card sidebar">
             <h2 class="card-title">Phương thức thanh toán</h2>
 
@@ -444,14 +570,10 @@
                                 </div>
 
                                 <div class="payment-logo
-                                    @if(stripos($method->name, 'VNPAY') !== false)
-                                        logo-vnpay
-                                    @elseif(stripos($method->name, 'MoMo') !== false)
-                                        logo-momo
-                                    @elseif(stripos($method->name, 'VietQR') !== false)
-                                        logo-vietqr
-                                    @elseif(stripos($method->name, 'Visa') !== false)
-                                        logo-visa
+                                    @if(stripos($method->name, 'VNPAY') !== false) logo-vnpay
+                                    @elseif(stripos($method->name, 'MoMo') !== false) logo-momo
+                                    @elseif(stripos($method->name, 'VietQR') !== false) logo-vietqr
+                                    @elseif(stripos($method->name, 'Visa') !== false) logo-visa
                                     @endif
                                 ">
                                     @if(stripos($method->name, 'VNPAY') !== false)
@@ -467,43 +589,58 @@
                                     @endif
                                 </div>
 
-                                <div class="payment-name">
-                                    {{ $method->name }}
-                                </div>
+                                <div class="payment-name">{{ $method->name }}</div>
                             </div>
                         </label>
                     @endforeach
                 </div>
 
-                {{-- CHI PHÍ --}}
+                {{-- CHI PHÍ BREAKDOWN --}}
                 <div class="mb-6">
                     <h3 class="cost-title">Chi phí</h3>
 
-                    <div class="cost-row">
-                        <span>Thanh toán</span>
-                        <span>{{ number_format($invoice['total']) }}đ</span>
-                    </div>
+                    @foreach($invoice['seat_details'] as $detail)
+                        @php
+                            $typeLower = mb_strtolower($detail['type_name']);
+
+                            if (str_contains($typeLower, 'vip')) {
+                                $dotClass = 'dot-vip';
+                            } elseif (str_contains($typeLower, 'couple') || str_contains($typeLower, 'đôi')) {
+                                $dotClass = 'dot-couple';
+                            } elseif (str_contains($typeLower, 'normal') || str_contains($typeLower, 'thường')) {
+                                $dotClass = 'dot-normal';
+                            } else {
+                                $dotClass = 'dot-default';
+                            }
+                        @endphp
+                        <div class="cost-type-row">
+                            <div class="cost-type-left">
+                                <span class="cost-type-dot {{ $dotClass }}"></span>
+                                <span class="cost-type-name">{{ $detail['type_name'] }}</span>
+                                <span class="cost-type-qty">&times;{{ $detail['quantity'] }}</span>
+                            </div>
+                            <span class="cost-type-amount">{{ number_format($detail['subtotal']) }}đ</span>
+                        </div>
+                    @endforeach
+
+                    <hr class="cost-divider">
 
                     <div class="cost-total">
-                        <span>Tổng cộng</span>
-                        <span>{{ number_format($invoice['total']) }}đ</span>
+                        <span class="cost-total-label">Tổng cộng</span>
+                        <span class="cost-total-amount">{{ number_format($invoice['total']) }}đ</span>
                     </div>
                 </div>
 
                 {{-- BUTTON THANH TOÁN --}}
-                <button type="submit" class="btn-submit">
-                    Thanh toán
-                </button>
+                <button type="submit" class="btn-submit">Thanh toán</button>
 
                 {{-- QUAY LẠI --}}
-                <button
-                    type="button"
-                    onclick="history.back()"
-                    class="btn-back">
-                    Quay lại
+                <button type="button" onclick="history.back()" class="btn-back">
+                    ← Quay lại
                 </button>
             </form>
         </div>
+
     </div>
 </div>
 @endsection

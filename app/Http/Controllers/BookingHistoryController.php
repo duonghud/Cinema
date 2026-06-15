@@ -19,7 +19,7 @@ class BookingHistoryController extends Controller
             'paymentMethod',
             'tickets.showTime.movie',
             'tickets.showTime.room',
-            'tickets.seat',
+            'tickets.seat.seatType',   // ← thêm quan hệ seatType để lấy tên + giá
         ])
             ->where('customerID', $customer->customerID)
             ->orderByDesc('createDate')

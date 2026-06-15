@@ -86,6 +86,140 @@
         font-size: .9rem;
         font-weight: 700;
     }
+
+    /* ── Modal chi tiết vé ── */
+    .modal-ticket .modal-content {
+        background: #0e1117;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 24px;
+        color: #fff;
+    }
+
+    .modal-ticket .modal-header {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 1.5rem 1.75rem;
+    }
+
+    .modal-ticket .modal-footer {
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 1.25rem 1.75rem;
+    }
+
+    .modal-ticket .modal-body {
+        padding: 1.75rem;
+    }
+
+    .ticket-stub {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        overflow: hidden;
+    }
+
+    .ticket-stub-header {
+        background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%);
+        padding: 1.25rem 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+    }
+
+    .ticket-stub-body {
+        padding: 1.5rem;
+    }
+
+    .ticket-divider {
+        position: relative;
+        margin: 0;
+        border: none;
+        height: 1px;
+        background: repeating-linear-gradient(
+            to right,
+            rgba(255,255,255,0.15) 0px,
+            rgba(255,255,255,0.15) 8px,
+            transparent 8px,
+            transparent 16px
+        );
+    }
+
+    /* Notches on the divider */
+    .ticket-divider::before,
+    .ticket-divider::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #0e1117;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .ticket-divider::before { left: -10px; }
+    .ticket-divider::after  { right: -10px; }
+
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+        padding: .65rem 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .detail-row:last-child { border-bottom: none; }
+
+    .detail-row .label {
+        color: #6b7280;
+        font-size: .82rem;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .detail-row .value {
+        font-weight: 600;
+        text-align: right;
+        word-break: break-word;
+    }
+
+    .seat-chip {
+        display: inline-block;
+        background: rgba(220, 53, 69, 0.18);
+        border: 1px solid rgba(220, 53, 69, 0.4);
+        color: #fca5a5;
+        border-radius: 6px;
+        padding: .1rem .5rem;
+        font-size: .85rem;
+        font-weight: 700;
+        margin: 2px;
+    }
+
+    .btn-detail {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        color: #e5e7eb;
+        border-radius: 999px;
+        padding: .45rem 1.1rem;
+        font-size: .9rem;
+        font-weight: 600;
+        transition: all .22s ease;
+        cursor: pointer;
+        text-decoration: none;
+    }
+
+    .btn-detail:hover {
+        background: rgba(220, 53, 69, 0.18);
+        border-color: rgba(220, 53, 69, 0.55);
+        color: #fca5a5;
+    }
+
+    .btn-detail i { font-size: 1rem; }
 </style>
 
 <section class="history-page py-5 px-3">
@@ -121,8 +255,26 @@
                                     return $seat ? $seat->rowSeat . $seat->colSeat : null;
                                 })
                                 ->filter()
-                                ->implode(', ');
+                                ->values();
                             $ticketCount = $invoice->tickets->count();
+
+                            // Phòng chiếu (bỏ rạp vì chỉ có 1 rạp)
+                            $roomName = optional(optional($firstTicket)->showTime)->room->roomName ?? 'N/A';
+
+                            // Nhóm ghế theo loại + giá (quan hệ: seat->seatType)
+                            $seatGroups = $invoice->tickets
+                                ->filter(fn($t) => $t->seat && $t->seat->seatType)
+                                ->groupBy(fn($t) => $t->seat->seatType->seatTypeID)
+                                ->map(function ($group) {
+                                    $type = $group->first()->seat->seatType;
+                                    return [
+                                        'name'  => $type->seatTypeName,
+                                        'price' => $type->price,
+                                        'count' => $group->count(),
+                                        'seats' => $group->map(fn($t) => $t->seat->rowSeat . $t->seat->colSeat)->values(),
+                                    ];
+                                })
+                                ->values();
                         @endphp
 
                         <div class="col-12">
@@ -178,7 +330,7 @@
 
                                     <div class="col-md-3">
                                         <div class="info-label mb-2">Ghế</div>
-                                        <div class="fw-semibold">{{ $seatLabels ?: 'N/A' }}</div>
+                                        <div class="fw-semibold">{{ $seatLabels->implode(', ') ?: 'N/A' }}</div>
                                     </div>
 
                                     <div class="col-md-1">
@@ -191,6 +343,14 @@
                                 </div>
 
                                 <div class="d-flex flex-wrap gap-3">
+                                    {{-- Nút xem chi tiết vé --}}
+                                    <button class="btn-detail"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#modalTicket{{ $invoice->invoiceID }}">
+                                        <i class="bi bi-eye"></i>
+                                        Xem chi tiết
+                                    </button>
+
                                     <a href="{{ route('home') }}"
                                        class="btn btn-danger rounded-pill px-4">
                                         <i class="bi bi-ticket-perforated me-2"></i>Đặt vé lại
@@ -198,6 +358,7 @@
                                 </div>
                             </div>
                         </div>
+
                     @endforeach
                 </div>
 
@@ -224,4 +385,186 @@
         </div>
     </div>
 </section>
+
+{{-- ══════════════════════════════════════════════════════
+     Modals chi tiết vé — đặt ngoài section để Bootstrap
+     có thể mount overlay lên toàn trang đúng cách
+     ══════════════════════════════════════════════════════ --}}
+@if(isset($invoices) && $invoices->count() > 0)
+    @foreach($invoices as $invoice)
+        @php
+            /* Tái tính các biến cần thiết cho modal */
+            $m_status      = strtolower($invoice->status ?? 'paid');
+            $m_firstTicket = $invoice->tickets->first();
+            $m_movie       = optional(optional($m_firstTicket)->showTime)->movie->movieTitle ?? 'Chưa có thông tin phim';
+            $m_showDT      = $m_firstTicket && $m_firstTicket->showTime
+                ? \Carbon\Carbon::parse($m_firstTicket->showTime->showDate . ' ' . $m_firstTicket->showTime->startTime)->format('d/m/Y H:i')
+                : 'N/A';
+            $m_room        = optional(optional($m_firstTicket)->showTime)->room->roomName ?? 'N/A';
+            $m_count       = $invoice->tickets->count();
+
+            /* Nhóm ghế theo loại + giá */
+            $m_groups = $invoice->tickets
+                ->filter(fn($t) => $t->seat && $t->seat->seatType)
+                ->groupBy(fn($t) => $t->seat->seatType->seatTypeID)
+                ->map(function ($grp) {
+                    $type = $grp->first()->seat->seatType;
+                    return [
+                        'name'  => $type->seatTypeName,
+                        'price' => $type->price,
+                        'count' => $grp->count(),
+                        'seats' => $grp->map(fn($t) => $t->seat->rowSeat . $t->seat->colSeat)->values(),
+                    ];
+                })
+                ->values();
+
+            /* Fallback: danh sách ghế đơn giản nếu không có quan hệ seatType */
+            $m_seatLabels = $invoice->tickets
+                ->map(fn($t) => $t->seat ? $t->seat->rowSeat . $t->seat->colSeat : null)
+                ->filter()->values();
+        @endphp
+
+        <div class="modal fade modal-ticket"
+             id="modalTicket{{ (int) $invoice->invoiceID }}"
+             tabindex="-1"
+             aria-labelledby="modalLabel{{ (int) $invoice->invoiceID }}"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-md modal-dialog-scrollable">
+                <div class="modal-content">
+
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold" id="modalLabel{{ (int) $invoice->invoiceID }}">
+                            <i class="bi bi-ticket-perforated-fill text-danger me-2"></i>
+                            Chi tiết vé — INV-{{ $invoice->invoiceID }}
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <div class="ticket-stub">
+
+                            {{-- Header: tên phim --}}
+                            <div class="ticket-stub-header">
+                                <i class="bi bi-film text-white fs-4"></i>
+                                <div>
+                                    <div style="font-size:.75rem;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.06em;">Phim</div>
+                                    <div class="fw-bold fs-6 text-white">{{ $m_movie }}</div>
+                                </div>
+                            </div>
+
+                            {{-- Thông tin chung --}}
+                            <div class="ticket-stub-body">
+                                <div class="detail-row">
+                                    <span class="label">Mã hóa đơn</span>
+                                    <span class="value text-danger fw-bold">INV-{{ $invoice->invoiceID }}</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="label">Ngày đặt</span>
+                                    <span class="value">{{ \Carbon\Carbon::parse($invoice->createDate)->format('d/m/Y H:i') }}</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="label">Suất chiếu</span>
+                                    <span class="value">{{ $m_showDT }}</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="label">Phòng chiếu</span>
+                                    <span class="value">{{ $m_room }}</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="label">Số vé</span>
+                                    <span class="value">{{ $m_count }} vé</span>
+                                </div>
+                            </div>
+
+                            {{-- Bảng ghế & giá --}}
+                            <div class="ticket-stub-body" style="padding-top:0;">
+                                <div style="color:#6b7280;font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.6rem;">
+                                    Chi tiết ghế &amp; giá
+                                </div>
+
+                                @if($m_groups->isNotEmpty())
+                                    <div style="border:1px solid rgba(255,255,255,0.07);border-radius:10px;overflow:hidden;">
+                                        @foreach($m_groups as $grp)
+                                            <div style="padding:.75rem 1rem;{{ !$loop->last ? 'border-bottom:1px solid rgba(255,255,255,0.06);' : '' }}">
+                                                {{-- Dòng: tên loại + đơn giá × số lượng = thành tiền --}}
+                                                <div style="display:flex;justify-content:space-between;align-items:baseline;gap:.5rem;flex-wrap:wrap;margin-bottom:.45rem;">
+                                                    <span style="font-weight:700;color:#e5e7eb;font-size:.95rem;">
+                                                        {{ $grp['name'] }}
+                                                    </span>
+                                                    <span style="white-space:nowrap;font-size:.88rem;">
+                                                        <span style="color:#fbbf24;font-weight:600;">
+                                                            {{ number_format($grp['price'], 0, ',', '.') }} đ
+                                                        </span>
+                                                        <span style="color:#6b7280;"> × {{ $grp['count'] }} = </span>
+                                                        <span style="color:#fbbf24;font-weight:700;">
+                                                            {{ number_format($grp['price'] * $grp['count'], 0, ',', '.') }} đ
+                                                        </span>
+                                                    </span>
+                                                </div>
+                                                {{-- Chip ghế --}}
+                                                <div>
+                                                    @foreach($grp['seats'] as $s)
+                                                        <span class="seat-chip">{{ $s }}</span>
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    {{-- Fallback khi chưa có quan hệ seatType --}}
+                                    <div style="padding:.5rem 0;">
+                                        @forelse($m_seatLabels as $s)
+                                            <span class="seat-chip">{{ $s }}</span>
+                                        @empty
+                                            <span style="color:#6b7280;">N/A</span>
+                                        @endforelse
+                                    </div>
+                                @endif
+                            </div>
+
+                            <hr class="ticket-divider mx-3">
+
+                            {{-- Tổng tiền & trạng thái --}}
+                            <div class="ticket-stub-body pt-3">
+                                <div class="detail-row">
+                                    <span class="label">Trạng thái</span>
+                                    <span class="value">
+                                        @if($m_status === 'paid')
+                                            <span class="badge bg-success px-3 py-2">Đã thanh toán</span>
+                                        @elseif($m_status === 'pending')
+                                            <span class="badge bg-warning text-dark px-3 py-2">Chờ thanh toán</span>
+                                        @else
+                                            <span class="badge bg-secondary px-3 py-2">{{ $invoice->status }}</span>
+                                        @endif
+                                    </span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="label">Tổng tiền</span>
+                                    <span class="value text-warning fs-5 fw-bold">
+                                        {{ number_format($invoice->totalAmount ?? 0, 0, ',', '.') }} đ
+                                    </span>
+                                </div>
+                            </div>
+
+                        </div>{{-- /ticket-stub --}}
+                    </div>
+
+                    <div class="modal-footer gap-2">
+                        <button type="button"
+                                class="btn btn-outline-secondary rounded-pill px-4"
+                                data-bs-dismiss="modal">
+                            <i class="bi bi-x-lg me-1"></i>Đóng
+                        </button>
+                        <a href="{{ route('home') }}"
+                           class="btn btn-danger rounded-pill px-4">
+                            <i class="bi bi-ticket-perforated me-2"></i>Đặt vé lại
+                        </a>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    @endforeach
+@endif
+
 @endsection

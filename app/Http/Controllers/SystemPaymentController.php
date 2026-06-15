@@ -33,7 +33,7 @@ class SystemPaymentController extends Controller
 
         $request->validate([
             'showtime_id' => 'required|exists:show_times,showTimeID',
-            'seats' => 'required|string',
+            'seats'       => 'required|string',
         ]);
 
         $seatCodes = array_values(array_filter(explode(',', $request->seats)));
@@ -42,7 +42,7 @@ class SystemPaymentController extends Controller
             ->findOrFail($request->showtime_id);
 
         $startDateTime = $this->getStartDateTime($showtime);
-        $now = Carbon::now('Asia/Ho_Chi_Minh');
+        $now           = Carbon::now('Asia/Ho_Chi_Minh');
 
         if ($now->greaterThanOrEqualTo($startDateTime)) {
             return back()->with('error', 'Suất chiếu đã bắt đầu!');
@@ -68,18 +68,34 @@ class SystemPaymentController extends Controller
 
         $total = $seats->sum(fn($seat) => $seat->seatType->price ?? 0);
 
+        // Group seats by type for display breakdown
+        $seatDetails = $seats
+            ->groupBy(fn($seat) => $seat->seatType->typeName ?? 'Không xác định')
+            ->map(function ($group, $typeName) {
+                return [
+                    'type_name' => $typeName,
+                    'price'     => $group->first()->seatType->price ?? 0,
+                    'quantity'  => $group->count(),
+                    'codes'     => $group->map(fn($s) => $s->rowSeat . $s->colSeat)->values()->all(),
+                    'subtotal'  => $group->sum(fn($s) => $s->seatType->price ?? 0),
+                ];
+            })
+            ->values()
+            ->all();
+
         session([
             'invoice' => [
-                'movie' => $showtime->movie->movieTitle ?? 'N/A',
-                'seats' => $seatCodes,
-                'seat_ids' => $seats->pluck('seatID')->values()->all(),
-                'time' => substr($showtime->startTime, 0, 5),
-                'date' => Carbon::parse($showtime->showDate)->format('d/m/Y'),
-                'room' => $showtime->room->roomName ?? 'N/A',
-                'room_id' => $showtime->roomID,
-                'format' => $showtime->format ?? '2D',
-                'total' => $total,
-                'showtime_id' => $showtime->showTimeID,
+                'movie'        => $showtime->movie->movieTitle ?? 'N/A',
+                'seats'        => $seatCodes,
+                'seat_ids'     => $seats->pluck('seatID')->values()->all(),
+                'seat_details' => $seatDetails,
+                'time'         => substr($showtime->startTime, 0, 5),
+                'date'         => Carbon::parse($showtime->showDate)->format('d/m/Y'),
+                'room'         => $showtime->room->roomName ?? 'N/A',
+                'room_id'      => $showtime->roomID,
+                'format'       => $showtime->format ?? '2D',
+                'total'        => $total,
+                'showtime_id'  => $showtime->showTimeID,
             ],
         ]);
 
@@ -90,9 +106,18 @@ class SystemPaymentController extends Controller
     {
         $invoice = session('invoice');
 
+        // Không có invoice
         if (!$invoice) {
             return redirect()->route('show')
                 ->with('error', 'Không có dữ liệu hóa đơn!');
+        }
+
+        // Session cũ chưa có seat_details → buộc chọn lại ghế
+        if (empty($invoice['seat_details'])) {
+            session()->forget('invoice');
+
+            return redirect()->route('show')
+                ->with('error', 'Phiên đặt vé đã hết hạn, vui lòng chọn lại ghế!');
         }
 
         $showtime = showTime::find($invoice['showtime_id']);
@@ -105,7 +130,7 @@ class SystemPaymentController extends Controller
         }
 
         $startDateTime = $this->getStartDateTime($showtime);
-        $now = Carbon::now('Asia/Ho_Chi_Minh');
+        $now           = Carbon::now('Asia/Ho_Chi_Minh');
 
         if ($now->greaterThanOrEqualTo($startDateTime)) {
             session()->forget('invoice');
@@ -125,7 +150,7 @@ class SystemPaymentController extends Controller
             'payment_method' => 'required|exists:payment_methods,paymentID',
         ]);
 
-        $invoice = session('invoice');
+        $invoice  = session('invoice');
         $customer = session('customer');
 
         if (!$invoice || !$customer) {
@@ -135,9 +160,7 @@ class SystemPaymentController extends Controller
 
         $paymentMethod = payment_method::findOrFail($request->payment_method);
 
-        session([
-            'selected_payment_method' => $paymentMethod->paymentID,
-        ]);
+        session(['selected_payment_method' => $paymentMethod->paymentID]);
 
         // VNPAY
         if (stripos($paymentMethod->name, 'VNPAY') !== false) {
@@ -162,22 +185,16 @@ class SystemPaymentController extends Controller
                 ->with('error', $e->getMessage());
         }
 
-        session()->forget([
-            'invoice',
-            'selected_payment_method',
-        ]);
+        session()->forget(['invoice', 'selected_payment_method']);
 
         return redirect()->route('system.success', [
-            'invoiceID' => $savedInvoice->invoiceID
+            'invoiceID' => $savedInvoice->invoiceID,
         ])->with('success', 'Thanh toán thành công');
     }
 
     public function vnpaySuccess()
     {
-        session()->forget([
-            'invoice',
-            'selected_payment_method',
-        ]);
+        session()->forget(['invoice', 'selected_payment_method']);
 
         return redirect()->route('show')
             ->with('success', 'Thanh toán VNPay thành công');

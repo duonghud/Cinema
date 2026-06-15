@@ -595,7 +595,7 @@
             <div class="table-responsive">
             <table class="table table-hover align-middle mb-0 modal-table">
                 <thead><tr>
-                    <th>#</th><th>Mã HĐ</th><th>Loại</th><th>Khách hàng</th>
+                    <th>#</th><th>Mã HĐ</th><th>Khách hàng</th>
                     <th>Thanh toán</th><th>Ngày</th><th>Tổng tiền</th><th></th>
                 </tr></thead>
                 <tbody>
@@ -617,7 +617,6 @@
                     return `<tr>
                         <td style="color:#94a3b8">${i+1}</td>
                         <td class="fw-semibold text-nowrap" style="color:${color}">${idStr}</td>
-                        <td>${badge}</td>
                         <td>${inv.customer ?? 'Khách vãng lai'}</td>
                         <td><span class="badge fw-semibold" style="background:#ecfdf5;color:#10b981;border:1px solid #a7f3d0;border-radius:6px;padding:4px 10px">${inv.paymentMethod ?? '---'}</span></td>
                         <td class="text-nowrap" style="color:#64748b">${inv.createDate ?? ''}</td>

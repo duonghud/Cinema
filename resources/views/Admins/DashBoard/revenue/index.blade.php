@@ -79,7 +79,23 @@
     }
     #revenueTable tbody tr { transition: background .12s; }
     #revenueTable tbody tr:hover { background: #eef2ff; }
+    #revenueTable tbody tr.row-disabled:hover { background: transparent; }
     #revenueTable tbody td { padding: 11px 14px; font-size: .9rem; color: var(--text); border-color: var(--border); }
+
+    /* ── Disabled future row ── */
+    .row-disabled {
+        opacity: .38;
+        pointer-events: none;
+        cursor: not-allowed;
+    }
+    .badge-future {
+        font-size: .65rem; font-weight: 700;
+        background: #f1f5f9; color: #94a3b8;
+        border: 1px solid #e2e8f0;
+        border-radius: 5px; padding: 1px 7px;
+        vertical-align: middle; white-space: nowrap;
+        margin-left: 6px;
+    }
 
     /* ── Pagination ── */
     .pagination-wrap {
@@ -159,7 +175,7 @@
         </div>
     </div>
 
-    {{-- ── Summary boxes (bỏ onclick/hover, chỉ hiển thị số liệu) ── --}}
+    {{-- ── Summary boxes ── --}}
     <div class="row g-3 mb-4">
         <div class="col-md-4">
             <div class="summary-box ticket">
@@ -190,7 +206,7 @@
         </div>
     </div>
 
-    {{-- ── Chart card (giữ nguyên) ── --}}
+    {{-- ── Chart card ── --}}
     <div class="card report-card mb-4">
         <div class="card-body">
             <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
@@ -209,6 +225,9 @@
             <div class="mb-3 d-flex flex-wrap gap-3" id="chart-legend" style="font-size:.85rem;color:var(--text)">
                 <span><span class="legend-dot" style="background:#6366f1"></span>Doanh thu vé</span>
                 <span><span class="legend-dot" style="background:#06b6d4"></span>Doanh thu đồ ăn</span>
+                @if($filterKey === 'year')
+                <span><span class="legend-dot" style="background:rgba(203,213,225,0.7)"></span>Tháng chưa đến</span>
+                @endif
             </div>
 
             <div class="chart-panel active" id="panel-bar">
@@ -220,7 +239,7 @@
         </div>
     </div>
 
-    {{-- ── Data table (giữ nguyên) ── --}}
+    {{-- ── Data table ── --}}
     <div class="card report-card">
         <div class="card-body">
             <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
@@ -329,6 +348,36 @@ const periods    = @json($rows->pluck('period')->toArray());
 const summaryTicket = {{ $summary['ticketRevenue'] }};
 const summaryFood   = {{ $summary['foodRevenue'] }};
 
+// ── Màu disable tháng tương lai chưa có dữ liệu ──────────────────
+const FUTURE_COLOR = 'rgba(203,213,225,0.5)'; // slate-300
+
+@if($filterKey === 'year')
+(function buildFutureFlags() {
+    const selectedYear = {{ $filterValue }};
+    const now          = new Date();
+    const currentYear  = now.getFullYear();
+    const currentMonth = now.getMonth() + 1; // 1-12
+
+    // Gán cờ toàn cục để dùng khi build chart
+    window._futureDisabled = ticketData.map((t, i) => {
+        const month    = i + 1;
+        const hasData  = (t ?? 0) > 0 || (foodData[i] ?? 0) > 0;
+        const isFuture = selectedYear === currentYear && month > currentMonth;
+        return isFuture && !hasData;
+    });
+})();
+@else
+window._futureDisabled = ticketData.map(() => false);
+@endif
+
+// ── Hàm tính màu nền cho từng cột/điểm ──────────────────────────
+function resolveBarColors(baseColor) {
+    return ticketData.map((_, i) => window._futureDisabled[i] ? FUTURE_COLOR : baseColor);
+}
+function resolveBorderColors(baseColor) {
+    return ticketData.map((_, i) => window._futureDisabled[i] ? 'rgba(203,213,225,0.5)' : baseColor);
+}
+
 // ── Chart helpers ─────────────────────────────────────────────────
 const C = {
     ticket : '#6366f1', ticketA : 'rgba(99,102,241,0.15)',
@@ -336,8 +385,15 @@ const C = {
 };
 const tooltipPlugin = {
     callbacks: {
-        label     : ctx => ' ' + fmt(ctx.parsed.y ?? ctx.parsed),
-        afterLabel: ()  => '  ← Nhấn để xem hóa đơn',
+        label: ctx => {
+            const idx = ctx.dataIndex;
+            if (window._futureDisabled[idx]) return ' Chưa có dữ liệu';
+            return ' ' + fmt(ctx.parsed.y ?? ctx.parsed);
+        },
+        afterLabel: ctx => {
+            if (window._futureDisabled[ctx.dataIndex]) return '';
+            return '  ← Nhấn để xem hóa đơn';
+        },
     }
 };
 const axisDefaults = {
@@ -352,10 +408,12 @@ function makeClickHandler(chart) {
     return function (evt) {
         const pts = chart.getElementsAtEventForMode(evt, 'index', { intersect: false }, true);
         if (!pts.length) return;
-        const idx   = pts[0].index;
-        const dsIdx = pts[0].datasetIndex;
+        const idx = pts[0].index;
+        // Không mở modal nếu tháng bị disable
+        if (window._futureDisabled[idx]) return;
+        const dsIdx  = pts[0].datasetIndex;
         const typeMap = ['ticket', 'food'];
-        const type    = typeMap[dsIdx] ?? 'all';
+        const type   = typeMap[dsIdx] ?? 'all';
         openModal(periods[idx] ?? labels[idx], type, labels[idx]);
     };
 }
@@ -365,8 +423,20 @@ const barChart = new Chart(document.getElementById('barChart'), {
     data: {
         labels,
         datasets: [
-            { label: 'Doanh thu vé',    data: ticketData, backgroundColor: 'rgba(99,102,241,0.82)', borderRadius: 6, borderSkipped: false },
-            { label: 'Doanh thu đồ ăn', data: foodData,   backgroundColor: 'rgba(6,182,212,0.82)',  borderRadius: 6, borderSkipped: false },
+            {
+                label: 'Doanh thu vé',
+                data: ticketData,
+                backgroundColor: resolveBarColors('rgba(99,102,241,0.82)'),
+                borderRadius: 6,
+                borderSkipped: false,
+            },
+            {
+                label: 'Doanh thu đồ ăn',
+                data: foodData,
+                backgroundColor: resolveBarColors('rgba(6,182,212,0.82)'),
+                borderRadius: 6,
+                borderSkipped: false,
+            },
         ]
     },
     options: {
@@ -382,8 +452,28 @@ const lineChart = new Chart(document.getElementById('lineChart'), {
     data: {
         labels,
         datasets: [
-            { label: 'Doanh thu vé',    data: ticketData, borderColor: C.ticket, backgroundColor: C.ticketA, tension: .4, fill: true, pointBackgroundColor: C.ticket, pointRadius: 5, pointHoverRadius: 8 },
-            { label: 'Doanh thu đồ ăn', data: foodData,   borderColor: C.food,   backgroundColor: C.foodA,   tension: .4, fill: true, pointBackgroundColor: C.food,   pointRadius: 5, pointHoverRadius: 8 },
+            {
+                label: 'Doanh thu vé',
+                data: ticketData,
+                borderColor: resolveBorderColors(C.ticket),
+                backgroundColor: C.ticketA,
+                tension: .4,
+                fill: true,
+                pointBackgroundColor: resolveBorderColors(C.ticket),
+                pointRadius: 5,
+                pointHoverRadius: 8,
+            },
+            {
+                label: 'Doanh thu đồ ăn',
+                data: foodData,
+                borderColor: resolveBorderColors(C.food),
+                backgroundColor: C.foodA,
+                tension: .4,
+                fill: true,
+                pointBackgroundColor: resolveBorderColors(C.food),
+                pointRadius: 5,
+                pointHoverRadius: 8,
+            },
         ]
     },
     options: {
@@ -402,7 +492,27 @@ function switchChart(type, btn) {
     btn.classList.add('active');
 }
 
-// ── Pagination ────────────────────────────────────────────────────
+// ── Disable future rows trong bảng (chỉ áp dụng filterKey === 'year') ──
+@if($filterKey === 'year')
+(function disableFutureTableRows() {
+    const rows = document.querySelectorAll('#tableBody tr[data-row]');
+    rows.forEach((tr, i) => {
+        if (!window._futureDisabled[i]) return;
+
+        tr.classList.add('row-disabled');
+
+        // Thêm badge "Chưa đến" vào cột đầu tiên
+        const firstTd = tr.querySelector('td');
+        if (firstTd) {
+            const badge = document.createElement('span');
+            badge.className = 'badge-future';
+            badge.textContent = 'Chưa đến';
+            firstTd.appendChild(badge);
+        }
+    });
+})();
+@endif
+
 (function () {
     const wrap = document.getElementById('paginationWrap');
     if (!wrap) return;
