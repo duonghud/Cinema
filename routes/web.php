@@ -39,10 +39,6 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/show', [showController::class, 'index'])->name('show');
 Route::view('/contact', 'system.contact')->name('contact');
 Route::view('/ticket-price', 'system.ticketprice')->name('ticket.price');
-Route::get('/profile', function () {
-    $customer = session('customer');
-    return view('system.profile', compact('customer'));
-})->name('customer.profile');
 
 Route::get('/vnpay/return', [VnpayController::class, 'vnpayReturn'])
     ->name('vnpay.return');
@@ -51,7 +47,7 @@ Route::get('/momo/return', [MomoController::class, 'momoReturn'])
     ->name('momo.return');
 Route::post('/momo/notify', [MomoController::class, 'momoNotify'])
     ->name('momo.notify');
-    
+
 
 // ================== AUTH CUSTOMER ==================
 Route::prefix('customer')->group(function () {
@@ -96,8 +92,6 @@ Route::prefix('admins')->middleware('admin.auth')->group(function () {
     Route::get('/reports/invoices-by-period', [DashBoardController::class, 'invoicesByPeriod'])
         ->name('admins.reports.invoices-by-period');
 
-
-
     // Resources
     Route::resource('admin',             AdminController::class);
     Route::resource('customer',          CustomerController::class);
@@ -117,23 +111,23 @@ Route::prefix('admins')->middleware('admin.auth')->group(function () {
     Route::resource('invoices',          InvoiceController::class);
 
     // Seat AJAX
-    Route::get('seat/ajax/{roomID}',         [SeatController::class, 'getSeatsByRoom'])
+    Route::get('seat/ajax/{roomID}',          [SeatController::class, 'getSeatsByRoom'])
         ->name('seat.ajax.list');
-    Route::post('seat/ajax-add',             [SeatController::class, 'storeAjax'])
+    Route::post('seat/ajax-add',              [SeatController::class, 'storeAjax'])
         ->name('seat.ajax.add');
-    Route::post('seat/ajax-update-type',     [SeatController::class, 'ajaxUpdateType'])
+    Route::post('seat/ajax-update-type',      [SeatController::class, 'ajaxUpdateType'])
         ->name('seat.ajax.updateType');
-    Route::delete('seat/ajax-delete/{id}',   [SeatController::class, 'deleteAjax'])
+    Route::delete('seat/ajax-delete/{id}',    [SeatController::class, 'deleteAjax'])
         ->name('seat.ajax.delete');
-    Route::post('seat/update-multiple',      [SeatController::class, 'updateMultiple'])
+    Route::post('seat/update-multiple',       [SeatController::class, 'updateMultiple'])
         ->name('seat.updateMultiple');
-    Route::get('seat/edit-multiple',         [SeatController::class, 'editMultiple'])
+    Route::get('seat/edit-multiple',          [SeatController::class, 'editMultiple'])
         ->name('seat.editMultiple');
-    Route::post('seat/ajax-swap-type',       [SeatController::class, 'ajaxSwapType'])
+    Route::post('seat/ajax-swap-type',        [SeatController::class, 'ajaxSwapType'])
         ->name('seat.ajax.swapType');
-    Route::post('seat/ajax-convert-couple',  [SeatController::class, 'ajaxConvertCouple'])
+    Route::post('seat/ajax-convert-couple',   [SeatController::class, 'ajaxConvertCouple'])
         ->name('seat.ajax.convertCouple');
-    Route::post('seat/ajax-move-couple',     [SeatController::class, 'ajaxMoveCouple'])
+    Route::post('seat/ajax-move-couple',      [SeatController::class, 'ajaxMoveCouple'])
         ->name('seat.ajax.moveCouple');
     Route::post('seat/ajax-swap-couple-type', [SeatController::class, 'ajaxSwapCoupleType'])
         ->name('seat.ajax.swapCoupleType');
@@ -150,6 +144,13 @@ Route::get('/select-seat/{id}', [SeatController::class, 'selectSeat'])
 
 // ================== CUSTOMER MIDDLEWARE ====================
 Route::middleware('customer.login')->group(function () {
+
+    // Profile
+    Route::get('/profile', [CustomerAuthController::class, 'showProfile'])
+        ->name('customer.profile');
+    Route::post('/profile/update', [CustomerAuthController::class, 'updateProfile'])
+        ->name('customer.profile.update');
+
     Route::get('/member', function () {
         return view('customer.member');
     })->name('customer.member');
