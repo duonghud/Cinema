@@ -72,7 +72,7 @@
                                         Sửa
                                     </button>
 
-                                    <form action="{{ route('admin.movies.destroy', $movie->movieID) }}" method="POST" class="m-0">
+                                    <form action="{{ route('admine.movies.destroy', $movie->movieID) }}" method="POST" class="m-0">
                                         @csrf
                                         @method('DELETE')
 
@@ -104,4 +104,33 @@
 
 @include('admins.manageMovies.movies.create')
 
+
+<!-- @push('js')
+<script>
+    // Lazy load poster images
+    const lazyImgs = document.querySelectorAll('.lazy-img');
+    const imgObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const img = entry.target;
+                img.src = img.dataset.src;
+                imgObserver.unobserve(img);
+            }
+        });
+    });
+    lazyImgs.forEach(img => imgObserver.observe(img));
+
+    // Click thumbnail → swap thành video thật
+    document.querySelectorAll('.trailer-thumb').forEach(thumb => {
+        thumb.addEventListener('click', function () {
+            const src = this.dataset.src;
+            const wrap = this.closest('.trailer-wrap');
+            wrap.innerHTML = `
+                <video width="140" height="80" class="rounded" controls autoplay>
+                    <source src="${src}">
+                </video>`;
+        });
+    });
+</script>
+@endpush -->
 @endsection

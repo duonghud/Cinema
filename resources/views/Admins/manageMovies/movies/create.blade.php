@@ -3,7 +3,7 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content shadow">
 
-            <form action="{{ route('admin.movies.store') }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ route('admine.movies.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
 
                 <!-- Header -->

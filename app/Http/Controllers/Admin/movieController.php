@@ -47,7 +47,7 @@ class movieController extends Controller
                     $genreQuery->where('genres.genreID', $genreId);
                 });
             })
-            ->paginate(5)
+            ->paginate(8)
             ->withQueryString();
 
         $ageRatings = ageRating::all();

@@ -234,8 +234,8 @@
                     <i class="bi bi-chevron-down ms-auto"></i>
                 </a>
 
-                <div class="collapse submenu {{ request()->routeIs('movies.*','genre.*','studio.*','ageRating.*') ? 'show' : '' }}" id="movieMenu">
-                    <a href="{{ route('admin.movies.index') }}" class="{{ request()->routeIs('movies.*') ? 'active' : '' }}">
+                <div class="collapse submenu {{ request()->routeIs('admine.movies.*','genre.*','studio.*','ageRating.*') ? 'show' : '' }}" id="movieMenu">
+                    <a href="{{ route('admine.movies.index') }}" class="{{ request()->routeIs('admine.movies.*') ? 'active' : '' }}">
                         <span class="mt-2"></span><i class="bi bi-camera-reels"></i> Phim
                     </a>
                     <a href="{{ route('genre.index') }}" class="{{ request()->routeIs('genre.*') ? 'active' : '' }}">
@@ -306,7 +306,7 @@
                 </div>
 
                 {{--<a href="{{ route('ticket.index') }}" class="{{ request()->routeIs('ticket.*') ? 'active' : '' }}">
-                    <i class="bi bi-ticket-perforated"></i> Vé
+                <i class="bi bi-ticket-perforated"></i> Vé
                 </a>--}}
 
                 <a href="{{ route('showTime.index') }}" class="{{ request()->routeIs('showTime.*') ? 'active' : '' }}">
@@ -317,32 +317,32 @@
 
         <div class="modern-toast-wrapper">
             @if(session('success'))
-                <div class="modern-toast toast-success">
-                    <div class="toast-icon">
-                        <i class="bi bi-check-circle-fill"></i>
-                    </div>
-                    <div class="toast-content">
-                        <div class="toast-text">{{ session('success') }}</div>
-                    </div>
-                    <button class="toast-close" onclick="this.parentElement.remove()">
-                        <i class="bi bi-x-lg"></i>
-                    </button>
+            <div class="modern-toast toast-success">
+                <div class="toast-icon">
+                    <i class="bi bi-check-circle-fill"></i>
                 </div>
+                <div class="toast-content">
+                    <div class="toast-text">{{ session('success') }}</div>
+                </div>
+                <button class="toast-close" onclick="this.parentElement.remove()">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
             @endif
 
             @if(session('error'))
-                <div class="modern-toast toast-error">
-                    <div class="toast-icon">
-                        <i class="bi bi-exclamation-triangle-fill"></i>
-                    </div>
-                    <div class="toast-content">
-                        <div class="toast-title">Lỗi</div>
-                        <div class="toast-text">{{ session('error') }}</div>
-                    </div>
-                    <button class="toast-close" onclick="this.parentElement.remove()">
-                        <i class="bi bi-x-lg"></i>
-                    </button>
+            <div class="modern-toast toast-error">
+                <div class="toast-icon">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
                 </div>
+                <div class="toast-content">
+                    <div class="toast-title">Lỗi</div>
+                    <div class="toast-text">{{ session('error') }}</div>
+                </div>
+                <button class="toast-close" onclick="this.parentElement.remove()">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
             @endif
         </div>
 

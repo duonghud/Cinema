@@ -37,9 +37,9 @@
                                 @if($admin->role == 'admin')
                                     <span class="badge bg-danger">Quản trị</span>
                                 @elseif($admin->role == 'ticket_staff')
-                                    <span class="badge bg-primary">Bán vé</span>
+                                    <span class="badge bg-primary">Nhân viên bán vé</span>
                                 @elseif($admin->role == 'food_staff')
-                                    <span class="badge bg-warning text-dark">Đồ ăn</span>
+                                    <span class="badge bg-warning text-dark">Nhân viên bán đồ ăn</span>
                                 @else
                                     <span class="badge bg-secondary">Khác</span>
                                 @endif

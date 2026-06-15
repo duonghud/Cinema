@@ -8,9 +8,9 @@
             <small class="text-muted">Danh sách tất cả hóa đơn trong hệ thống</small>
         </div>
 
-        <a href="{{ route('invoices.create') }}" class="btn btn-dark shadow-sm">
+        <!-- <a href="{{ route('invoices.create') }}" class="btn btn-dark shadow-sm">
             + Tạo hóa đơn
-        </a>
+        </a> -->
     </div>
 
     @include('admins.partials.page-search', [

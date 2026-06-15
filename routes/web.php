@@ -102,7 +102,7 @@ Route::prefix('admins')->middleware('admin.auth')->group(function () {
     Route::resource('genre',             GenreController::class);
     Route::resource('studio',            StudioController::class);
     Route::resource('ageRating',         AgeRatingController::class);
-    Route::resource('movies',            MovieController::class)->names('admin.movies');
+    Route::resource('movies',            MovieController::class)->names('admine.movies');
     Route::resource('screeningRoom',     ScreeningRoomController::class);
     Route::resource('screenType',        ScreeningTypeController::class);
     Route::resource('seatType',          SeatTypeController::class);

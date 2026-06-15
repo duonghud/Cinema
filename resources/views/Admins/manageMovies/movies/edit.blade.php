@@ -2,7 +2,7 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content shadow">
 
-            <form action="{{ route('admin.movies.update',$movie->movieID) }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ route('admine.movies.update',$movie->movieID) }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 @method('PUT')
 

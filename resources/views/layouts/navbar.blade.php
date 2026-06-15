@@ -202,9 +202,9 @@
             <li class="nav-item"><a href="{{ route('home') }}" class="nav-link">Trang chủ</a></li>
             <li class="nav-item"><a href="{{ route('show') }}" class="nav-link">Lịch chiếu</a></li>
             <li class="nav-item"><a href="{{ route('ticket.price') }}" class="nav-link">Giá vé</a></li>
-            <li class="nav-item"><a href="#" class="nav-link">Tin tức</a></li>
+            <!-- <li class="nav-item"><a href="#" class="nav-link">Tin tức</a></li> -->
             <li class="nav-item"><a href="{{ route('contact') }}" class="nav-link">Liên hệ</a></li>
-            <li class="nav-item"><a href="#" class="nav-link">Giới thiệu</a></li>
+            <!-- <li class="nav-item"><a href="#" class="nav-link">Giới thiệu</a></li> -->
         </ul>
 
         <div class="d-flex gap-2">

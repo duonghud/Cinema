@@ -24,7 +24,7 @@ class BookingHistoryController extends Controller
             ->where('customerID', $customer->customerID)
             ->orderByDesc('createDate')
             ->orderByDesc('invoiceID')
-            ->paginate(10);
+            ->paginate(2);
 
         return view('system.history', compact('invoices', 'customer'));
     }
