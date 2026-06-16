@@ -15,9 +15,9 @@
                 <a href="{{ route('foodInvoice.index') }}" class="btn btn-outline-secondary">
                     <i class="bi bi-arrow-left me-1"></i> Quay lại
                 </a>
-                <a href="{{ route('foodInvoice.edit', $invoice->foodInvoiceID) }}" class="btn btn-dark">
+                {{--<a href="{{ route('foodInvoice.edit', $invoice->foodInvoiceID) }}" class="btn btn-dark">
                     <i class="bi bi-pencil-square me-1"></i> Sửa hóa đơn
-                </a>
+                </a>--}}
             </div>
         </div>
 

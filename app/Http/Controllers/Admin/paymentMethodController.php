@@ -95,7 +95,7 @@ class paymentMethodController extends Controller
     {
         // Tìm bản ghi theo ID khóa chính, nếu không tồn tại tự động ném ra lỗi 404
         $paymentMethods = payment_method::findOrFail($paymentID);
-        
+
         // Trả về view sửa và truyền dữ liệu của bản ghi cần sửa sang
         return view('admins.paymentMethod.edit', ['paymentMethods' => $paymentMethods]);
     }

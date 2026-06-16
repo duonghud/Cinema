@@ -45,9 +45,9 @@
                             </td>
                             <td class="fw-semibold">{{ number_format($foodInvoice->total, 0, ',', '.') }} ₫</td>
                             <td class="text-end">
-                                <a href="{{ route('foodInvoice.edit', $foodInvoice->foodInvoiceID) }}" class="btn btn-sm btn-outline-dark me-2">
+                                {{--<a href="{{ route('foodInvoice.edit', $foodInvoice->foodInvoiceID) }}" class="btn btn-sm btn-outline-dark me-2">
                                     Sửa
-                                </a>
+                                </a>--}}
 
                                 <form action="{{ route('foodInvoice.destroy', $foodInvoice->foodInvoiceID) }}" method="POST" class="d-inline">
                                     @csrf

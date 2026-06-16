@@ -38,11 +38,11 @@ class genreController extends Controller
 
         return view('admins.manageMovies.genre.index', [
             'genres' => $genres,
-            'filters' => [[
+            /*'filters' => [[
                 'name' => 'genre_name',
                 'all_label' => 'Tất cả thể loại',
                 'options' => $genreNames->toArray(),
-            ]],
+            ]],*/
         ]);
     }
 

@@ -38,11 +38,11 @@ class studioController extends Controller
 
         return view('admins.manageMovies.studio.index', [
             'studios' => $studios,
-            'filters' => [[
-                'name' => 'studio_name',
-                'all_label' => 'Tất cả nhà sản xuất',
-                'options' => $studioNames->toArray(),
-            ]],
+//            'filters' => [[
+//                'name' => 'studio_name',
+//                'all_label' => 'Tất cả nhà sản xuất',
+//                'options' => $studioNames->toArray(),
+//            ]],
         ]);
     }
 
